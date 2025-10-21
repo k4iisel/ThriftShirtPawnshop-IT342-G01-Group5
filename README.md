@@ -42,11 +42,11 @@ Name	Role	CIT-U Email	GitHub Username
 Nicolo Francis L. Gabiana	Project Manager / Developer	nfgabiana@cit.edu
 https://github.com/NFGab
 Dale Christian C. Fortaleza	Developer	dcfortaleza@cit.edu
-	@<username>
+https://github.com/daley2
 Mark Christian Q. Garing	Developer	mcqgaring@cit.edu
 https://github.com/k4iisel
 Kaysean Miel	Developer	kmiel@cit.edu
-	@<username>
+https://github.com/kayseanmiel
 
 
 
