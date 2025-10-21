@@ -1,58 +1,88 @@
-🏷️ Project Title
+# Thrift Shirt Pawnshop & Lending System
 
-Thrift Shirt Pawnshop & Lending System: Web and Mobile Application for Digital Pawn Lending and Resale
+The **Thrift Shirt Pawnshop & Lending System** is a comprehensive cross-platform solution designed to digitize pawnshop operations and streamline the thrift resale business. 
 
-💡 Short Description
+This modern system enables customers to:
+- Upload item photos through a Kotlin Android mobile app
+- Receive real-time digital appraisal updates
+- Track loan due dates and payment schedules
+- Browse and purchase items from the thrift catalog
 
-A cross-platform system for pawnshop operations, enabling users to digitally pawn items, receive loan updates, and resell unredeemed items. The system includes:
+**Key Features:**
+- **Digital Loan Management**: Secure loan processing with automated due-date enforcement
+- **Smart Inventory System**: Items not redeemed after the loan period are automatically moved to resale inventory
+- **Administrative Dashboard**: ReactJS-powered interface for staff to manage customer profiles, loan records, and item listings
+- **Robust Backend**: Spring Boot ensures reliable transaction logging and data security
+- **Flexible Database**: Integrated with Supabase or MySQL for scalable data management
 
-Kotlin Android mobile app (customer side)
+This solution modernizes traditional pawnshop operations by increasing customer transparency, streamlining administrative processes, and creating additional revenue streams through automated digital resale and penalty management.
 
-ReactJS web dashboard (admin/staff)
+## Tech Stack Used
 
-Spring Boot backend API
+| Component | Technology |
+|-----------|------------|
+| **Mobile** | Kotlin (Android) |
+| **Web** | ReactJS |
+| **Backend** | Spring Boot (Java) |
+| **Database** | MySQL / Supabase |
+| **APIs** | Firebase Cloud Messaging, Google Maps API, Gmail API |
 
-MySQL/Supabase database
+## Setup & Run Instructions
 
-🛠️ Tech Stack
-Component	Technology
-Mobile	Kotlin (Android)
-Web	ReactJS
-Backend	Spring Boot (Java)
-Database	MySQL / Supabase
-APIs	Firebase Cloud Messaging, Google Maps API, Gmail API
-⚙️ Setup & Run Instructions
-🖥️ Backend (Spring Boot)
+### 🖥️ Backend (Spring Boot)
+
+**Prerequisites**: Java 17+, Maven
+
+```bash
 cd backend
-# import into IntelliJ / VS Code / Eclipse
-# configure application.properties for MySQL connection
+# Configure database connection in application.properties
+mvn clean install
 mvn spring-boot:run
+```
 
-🌐 Web (ReactJS)
+**Server will run on**: `http://localhost:8080`
+
+### 🌐 Web (ReactJS)
+
+**Prerequisites**: Node.js 16+, npm
+
+```bash
 cd web
 npm install
 npm run dev
+```
 
-📱 Mobile (Kotlin)
+**Application will run on**: `http://localhost:3000`
 
-Open the /mobile folder in Android Studio, build and run the project on an emulator or physical device.
+### 📱 Mobile (Kotlin)
 
-👥 Team Members
-Name	Role	CIT-U Email	GitHub Username
-Nicolo Francis L. Gabiana	Project Manager / Developer	nfgabiana@cit.edu
-https://github.com/NFGab
-Dale Christian C. Fortaleza	Developer	dcfortaleza@cit.edu
-https://github.com/daley2
-Mark Christian Q. Garing	Developer	mcqgaring@cit.edu
-https://github.com/k4iisel
-Kaysean Miel	Developer	kmiel@cit.edu
-https://github.com/kayseanmiel
+**Prerequisites**: Android Studio, Android SDK
 
+1. **Open** Android Studio
+2. **Import** the `/mobile` folder as an existing project  
+3. **Sync** project with Gradle files
+4. **Configure** API endpoints in app configuration
+5. **Build and run** on emulator or physical device
 
+## Team Members
 
-🌍 Deployed Link (Optional)
+| Name | Role | CIT-U Email | GitHub |
+|------|------|-------------|---------|
+| **Nicolo Francis L. Gabiana** | Project Manager / Developer | nicolofrancis.gabiana@cit.edu | [@NFGab](https://github.com/NFGab) |
+| **Dale Christian C. Fortaleza** | Developer | dalechristian.fortaleza@cit.edu | [@daley2](https://github.com/daley2) |
+| **Mark Christian Q. Garing** | Developer | markchristian.garing@cit.edu | [@k4iisel](https://github.com/k4iisel) |
+| **Kaysean Miel** | Developer | kaysean.miel@cit.edu | [@kayseanmiel](https://github.com/kayseanmiel) |
 
-Add deployment URLs here (e.g., Netlify for frontend, Render for backend)
-Example:
+## Deployed Link
 
+*Deployment links will be added here once the applications are deployed to production.*
 
+**🚀 Production URLs:**
+- **Backend API**: TBD  
+- **Web Application**: TBD  
+- **Mobile APK**: TBD
+
+**📋 Recommended Deployment Platforms:**
+- **Backend**: Railway, Render, or Heroku
+- **Web Frontend**: Netlify, Vercel, or Firebase Hosting  
+- **Mobile**: Google Play Store or direct APK distribution
