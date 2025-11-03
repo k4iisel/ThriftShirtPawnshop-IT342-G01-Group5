@@ -1,16 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiService from '../services/apiService';
+import useNotify from '../hooks/useNotify';
 import '../styles/Auth.css';
 
 function Login() {
   const [activeTab, setActiveTab] = useState('login');
   const [formData, setFormData] = useState({
-    email: '',
+    usernameOrEmail: '',
     password: '',
     rememberMe: false
   });
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { notifySuccess, notifyError } = useNotify();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -30,10 +34,8 @@ function Login() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+    if (!formData.usernameOrEmail) {
+      newErrors.usernameOrEmail = 'Username or email is required';
     }
 
     if (!formData.password) {
@@ -46,14 +48,32 @@ function Login() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (validateForm()) {
-      // TODO: Implement actual login logic with backend API
-      console.log('Login data:', formData);
-      // For now, just navigate to dashboard
-      navigate('/dashboard');
+      setLoading(true);
+      try {
+        const response = await apiService.auth.login({
+          usernameOrEmail: formData.usernameOrEmail,
+          password: formData.password
+        });
+        
+        notifySuccess('Login successful! Welcome back.');
+        navigate('/dashboard');
+      } catch (error) {
+        console.error('Login error:', error);
+        if (error.status === 401) {
+          notifyError('Invalid username/email or password');
+        } else if (error.data?.data) {
+          // Handle validation errors
+          setErrors(error.data.data);
+        } else {
+          notifyError(error.message || 'Login failed. Please try again.');
+        }
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -98,17 +118,18 @@ function Login() {
         <div className="auth-form-card">
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="usernameOrEmail">Username or Email</label>
               <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
+                type="text"
+                id="usernameOrEmail"
+                name="usernameOrEmail"
+                value={formData.usernameOrEmail}
                 onChange={handleChange}
-                className={errors.email ? 'error' : ''}
-                autoComplete="email"
+                className={errors.usernameOrEmail ? 'error' : ''}
+                autoComplete="username"
+                placeholder="Enter your username or email"
               />
-              {errors.email && <span className="error-message">{errors.email}</span>}
+              {errors.usernameOrEmail && <span className="error-message">{errors.usernameOrEmail}</span>}
             </div>
 
             <div className="form-group">
@@ -141,8 +162,8 @@ function Login() {
               Forgot password?
             </a>
 
-            <button type="submit" className="btn-login">
-              Log In
+            <button type="submit" className="btn-login" disabled={loading}>
+              {loading ? 'Signing in...' : 'Log In'}
             </button>
           </form>
         </div>

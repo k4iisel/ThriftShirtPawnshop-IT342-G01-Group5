@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, ChevronDown, LogOut, Lock, User } from 'lucide-react';
 import useNotify from '../hooks/useNotify';
+import apiService from '../services/apiService';
 import '../styles/Header.css';
 
 const Header = () => {
@@ -11,14 +12,39 @@ const Header = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [passwordData, setPasswordData] = useState({
-    current: '',
-    next: '',
-    confirm: ''
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   });
-  const [passwordError, setPasswordError] = useState('');
+  const [userProfile, setUserProfile] = useState({
+    firstName: '',
+    lastName: '',
+    username: '',
+    email: ''
+  });
   const { notifyInfo, notifySuccess, notifyError } = useNotify();
   const notificationRef = useRef(null);
   const userMenuRef = useRef(null);
+
+  // Fetch user profile on component mount
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        if (apiService.auth.isAuthenticated()) {
+          const profile = await apiService.auth.getProfile();
+          setUserProfile(profile);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        // If token is invalid, redirect to login
+        if (error.status === 401) {
+          navigate('/login');
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, [navigate]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -80,37 +106,63 @@ const Header = () => {
     setPasswordData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleChangePassword = (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
-    const { current, next, confirm } = passwordData;
+    const { currentPassword, newPassword, confirmPassword } = passwordData;
     
-    if (!current || !next || !confirm) {
-      setPasswordError('Please fill out all fields.');
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      notifyError('Please fill out all fields.');
       return;
     }
     
-    if (next.length < 8) {
-      setPasswordError('New password must be at least 8 characters.');
+    if (newPassword.length < 6) {
+      notifyError('New password must be at least 6 characters.');
       return;
     }
     
-    if (next !== confirm) {
-      setPasswordError('Passwords do not match.');
+    if (newPassword !== confirmPassword) {
+      notifyError('Passwords do not match.');
       return;
     }
     
-    // Add your change password API call here
-    // const response = await changePassword({ currentPassword: current, newPassword: next });
-    
-    // Mock success response
-    setPasswordError('');
-    setShowChangePasswordModal(false);
-    setPasswordData({ current: '', next: '', confirm: '' });
-    notifySuccess('Password changed successfully');
+    try {
+      await apiService.auth.changePassword({ currentPassword, newPassword, confirmPassword });
+      setShowChangePasswordModal(false);
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      notifySuccess('Password changed successfully');
+    } catch (error) {
+      console.error('Change password error:', error);
+      notifyError(error.message || 'Failed to change password');
+    }
   };
 
   const handlePasswordInputChange = (field, value) => {
     setPasswordData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Helper function to get user initials
+  const getUserInitials = () => {
+    const firstName = userProfile.firstName || '';
+    const lastName = userProfile.lastName || '';
+    
+    if (firstName && lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    } else if (firstName) {
+      return firstName.charAt(0).toUpperCase();
+    } else if (userProfile.username) {
+      return userProfile.username.charAt(0).toUpperCase();
+    }
+    return 'U'; // Default initial
+  };
+
+  // Helper function to get display name
+  const getDisplayName = () => {
+    if (userProfile.firstName) {
+      return userProfile.firstName;
+    } else if (userProfile.username) {
+      return userProfile.username;
+    }
+    return 'User';
   };
   
   return (
@@ -186,9 +238,9 @@ const Header = () => {
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
               <div className="user-avatar">
-                <span>JD</span>
+                <span>{getUserInitials()}</span>
               </div>
-              <span className="user-name">John Doe</span>
+              <span className="user-name">{getDisplayName()}</span>
               <ChevronDown size={16} className={`chevron ${showUserMenu ? 'rotated' : ''}`} />
             </div>
 
@@ -232,8 +284,8 @@ const Header = () => {
                 <label>Current Password</label>
                 <input 
                   type="password" 
-                  name="current" 
-                  value={passwordData.current} 
+                  name="currentPassword" 
+                  value={passwordData.currentPassword} 
                   onChange={handlePasswordChange} 
                 />
               </div>
@@ -241,8 +293,8 @@ const Header = () => {
                 <label>New Password</label>
                 <input 
                   type="password" 
-                  name="next" 
-                  value={passwordData.next} 
+                  name="newPassword" 
+                  value={passwordData.newPassword} 
                   onChange={handlePasswordChange} 
                 />
               </div>
@@ -250,12 +302,11 @@ const Header = () => {
                 <label>Confirm New Password</label>
                 <input 
                   type="password" 
-                  name="confirm" 
-                  value={passwordData.confirm} 
+                  name="confirmPassword" 
+                  value={passwordData.confirmPassword} 
                   onChange={handlePasswordChange} 
                 />
               </div>
-              {passwordError && <p className="error-text">{passwordError}</p>}
               <div className="modal-actions">
                 <button 
                   type="button"

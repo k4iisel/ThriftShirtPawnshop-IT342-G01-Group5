@@ -1,23 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import apiService from '../services/apiService';
+import useNotify from '../hooks/useNotify';
 import '../styles/Profile.css';
 
 function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' });
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordError, setPasswordError] = useState('');
+  const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
-    phone: '+63 912 345 6789',
-    address: '123 Main Street, Manila, Philippines',
-    role: 'Shop Owner',
-    joinedDate: 'January 2024'
+    id: null,
+    username: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+    address: '',
+    role: '',
+    createdAt: ''
   });
 
   const [formData, setFormData] = useState({ ...profile });
+  const { notifySuccess, notifyError } = useNotify();
+
+  // Fetch user profile when component mounts
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const userProfile = await apiService.auth.getProfile();
+      setProfile(userProfile);
+      setFormData(userProfile);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      notifyError('Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,10 +52,17 @@ function Profile() {
     }));
   };
 
-  const handleSave = () => {
-    setProfile({ ...formData });
-    setIsEditing(false);
-    alert('Profile updated successfully!');
+  const handleSave = async () => {
+    try {
+      const updatedProfile = await apiService.auth.updateProfile(formData);
+      setProfile(updatedProfile);
+      setFormData(updatedProfile);
+      setIsEditing(false);
+      notifySuccess('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      notifyError('Failed to update profile');
+    }
   };
 
   const handleCancel = () => {
@@ -41,7 +73,7 @@ function Profile() {
   
 
   const openChangePassword = () => {
-    setPasswordForm({ current: '', next: '', confirm: '' });
+    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     setPasswordError('');
     setShowChangePassword(true);
   };
@@ -51,24 +83,47 @@ function Profile() {
     setPasswordForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const submitPassword = () => {
-    const { current, next, confirm } = passwordForm;
-    if (!current || !next || !confirm) {
+  const submitPassword = async () => {
+    const { currentPassword, newPassword, confirmPassword } = passwordForm;
+    if (!currentPassword || !newPassword || !confirmPassword) {
       setPasswordError('Please fill out all fields.');
       return;
     }
-    if (next.length < 8) {
-      setPasswordError('New password must be at least 8 characters.');
+    if (newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters.');
       return;
     }
-    if (next !== confirm) {
+    if (newPassword !== confirmPassword) {
       setPasswordError('Passwords do not match.');
       return;
     }
-    setPasswordError('');
-    setShowChangePassword(false);
-    alert('Password changed successfully.');
+    
+    try {
+      setPasswordError('');
+      await apiService.auth.changePassword({
+        currentPassword,
+        newPassword,
+        confirmPassword
+      });
+      setShowChangePassword(false);
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      notifySuccess('Password changed successfully.');
+    } catch (error) {
+      console.error('Error changing password:', error);
+      setPasswordError(error.message || 'Failed to change password');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="profile-page">
+        <Navbar />
+        <div className="profile-content">
+          <div className="loading-spinner">Loading profile...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page">
@@ -167,16 +222,21 @@ function Profile() {
                 </div>
 
                 <div className="form-group">
+                  <label>Username</label>
+                  <p className="form-value">{profile.username}</p>
+                </div>
+
+                <div className="form-group">
                   <label>Phone Number</label>
                   {isEditing ? (
                     <input
                       type="tel"
-                      name="phone"
-                      value={formData.phone}
+                      name="phoneNumber"
+                      value={formData.phoneNumber || ''}
                       onChange={handleChange}
                     />
                   ) : (
-                    <p className="form-value">{profile.phone}</p>
+                    <p className="form-value">{profile.phoneNumber || 'Not provided'}</p>
                   )}
                 </div>
 
@@ -202,7 +262,7 @@ function Profile() {
 
                   <div className="form-group">
                     <label>Member Since</label>
-                    <p className="form-value">{profile.joinedDate}</p>
+                    <p className="form-value">{profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : 'Unknown'}</p>
                   </div>
                 </div>
               </div>
@@ -278,15 +338,15 @@ function Profile() {
             <div className="modal-body">
               <div className="form-group">
                 <label>Current Password</label>
-                <input type="password" name="current" value={passwordForm.current} onChange={handlePasswordChange} />
+                <input type="password" name="currentPassword" value={passwordForm.currentPassword} onChange={handlePasswordChange} />
               </div>
               <div className="form-group">
                 <label>New Password</label>
-                <input type="password" name="next" value={passwordForm.next} onChange={handlePasswordChange} />
+                <input type="password" name="newPassword" value={passwordForm.newPassword} onChange={handlePasswordChange} />
               </div>
               <div className="form-group">
                 <label>Confirm New Password</label>
-                <input type="password" name="confirm" value={passwordForm.confirm} onChange={handlePasswordChange} />
+                <input type="password" name="confirmPassword" value={passwordForm.confirmPassword} onChange={handlePasswordChange} />
               </div>
               {passwordError && <p className="error-text">{passwordError}</p>}
             </div>

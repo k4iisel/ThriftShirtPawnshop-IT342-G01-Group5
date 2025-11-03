@@ -3,8 +3,23 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow: hidden;
   position: relative;
+}
+
+/* Hide scrollbars for webkit browsers */
+.auth-page::-webkit-scrollbar,
+.auth-content-section::-webkit-scrollbar,
+.auth-form-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbars for other browsers */
+.auth-page,
+.auth-content-section,
+.auth-form-content {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Header Section with Background Image */
@@ -60,12 +75,12 @@
 .auth-content-section {
   flex: 1;
   background: #f9f3d4;
-  padding: 40px 20px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  min-height: 0;
+  overflow-y: auto;
   width: 100%;
   box-sizing: border-box;
 }
@@ -117,8 +132,7 @@
   margin: 20px 0;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  flex: 0 1 auto;
+  overflow: visible;
 }
 
 /* Form Styles */
@@ -126,19 +140,15 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  height: 100%;
-  min-height: 0;
   width: 100%;
 }
 
 /* Form content area */
 .auth-form-content {
   flex: 1;
-  overflow-y: auto;
+  overflow: visible;
   padding: 10px 0;
   margin-bottom: 20px;
-  max-height: 60vh;
-  min-height: 300px;
 }
 
 /* Container for the button */
@@ -336,26 +346,30 @@
   .auth-page {
     height: auto;
     min-height: 100vh;
+    overflow: hidden;
   }
   
   .auth-content-section {
-    padding: 20px 16px;
-    min-height: calc(100vh - 200px);
+    padding: 15px 16px;
+    min-height: calc(100vh - 180px);
+    overflow-y: auto;
   }
   
   .auth-form-card {
     padding: 20px;
     margin: 0;
-    max-height: 100%;
+    max-height: none;
+    overflow: visible;
   }
   
   .auth-form-content {
     max-height: none;
     min-height: auto;
+    overflow: visible;
   }
 
-  .auth-form-card {
-    padding: 24px 20px;
+  .auth-form {
+    gap: 15px;
   }
 
   .business-name {

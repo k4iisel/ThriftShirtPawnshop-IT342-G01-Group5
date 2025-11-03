@@ -1,20 +1,26 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiService from '../services/apiService';
+import useNotify from '../hooks/useNotify';
 import '../styles/Auth.css';
 
 function Register() {
   const [activeTab, setActiveTab] = useState('register');
   const [formData, setFormData] = useState({
+    username: '',
     firstName: '',
     lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
-    phone: '',
+    phoneNumber: '',
+    address: '',
     agreeToTerms: false
   });
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { notifySuccess, notifyError } = useNotify();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -34,6 +40,12 @@ function Register() {
   const validateForm = () => {
     const newErrors = {};
 
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
+    } else if (formData.username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters';
+    }
+
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'First name is required';
     }
@@ -48,10 +60,8 @@ function Register() {
       newErrors.email = 'Email is invalid';
     }
 
-    if (!formData.phone) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!/^[\d\s\-\+\(\)]+$/.test(formData.phone)) {
-      newErrors.phone = 'Phone number is invalid';
+    if (formData.phoneNumber && !/^[\d\s\-\+\(\)]+$/.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = 'Phone number is invalid';
     }
 
     if (!formData.password) {
@@ -74,21 +84,35 @@ function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (validateForm()) {
-      // TODO: Implement actual registration logic with backend API
-      console.log('Registration data:', {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        password: formData.password
-      });
-      // For now, just navigate to login
-      // navigate('/login');
-      alert('Registration functionality will be connected to backend');
+      setLoading(true);
+      try {
+        const response = await apiService.auth.register({
+          username: formData.username,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          phoneNumber: formData.phoneNumber,
+          address: formData.address
+        });
+        
+        notifySuccess('Registration successful! Welcome to Thrift Shirt Pawnshop.');
+        navigate('/dashboard');
+      } catch (error) {
+        console.error('Registration error:', error);
+        if (error.data?.data) {
+          // Handle validation errors
+          setErrors(error.data.data);
+        } else {
+          notifyError(error.message || 'Registration failed. Please try again.');
+        }
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -164,6 +188,21 @@ function Register() {
               </div>
 
               <div className="form-group">
+                <label htmlFor="username">Username</label>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  className={errors.username ? 'error' : ''}
+                  autoComplete="username"
+                  placeholder="Choose a unique username"
+                />
+                {errors.username && <span className="error-message">{errors.username}</span>}
+              </div>
+
+              <div className="form-group">
                 <label htmlFor="email">Email</label>
                 <input
                   type="email"
@@ -178,17 +217,32 @@ function Register() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="phone">Phone Number</label>
+                <label htmlFor="phoneNumber">Phone Number (Optional)</label>
                 <input
                   type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
                   onChange={handleChange}
-                  className={errors.phone ? 'error' : ''}
+                  className={errors.phoneNumber ? 'error' : ''}
                   autoComplete="tel"
+                  placeholder="Your phone number"
                 />
-                {errors.phone && <span className="error-message">{errors.phone}</span>}
+                {errors.phoneNumber && <span className="error-message">{errors.phoneNumber}</span>}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="address">Address (Optional)</label>
+                <textarea
+                  id="address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  className={errors.address ? 'error' : ''}
+                  rows="3"
+                  placeholder="Your address"
+                />
+                {errors.address && <span className="error-message">{errors.address}</span>}
               </div>
 
               <div className="form-group">
