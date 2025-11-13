@@ -1,7 +1,7 @@
 package com.thriftshirt.pawnshop.entity;
 
 public enum Role {
-    USER,
+    USER, //basic user
     ADMIN,
     EMPLOYEE
 }
