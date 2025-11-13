@@ -7,6 +7,11 @@ import org.springframework.stereotype.Repository;
 
 import com.thriftshirt.pawnshop.entity.User;
 
+/**
+ * Repository interface for managing User entities.
+ * Extends JpaRepository to inherit standard CRUD operations.
+ */
+
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     
