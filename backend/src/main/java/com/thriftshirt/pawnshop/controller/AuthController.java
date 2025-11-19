@@ -1,5 +1,7 @@
 package com.thriftshirt.pawnshop.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -23,9 +25,11 @@ import com.thriftshirt.pawnshop.service.AuthService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 public class AuthController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
     
     @Autowired
     private AuthService authService;
@@ -38,8 +42,15 @@ public class AuthController {
     
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        AuthResponse authResponse = authService.register(registerRequest);
-        return ResponseEntity.ok(authResponse);
+        logger.info("Registration attempt for username: {}", registerRequest.getUsername());
+        try {
+            AuthResponse authResponse = authService.register(registerRequest);
+            logger.info("Registration successful for username: {}", registerRequest.getUsername());
+            return ResponseEntity.ok(authResponse);
+        } catch (Exception e) {
+            logger.error("Registration failed for username: {} - Error: {}", registerRequest.getUsername(), e.getMessage());
+            throw e;
+        }
     }
     
     @PostMapping("/logout")
