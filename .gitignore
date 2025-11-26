@@ -97,12 +97,6 @@ gradle-app.setting
 spring-boot-*.jar
 *.original
 
-# Application properties (containing sensitive data)
-backend/src/main/resources/application.properties
-backend/src/main/resources/application-*.properties
-backend/src/main/resources/application.yml
-backend/src/main/resources/application-*.yml
-
 # ==============================================
 # NODE.JS / REACT (Web Frontend)
 # ==============================================
