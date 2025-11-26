@@ -86,7 +86,7 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (validateForm()) {
       setLoading(true);
       try {
@@ -99,9 +99,9 @@ function Register() {
           phoneNumber: formData.phoneNumber,
           address: formData.address
         });
-        
-        notifySuccess('Registration successful! Welcome to Thrift Shirt Pawnshop.');
-        navigate('/dashboard');
+
+        notifySuccess('Registration successful! Please log in with your new account.');
+        navigate('/login');
       } catch (error) {
         console.error('Registration error:', error);
         if (error.data?.data) {

@@ -60,7 +60,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/auth/login", "/auth/register", "/auth/health").permitAll()
+                .requestMatchers("/auth/login", "/auth/register", "/auth/admin/login", "/auth/health", "/auth/force-logout", "/auth/clear-sessions").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .anyRequest().authenticated()
             )

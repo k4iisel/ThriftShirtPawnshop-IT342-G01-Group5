@@ -95,8 +95,15 @@ const Header = () => {
   const pageTitle = getPageTitle();
 
   const handleLogout = () => {
-    // Add your logout logic here (clear tokens, etc.)
-    sessionStorage.removeItem('authToken'); // Example
+    // Clear all authentication data
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('adminToken');
+    sessionStorage.removeItem('adminUser');
+    sessionStorage.removeItem('user');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
+    localStorage.removeItem('user');
     notifySuccess('Logged out successfully');
     navigate('/login');
   };

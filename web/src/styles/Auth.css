@@ -120,6 +120,14 @@
   color: #333;
 }
 
+/* Center text in single admin tab */
+.auth-tabs .auth-tab {
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Form Card */
 .auth-form-card {
   background: white;
@@ -385,4 +393,31 @@
     width: 35px;
     height: 35px;
   }
+
+  .person-icon {
+    width: 35px;
+    height: 35px;
+  }
+}
+
+/* Person Icon Styles */
+.person-icon {
+  width: 45px;
+  height: 45px;
+  color: #1976d2;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #e67e22;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
+.link-button:hover {
+  color: #d35400;
 }

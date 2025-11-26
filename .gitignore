@@ -97,6 +97,7 @@ gradle-app.setting
 spring-boot-*.jar
 *.original
 
+
 # ==============================================
 # NODE.JS / REACT (Web Frontend)
 # ==============================================

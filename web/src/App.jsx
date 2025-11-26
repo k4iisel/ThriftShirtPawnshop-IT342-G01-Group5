@@ -7,6 +7,8 @@ import Profile from './pages/Profile';
 import Browse from './pages/Browse';
 import CreatePawn from './pages/CreatePawn';
 import PawnStatus from './pages/PawnStatus';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 import NotificationContainer from './components/NotificationContainer';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
@@ -21,6 +23,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
@@ -30,6 +33,11 @@ function App() {
             <Route path="/status" element={<PawnStatus />} />
             <Route path="/notifications" element={<Dashboard />} />
           </Route>
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
         </Routes>
       </Router>
     </NotificationProvider>
