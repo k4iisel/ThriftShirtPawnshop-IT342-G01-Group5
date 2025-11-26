@@ -408,89 +408,16 @@
 }
 
 .link-button {
-  color: #6b7280;
   background: none;
   border: none;
-  text-decoration: underline;
+  color: #e67e22;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 14px;
-  transition: color 0.2s ease;
+  padding: 0;
+  font-size: inherit;
+  text-decoration: underline;
 }
 
 .link-button:hover {
-  color: #374151;
-}
-
-.security-notice {
-  font-size: 12px;
-  color: #9ca3af;
-  text-align: center;
-  margin: 10px 0 0 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.general-error {
-  background: #fee2e2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 14px;
-  text-align: center;
-  margin-bottom: 16px;
-}
-
-/* Admin Portal Link Styles */
-.admin-portal-link {
-  margin-top: 24px;
-  text-align: center;
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.admin-link-btn {
-  background: linear-gradient(135deg, #374151, #1f2937);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  letter-spacing: 0.025em;
-}
-
-.admin-link-btn:hover {
-  background: linear-gradient(135deg, #1f2937, #111827);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(31, 41, 55, 0.3);
-}
-
-.admin-link-btn:active {
-  transform: translateY(0);
-}
-
-.admin-link-btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.3);
-}
-
-@media (max-width: 768px) {
-  .person-icon {
-    width: 35px;
-    height: 35px;
-  }
-
-  .admin-portal-link {
-    margin-top: 16px;
-  }
+  color: #d35400;
 }

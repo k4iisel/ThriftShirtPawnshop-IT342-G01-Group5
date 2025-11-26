@@ -60,26 +60,26 @@ const Header = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  
+
   // Mock notifications - replace with real data from your API
   const [notifications, setNotifications] = useState([
     { id: 1, message: 'Your pawn request has been approved', read: false, time: '2h ago' },
     { id: 2, message: 'New shirts available in the shop', read: false, time: '5h ago' },
   ]);
-  
+
   const unreadCount = notifications.filter(n => !n.read).length;
-  
+
   const markAsRead = (id) => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, read: true } : n)
     );
   };
-  
+
   const markAllAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     notifyInfo('All notifications marked as read');
   };
-  
+
   const getPageTitle = () => {
     const path = location.pathname;
     if (path === '/dashboard') return 'Dashboard';
@@ -91,7 +91,7 @@ const Header = () => {
     if (path === '/register') return 'Register';
     return '';
   };
-  
+
   const pageTitle = getPageTitle();
 
   const handleLogout = () => {
@@ -116,22 +116,22 @@ const Header = () => {
   const handleChangePassword = async (e) => {
     e.preventDefault();
     const { currentPassword, newPassword, confirmPassword } = passwordData;
-    
+
     if (!currentPassword || !newPassword || !confirmPassword) {
       notifyError('Please fill out all fields.');
       return;
     }
-    
+
     if (newPassword.length < 6) {
       notifyError('New password must be at least 6 characters.');
       return;
     }
-    
+
     if (newPassword !== confirmPassword) {
       notifyError('Passwords do not match.');
       return;
     }
-    
+
     try {
       await apiService.auth.changePassword({ currentPassword, newPassword, confirmPassword });
       setShowChangePasswordModal(false);
@@ -151,7 +151,7 @@ const Header = () => {
   const getUserInitials = () => {
     const firstName = userProfile.firstName || '';
     const lastName = userProfile.lastName || '';
-    
+
     if (firstName && lastName) {
       return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
     } else if (firstName) {
@@ -171,7 +171,7 @@ const Header = () => {
     }
     return 'User';
   };
-  
+
   return (
     <header className="app-header">
       <div className="header-content">
@@ -185,10 +185,10 @@ const Header = () => {
             <h1 className="page-title">{pageTitle}</h1>
           </Link>
         </div>
-        
+
         <div className="header-actions">
           <div className="notification-wrapper" ref={notificationRef}>
-            <button 
+            <button
               className={`notification-button ${unreadCount > 0 ? 'has-unread' : ''}`}
               onClick={() => setShowNotifications(!showNotifications)}
               aria-label="Notifications"
@@ -196,12 +196,12 @@ const Header = () => {
               <Bell size={20} />
               {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
             </button>
-            
+
             {showNotifications && (
               <div className="notification-dropdown">
                 <div className="notification-header">
                   <h3>Notifications</h3>
-                  <button 
+                  <button
                     className="mark-all-read"
                     onClick={markAllAsRead}
                     disabled={unreadCount === 0}
@@ -209,12 +209,12 @@ const Header = () => {
                     Mark all as read
                   </button>
                 </div>
-                
+
                 <div className="notification-list">
                   {notifications.length > 0 ? (
                     notifications.map(notification => (
-                      <div 
-                        key={notification.id} 
+                      <div
+                        key={notification.id}
                         className={`notification-item ${!notification.read ? 'unread' : ''}`}
                         onClick={() => {
                           markAsRead(notification.id);
@@ -229,7 +229,7 @@ const Header = () => {
                     <div className="no-notifications">No new notifications</div>
                   )}
                 </div>
-                
+
                 <div className="notification-footer">
                   <Link to="/notifications" onClick={() => setShowNotifications(false)}>
                     View all notifications
@@ -238,9 +238,9 @@ const Header = () => {
               </div>
             )}
           </div>
-          
+
           <div className="user-menu-wrapper" ref={userMenuRef}>
-            <div 
+            <div
               className="user-menu"
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
@@ -257,7 +257,7 @@ const Header = () => {
                   <User size={16} />
                   <span>Profile</span>
                 </div>
-                <div 
+                <div
                   className="user-dropdown-item"
                   onClick={() => {
                     setShowChangePasswordModal(true);
@@ -268,7 +268,7 @@ const Header = () => {
                   <span>Change Password</span>
                 </div>
                 <div className="user-dropdown-divider"></div>
-                <div 
+                <div
                   className="user-dropdown-item logout"
                   onClick={handleLogout}
                 >
@@ -289,41 +289,41 @@ const Header = () => {
             <form onSubmit={handleChangePassword} className="modal-body">
               <div className="form-group">
                 <label>Current Password</label>
-                <input 
-                  type="password" 
-                  name="currentPassword" 
-                  value={passwordData.currentPassword} 
-                  onChange={handlePasswordChange} 
+                <input
+                  type="password"
+                  name="currentPassword"
+                  value={passwordData.currentPassword}
+                  onChange={handlePasswordChange}
                 />
               </div>
               <div className="form-group">
                 <label>New Password</label>
-                <input 
-                  type="password" 
-                  name="newPassword" 
-                  value={passwordData.newPassword} 
-                  onChange={handlePasswordChange} 
+                <input
+                  type="password"
+                  name="newPassword"
+                  value={passwordData.newPassword}
+                  onChange={handlePasswordChange}
                 />
               </div>
               <div className="form-group">
                 <label>Confirm New Password</label>
-                <input 
-                  type="password" 
-                  name="confirmPassword" 
-                  value={passwordData.confirmPassword} 
-                  onChange={handlePasswordChange} 
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  value={passwordData.confirmPassword}
+                  onChange={handlePasswordChange}
                 />
               </div>
               <div className="modal-actions">
-                <button 
+                <button
                   type="button"
-                  className="btn-secondary" 
+                  className="btn-secondary"
                   onClick={() => setShowChangePasswordModal(false)}
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn-primary"
                 >
                   Save

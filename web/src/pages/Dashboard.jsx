@@ -8,12 +8,12 @@ import '../styles/Dashboard.css';
 
 function Dashboard() {
   const navigate = useNavigate();
-  
+
   // Use the authentication hook
   // Check if there's an admin token and clear it if we're on the dashboard
   // This prevents redirection loops for admins who try to access the dashboard
   useEffect(() => {
-    const adminToken = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
+    const adminToken = sessionStorage.getItem('adminToken');
     if (adminToken) {
       // If we're on the dashboard and have an admin token, clear it to prevent redirection
       sessionStorage.removeItem('adminToken');
@@ -21,11 +21,11 @@ function Dashboard() {
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminUser');
     }
-    
+
     // Validate user token on dashboard load
     const validateUserToken = async () => {
       try {
-        const userToken = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+        const userToken = sessionStorage.getItem('authToken');
         if (userToken) {
           await apiService.auth.validateToken();
         }
@@ -38,18 +38,18 @@ function Dashboard() {
         localStorage.removeItem('user');
       }
     };
-    
+
     validateUserToken();
   }, []);
-  
+
   // Use the authentication hook
   useAuth('USER');
-  
+
   // Get user data from storage
   const [userData, setUserData] = useState(null);
-  
+
   useEffect(() => {
-    const storedUser = sessionStorage.getItem('user') || localStorage.getItem('user');
+    const storedUser = sessionStorage.getItem('user');
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
@@ -59,7 +59,7 @@ function Dashboard() {
       }
     }
   }, []);
-  
+
   const [userStats] = useState({
     activePawns: 3,
     loanAmount: 500,
@@ -90,7 +90,7 @@ function Dashboard() {
   return (
     <div className="dashboard-page">
       <Navbar />
-      
+
       <div className="dashboard-content">
         <Header />
 

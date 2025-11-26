@@ -3,40 +3,61 @@ const API_BASE_URL = 'http://localhost:8080/api';
 
 // Helper function to get auth headers
 const getAuthHeaders = () => {
-  // Try sessionStorage first, then fallback to localStorage for backward compatibility
-  const token = sessionStorage.getItem('authToken') || sessionStorage.getItem('adminToken') || 
-                localStorage.getItem('authToken') || localStorage.getItem('adminToken');
+  // Use sessionStorage exclusively to prevent persistence across sessions
+  const token = sessionStorage.getItem('authToken') || sessionStorage.getItem('adminToken');
   return {
     'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` })
   };
 };
 
+const persistAuthMetadata = (data) => {
+  if (data.token) {
+    sessionStorage.setItem('authToken', data.token);
+  }
+  if (data.role) {
+    sessionStorage.setItem('userRole', data.role);
+  }
+  if (data.username) {
+    sessionStorage.setItem('username', data.username);
+  }
+  if (data.email) {
+    sessionStorage.setItem('email', data.email);
+  }
+
+  // Store user object if present (from main branch logic)
+  if (data.user) {
+    sessionStorage.setItem('user', JSON.stringify(data.user));
+  }
+};
+
+const clearAuthMetadata = () => {
+  sessionStorage.removeItem('authToken');
+  sessionStorage.removeItem('userRole');
+  sessionStorage.removeItem('username');
+  sessionStorage.removeItem('email');
+  sessionStorage.removeItem('user');
+  sessionStorage.removeItem('adminToken');
+  sessionStorage.removeItem('adminUser');
+};
+
 // Helper function to handle API responses
 const handleResponse = async (response) => {
   const data = await response.json();
-  
+
   if (!response.ok) {
     const error = new Error(data.message || 'An error occurred');
     error.status = response.status;
     error.data = data;
-    
+
     // If unauthorized (401) or forbidden (403), clear tokens
     if (response.status === 401 || response.status === 403) {
-      // Clear all tokens to allow re-login
-      sessionStorage.removeItem('authToken');
-      sessionStorage.removeItem('user');
-      sessionStorage.removeItem('adminToken');
-      sessionStorage.removeItem('adminUser');
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('adminUser');
+      clearAuthMetadata();
     }
-    
+
     throw error;
   }
-  
+
   return data;
 };
 
@@ -52,25 +73,14 @@ export const apiService = {
         },
         body: JSON.stringify(credentials),
       });
-      
+
       const data = await handleResponse(response);
-      
-      // Store token in sessionStorage
-      if (data.token) {
-        sessionStorage.setItem('authToken', data.token);
-        // Also store in localStorage for backward compatibility
-        localStorage.setItem('authToken', data.token);
-        
-        // Store user data if available
-        if (data.user) {
-          sessionStorage.setItem('user', JSON.stringify(data.user));
-          localStorage.setItem('user', JSON.stringify(data.user));
-        }
-      }
-      
+
+      persistAuthMetadata(data);
+
       return data;
     },
-    
+
     validateToken: async () => {
       const response = await fetch(`${API_BASE_URL}/auth/profile`, {
         method: 'GET',
@@ -87,12 +97,15 @@ export const apiService = {
         },
         body: JSON.stringify(userData),
       });
-      
+
       const data = await handleResponse(response);
-      
+
       // Registration no longer auto-logs in, so no token is returned
       // User must login separately after registration
-      
+      if (data.token) {
+        persistAuthMetadata(data);
+      }
+
       return data;
     },
 
@@ -104,10 +117,17 @@ export const apiService = {
         },
         body: JSON.stringify(credentials),
       });
-      
+
       const data = await handleResponse(response);
-      
-      // Don't store token here - let the component handle it
+
+      // Store admin token if present
+      if (data.token) {
+        sessionStorage.setItem('adminToken', data.token);
+      }
+      if (data.user) {
+        sessionStorage.setItem('adminUser', JSON.stringify(data.user));
+      }
+
       return data;
     },
 
@@ -116,16 +136,19 @@ export const apiService = {
         method: 'POST',
         headers: getAuthHeaders(),
       });
-      
+
+      // Clear stored auth metadata regardless of response
+      clearAuthMetadata();
+
       if (response.ok) {
         return await handleResponse(response);
       }
-      
+
       return { success: true, message: 'Logged out successfully' };
     },
 
     adminLogout: async () => {
-      const adminToken = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
+      const adminToken = sessionStorage.getItem('adminToken');
       const response = await fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'POST',
         headers: {
@@ -133,11 +156,13 @@ export const apiService = {
           ...(adminToken && { Authorization: `Bearer ${adminToken}` })
         },
       });
-      
+
+      clearAuthMetadata();
+
       if (response.ok) {
         return await handleResponse(response);
       }
-      
+
       return { success: true, message: 'Admin logged out successfully' };
     },
 
@@ -146,7 +171,7 @@ export const apiService = {
         method: 'GET',
         headers: getAuthHeaders(),
       });
-      
+
       return await handleResponse(response);
     },
 
@@ -156,7 +181,7 @@ export const apiService = {
         headers: getAuthHeaders(),
         body: JSON.stringify(profileData),
       });
-      
+
       return await handleResponse(response);
     },
 
@@ -166,19 +191,27 @@ export const apiService = {
         headers: getAuthHeaders(),
         body: JSON.stringify(passwordData),
       });
-      
+
       return await handleResponse(response);
     },
 
     // Check if user is authenticated
     isAuthenticated: () => {
-      const token = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+      const token = sessionStorage.getItem('authToken');
       return !!token;
     },
 
     // Get stored token
     getToken: () => {
-      return sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+      return sessionStorage.getItem('authToken');
+    },
+
+    getRole: () => {
+      return sessionStorage.getItem('userRole');
+    },
+
+    getUsername: () => {
+      return sessionStorage.getItem('username');
     },
 
     // Health check
@@ -189,13 +222,21 @@ export const apiService = {
           'Content-Type': 'application/json',
         },
       });
-      
+
       return await handleResponse(response);
     }
   },
 
-  // Admin endpoints
   admin: {
+    getDashboardMetrics: async () => {
+      const response = await fetch(`${API_BASE_URL}/admin/dashboard`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      return await handleResponse(response);
+    },
+
     createDefaultAccount: async () => {
       const response = await fetch(`${API_BASE_URL}/admin/create-default`, {
         method: 'POST',
@@ -208,7 +249,7 @@ export const apiService = {
   },
 
   // Add more service endpoints here as needed (pawn items, transactions, etc.)
-  
+
   // Generic API call method
   call: async (endpoint, options = {}) => {
     const url = `${API_BASE_URL}${endpoint}`;
@@ -216,11 +257,11 @@ export const apiService = {
       headers: getAuthHeaders(),
       ...options,
     };
-    
+
     if (config.body && typeof config.body === 'object') {
       config.body = JSON.stringify(config.body);
     }
-    
+
     const response = await fetch(url, config);
     return await handleResponse(response);
   }

@@ -50,7 +50,7 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (validateForm()) {
       setLoading(true);
       try {
@@ -63,29 +63,29 @@ function Login() {
         localStorage.removeItem('user');
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminUser');
-        
+
         const response = await apiService.auth.login({
           usernameOrEmail: formData.usernameOrEmail,
           password: formData.password
         });
-        
+
         // Check if we have user data in the response
         if (response.user) {
           // Store user data in session storage for immediate use
           sessionStorage.setItem('user', JSON.stringify(response.user));
-          localStorage.setItem('user', JSON.stringify(response.user));
-          
+          // REMOVED localStorage usage to prevent persistence
+
           // Personalized success message
           const userName = response.user.username || response.user.firstName || 'user';
           notifySuccess(`Login successful! Welcome back, ${userName}.`);
         } else {
           notifySuccess('Login successful! Welcome back.');
         }
-        
+
         navigate('/dashboard');
       } catch (error) {
         console.error('Login error:', error);
-        
+
         // Handle different error types
         if (error.data && error.data.message) {
           notifyError(error.data.message);
