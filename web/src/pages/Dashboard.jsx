@@ -1,9 +1,65 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Header from '../components/Header';
+import useAuth from '../hooks/useAuth';
+import apiService from '../services/apiService';
 import '../styles/Dashboard.css';
 
 function Dashboard() {
+  const navigate = useNavigate();
+  
+  // Use the authentication hook
+  // Check if there's an admin token and clear it if we're on the dashboard
+  // This prevents redirection loops for admins who try to access the dashboard
+  useEffect(() => {
+    const adminToken = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
+    if (adminToken) {
+      // If we're on the dashboard and have an admin token, clear it to prevent redirection
+      sessionStorage.removeItem('adminToken');
+      sessionStorage.removeItem('adminUser');
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+    }
+    
+    // Validate user token on dashboard load
+    const validateUserToken = async () => {
+      try {
+        const userToken = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+        if (userToken) {
+          await apiService.auth.validateToken();
+        }
+      } catch (error) {
+        console.error('Token validation error:', error);
+        // Clear all tokens to allow re-login
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('user');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+      }
+    };
+    
+    validateUserToken();
+  }, []);
+  
+  // Use the authentication hook
+  useAuth('USER');
+  
+  // Get user data from storage
+  const [userData, setUserData] = useState(null);
+  
+  useEffect(() => {
+    const storedUser = sessionStorage.getItem('user') || localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUserData(parsedUser);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+  }, []);
+  
   const [userStats] = useState({
     activePawns: 3,
     loanAmount: 500,
@@ -40,7 +96,7 @@ function Dashboard() {
 
         {/* Welcome Section */}
         <div className="welcome-section">
-          <h2>Welcome back, user!</h2>
+          <h2>Welcome back, {userData?.username || userData?.firstName || 'user'}!</h2>
           <p>Here's what's happening with your account</p>
         </div>
 

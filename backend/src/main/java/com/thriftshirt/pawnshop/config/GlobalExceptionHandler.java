@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
     
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ApiResponse> handleBadRequestException(BadRequestException ex) {
-        logger.error("Bad request exception: ", ex);
+        logger.error("Invalid request exception: ", ex);
         return ResponseEntity.badRequest()
                 .body(ApiResponse.error(ex.getMessage()));
     }
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
     
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse> handleBadCredentialsException(BadCredentialsException ex) {
-        logger.error("Bad credentials exception: ", ex);
+        logger.error("Invalid credentials exception: ", ex);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.error("Invalid username or password"));
     }

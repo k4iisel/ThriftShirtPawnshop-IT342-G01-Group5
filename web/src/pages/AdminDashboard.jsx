@@ -1,0 +1,216 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import useNotify from '../hooks/useNotify';
+import useAuth from '../hooks/useAuth';
+import '../styles/AdminDashboard.css';
+
+function AdminDashboard() {
+  const [adminUser, setAdminUser] = useState(null);
+  const navigate = useNavigate();
+  const { notifySuccess, notifyError } = useNotify();
+
+  // Use the authentication hook for admin
+  useAuth('ADMIN');
+
+  // Set admin user data after authentication is validated
+  useEffect(() => {
+    // Clear any regular user tokens to prevent conflicts
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('user');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    
+    // Validate admin token on dashboard load
+    const validateAdminToken = async () => {
+      try {
+        const adminToken = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
+        if (adminToken) {
+          // Make a request to validate the token
+          const response = await fetch('http://localhost:8080/api/admin/health', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${adminToken}`
+            },
+          });
+          
+          if (!response.ok) {
+            throw new Error('Admin session invalid');
+          }
+        }
+      } catch (error) {
+        console.error('Admin token validation error:', error);
+        // Clear admin tokens to allow re-login
+        sessionStorage.removeItem('adminToken');
+        sessionStorage.removeItem('adminUser');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+      }
+    };
+    
+    validateAdminToken();
+    
+    const adminUserData = sessionStorage.getItem('adminUser') || localStorage.getItem('adminUser');
+    if (adminUserData) {
+      try {
+        setAdminUser(JSON.parse(adminUserData));
+      } catch (error) {
+        console.error('Error parsing admin user data:', error);
+      }
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      // Call backend logout API with admin token using apiService
+      const apiService = await import('../services/apiService');
+      await apiService.default.auth.adminLogout();
+    } catch (error) {
+      console.error('Admin logout API error:', error);
+    }
+    
+    // Clear admin tokens regardless of API result
+    sessionStorage.removeItem('adminToken');
+    sessionStorage.removeItem('adminUser');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
+    notifySuccess('Admin logged out successfully');
+    navigate('/admin/login');
+  };
+
+  const handleGoToUserLogin = () => {
+    navigate('/login');
+  };
+
+  return (
+    <div className="admin-dashboard">
+      {/* Admin Header */}
+      <header className="admin-header">
+        <div className="admin-header-left">
+          <div className="admin-logo">
+            <span className="admin-shield">👕</span>
+            <h1>Admin Portal</h1>
+          </div>
+          <span className="admin-breadcrumb">Thrift Shirt Pawnshop</span>
+        </div>
+        
+        <div className="admin-header-right">
+          <div className="admin-user-info">
+            <span className="admin-greeting">Welcome, {adminUser?.username}</span>
+            <span className="admin-role-badge">ADMIN</span>
+          </div>
+          <button 
+            className="admin-logout-btn"
+            onClick={handleLogout}
+            title="Logout"
+          >
+            Logout
+          </button>
+        </div>
+      </header>
+
+      {/* Admin Navigation */}
+      <nav className="admin-nav">
+        <div className="admin-nav-section">
+          <h3>Management</h3>
+          <ul>
+            <li><a href="#users" className="admin-nav-link">User Management</a></li>
+            <li><a href="#pawn" className="admin-nav-link">Pawn Management</a></li>
+            <li><a href="#inventory" className="admin-nav-link">Inventory</a></li>
+          </ul>
+        </div>
+        
+        <div className="admin-nav-section">
+          <h3>System</h3>
+          <ul>
+            <li><a href="#settings" className="admin-nav-link">Settings</a></li>
+            <li><a href="#logs" className="admin-nav-link">Activity Logs</a></li>
+          </ul>
+        </div>
+
+        <div className="admin-nav-section">
+          <h3>Quick Actions</h3>
+          <ul>
+            <li>
+              <button 
+                className="admin-nav-button"
+                onClick={handleGoToUserLogin}
+              >
+                Switch to User Portal
+              </button>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      {/* Main Content Area */}
+      <main className="admin-main">
+        <div className="admin-content">
+          {/* Welcome Section */}
+          <section className="admin-welcome">
+            <h2>Welcome to Admin Dashboard</h2>
+            <p>Manage your pawnshop system from this central dashboard.</p>
+          </section>
+
+          {/* Quick Stats */}
+          <section className="admin-stats">
+            <h3>System Overview</h3>
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-icon">👥</div>
+                <div className="stat-info">
+                  <span className="stat-number">0</span>
+                  <span className="stat-label">Users</span>
+                </div>
+              </div>
+              
+              <div className="stat-card">
+                <div className="stat-icon">💎</div>
+                <div className="stat-info">
+                  <span className="stat-number">0</span>
+                  <span className="stat-label">Pawns</span>
+                </div>
+              </div>
+              
+              <div className="stat-card">
+                <div className="stat-icon">💰</div>
+                <div className="stat-info">
+                  <span className="stat-number">₱0</span>
+                  <span className="stat-label">Revenue</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* System Status */}
+          <section className="admin-system-status">
+            <h3>System Status</h3>
+            <div className="status-grid">
+              <div className="status-item">
+                <span className="status-indicator online"></span>
+                <span className="status-label">Database</span>
+                <span className="status-value">Online</span>
+              </div>
+              
+              <div className="status-item">
+                <span className="status-indicator online"></span>
+                <span className="status-label">Authentication</span>
+                <span className="status-value">Active</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      {/* Admin Footer */}
+      <footer className="admin-footer">
+        <div className="admin-footer-content">
+          <p>&copy; 2024 Thrift Shirt Pawnshop</p>
+          <p>Logged in as: <strong>{adminUser?.username}</strong></p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+export default AdminDashboard;

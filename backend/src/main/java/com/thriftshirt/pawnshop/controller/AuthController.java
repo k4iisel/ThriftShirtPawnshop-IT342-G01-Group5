@@ -1,5 +1,7 @@
 package com.thriftshirt.pawnshop.controller;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,8 +38,28 @@ public class AuthController {
     
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        AuthResponse authResponse = authService.login(loginRequest);
-        return ResponseEntity.ok(authResponse);
+        try {
+            logger.info("User login attempt for: {}", loginRequest.getUsernameOrEmail());
+            AuthResponse authResponse = authService.loginUser(loginRequest);
+            logger.info("User login successful for: {}", loginRequest.getUsernameOrEmail());
+            return ResponseEntity.ok(authResponse);
+        } catch (Exception e) {
+            logger.error("User login failed for: {} - Error: {}", loginRequest.getUsernameOrEmail(), e.getMessage());
+            return ResponseEntity.badRequest().body(new AuthResponse(null, null, null, null, e.getMessage()));
+        }
+    }
+    
+    @PostMapping("/admin/login")
+    public ResponseEntity<AuthResponse> adminLogin(@Valid @RequestBody LoginRequest loginRequest) {
+        try {
+            logger.info("Admin login attempt for: {}", loginRequest.getUsernameOrEmail());
+            AuthResponse authResponse = authService.loginAdmin(loginRequest);
+            logger.info("Admin login successful for: {}", loginRequest.getUsernameOrEmail());
+            return ResponseEntity.ok(authResponse);
+        } catch (Exception e) {
+            logger.error("Admin login failed for: {} - Error: {}", loginRequest.getUsernameOrEmail(), e.getMessage());
+            return ResponseEntity.badRequest().body(new AuthResponse(null, null, null, null, e.getMessage()));
+        }
     }
     
     @PostMapping("/register")
@@ -54,11 +76,21 @@ public class AuthController {
     }
     
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse> logout() {
-        // In JWT, logout is handled client-side by removing the token
-        // Here we can add token blacklisting if needed in the future
-        SecurityContextHolder.clearContext();
-        return ResponseEntity.ok(ApiResponse.success("Logged out successfully"));
+    public ResponseEntity<ApiResponse> logout(Authentication authentication) {
+        try {
+            if (authentication != null) {
+                String username = authentication.getName();
+                logger.info("Logout requested for user: {}", username);
+                authService.logout(username);
+                logger.info("User {} logged out successfully", username);
+            }
+            SecurityContextHolder.clearContext();
+            return ResponseEntity.ok(ApiResponse.success("Logged out successfully"));
+        } catch (Exception e) {
+            logger.error("Logout failed: {}", e.getMessage());
+            // Always return success to prevent client-side issues
+            return ResponseEntity.ok(ApiResponse.success("Logged out successfully"));
+        }
     }
     
     @GetMapping("/profile")
@@ -90,5 +122,35 @@ public class AuthController {
     @GetMapping("/health")
     public ResponseEntity<ApiResponse> health() {
         return ResponseEntity.ok(ApiResponse.success("Auth service is running"));
+    }
+    
+    // Endpoint to clear expired sessions
+    @PostMapping("/clear-sessions")
+    public ResponseEntity<ApiResponse> clearExpiredSessions() {
+        try {
+            authService.clearExpiredSessions();
+            return ResponseEntity.ok(ApiResponse.success("Expired sessions cleared successfully"));
+        } catch (Exception e) {
+            logger.error("Failed to clear expired sessions: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error("Failed to clear sessions"));
+        }
+    }
+    
+    // Force logout endpoint for clearing stuck sessions
+    @PostMapping("/force-logout")
+    public ResponseEntity<ApiResponse> forceLogout(@RequestBody Map<String, String> request) {
+        try {
+            String username = request.get("username");
+            if (username == null || username.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Username is required"));
+            }
+            
+            logger.info("Force logout requested for user: {}", username);
+            authService.logout(username);
+            return ResponseEntity.ok(ApiResponse.success("User " + username + " has been forcefully logged out"));
+        } catch (Exception e) {
+            logger.error("Force logout failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error("Force logout failed: " + e.getMessage()));
+        }
     }
 }

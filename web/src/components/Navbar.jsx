@@ -1,14 +1,46 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import useNotify from '../hooks/useNotify';
+import apiService from '../services/apiService';
 import '../styles/Navbar.css';
 
 function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { notifySuccess, notifyError } = useNotify();
 
-  const handleLogout = () => {
-    // TODO: Implement actual logout logic
+  const handleLogout = async () => {
     if (window.confirm('Are you sure you want to logout?')) {
-      navigate('/login');
+      try {
+        // Call backend logout API
+        await apiService.auth.logout();
+        
+        // Clear all authentication data
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('adminToken');
+        sessionStorage.removeItem('adminUser');
+        sessionStorage.removeItem('user');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        localStorage.removeItem('user');
+        
+        notifySuccess('Logged out successfully!');
+        navigate('/login');
+      } catch (error) {
+        console.error('Logout error:', error);
+        // Even if API call fails, clear storage and redirect
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('adminToken');
+        sessionStorage.removeItem('adminUser');
+        sessionStorage.removeItem('user');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        localStorage.removeItem('user');
+        
+        notifySuccess('Logged out successfully!');
+        navigate('/login');
+      }
     }
   };
 

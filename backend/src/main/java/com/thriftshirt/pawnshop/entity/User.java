@@ -60,6 +60,12 @@ public class User implements UserDetails {
     
     private boolean enabled = true;
     
+    @Column(name = "active_session_id")
+    private String activeSessionId;
+    
+    @Column(name = "session_created_at")
+    private LocalDateTime sessionCreatedAt;
+    
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
@@ -204,5 +210,21 @@ public class User implements UserDetails {
     
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public String getActiveSessionId() {
+        return activeSessionId;
+    }
+    
+    public void setActiveSessionId(String activeSessionId) {
+        this.activeSessionId = activeSessionId;
+    }
+    
+    public LocalDateTime getSessionCreatedAt() {
+        return sessionCreatedAt;
+    }
+    
+    public void setSessionCreatedAt(LocalDateTime sessionCreatedAt) {
+        this.sessionCreatedAt = sessionCreatedAt;
     }
 }

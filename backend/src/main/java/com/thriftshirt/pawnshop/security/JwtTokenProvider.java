@@ -46,6 +46,20 @@ public class JwtTokenProvider {
                 .compact();
     }
     
+    public String generateTokenWithSessionId(Authentication authentication, String sessionId) {
+        UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
+        
+        Date expiryDate = new Date(System.currentTimeMillis() + jwtExpirationInMs);
+        
+        return Jwts.builder()
+                .subject(userPrincipal.getUsername())
+                .claim("sessionId", sessionId)
+                .issuedAt(new Date())
+                .expiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
+    }
+    
     public String generateTokenFromUsername(String username) {
         Date expiryDate = new Date(System.currentTimeMillis() + jwtExpirationInMs);
         
@@ -65,6 +79,21 @@ public class JwtTokenProvider {
                 .getPayload();
         
         return claims.getSubject();
+    }
+    
+    public String getSessionIdFromToken(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            
+            return claims.get("sessionId", String.class);
+        } catch (Exception e) {
+            logger.error("Error extracting session ID from token: {}", e.getMessage());
+            return null;
+        }
     }
     
     public boolean validateToken(String authToken) {

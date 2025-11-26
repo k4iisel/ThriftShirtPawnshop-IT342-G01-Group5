@@ -54,22 +54,56 @@ function Login() {
     if (validateForm()) {
       setLoading(true);
       try {
+        // Clear any existing tokens to allow new login without logging out first
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('adminToken');
+        sessionStorage.removeItem('adminUser');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        
         const response = await apiService.auth.login({
           usernameOrEmail: formData.usernameOrEmail,
           password: formData.password
         });
         
-        notifySuccess('Login successful! Welcome back.');
+        // Check if we have user data in the response
+        if (response.user) {
+          // Store user data in session storage for immediate use
+          sessionStorage.setItem('user', JSON.stringify(response.user));
+          localStorage.setItem('user', JSON.stringify(response.user));
+          
+          // Personalized success message
+          const userName = response.user.username || response.user.firstName || 'user';
+          notifySuccess(`Login successful! Welcome back, ${userName}.`);
+        } else {
+          notifySuccess('Login successful! Welcome back.');
+        }
+        
         navigate('/dashboard');
       } catch (error) {
         console.error('Login error:', error);
-        if (error.status === 401) {
-          notifyError('Invalid username/email or password');
+        
+        // Handle different error types
+        if (error.data && error.data.message) {
+          notifyError(error.data.message);
         } else if (error.data?.data) {
           // Handle validation errors
           setErrors(error.data.data);
+        } else if (error.message) {
+          notifyError(error.message);
+        } else if (error.status === 400) {
+          notifyError('Invalid credentials or account type');
+        } else if (error.status === 401) {
+          notifyError('Invalid username/email or password');
+        } else if (error.status === 500) {
+          notifyError('Server error. Please try again later.');
+        } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+          notifyError('Cannot connect to server. Please check if the backend is running.');
         } else {
-          notifyError(error.message || 'Login failed. Please try again.');
+          notifyError('Login failed. Please try again.');
         }
       } finally {
         setLoading(false);
