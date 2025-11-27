@@ -19,6 +19,7 @@ public class Notification {
     private String type; // loan, pawn, system, etc.
     private boolean isRead;
 
+    @Temporal(TemporalType.TIMESTAMP)
     private Date timestamp;
 
     public Long getNotifId() {

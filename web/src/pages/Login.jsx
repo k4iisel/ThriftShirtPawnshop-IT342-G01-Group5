@@ -58,15 +58,43 @@ function Login() {
           usernameOrEmail: formData.usernameOrEmail,
           password: formData.password
         });
-        
+
+        // Extract token: support a few common shapes to be safe
+        const token =
+          response?.data?.token ||
+          response?.data?.accessToken ||
+          response?.token ||
+          response?.accessToken ||
+          response?.data?.access_token ||
+          response?.access_token;
+
+        if (!token) {
+          // If the auth API returned a wrapper (like { data: { token: … } }), we might still be covered above
+          throw new Error('Login succeeded but token missing from server response.');
+        }
+
+        // Store token: localStorage if rememberMe true, otherwise sessionStorage
+        if (formData.rememberMe) {
+          localStorage.setItem('token', token);
+        } else {
+          sessionStorage.setItem('token', token);
+        }
+
+        // Optional: store the username to show in UI later
+        if (formData.rememberMe) {
+          localStorage.setItem('rememberedUsername', formData.usernameOrEmail);
+        } else {
+          sessionStorage.removeItem('rememberedUsername');
+        }
+
         notifySuccess('Login successful! Welcome back.');
         navigate('/dashboard');
       } catch (error) {
         console.error('Login error:', error);
-        if (error.status === 401) {
+        if (error.status === 401 || (error.response && error.response.status === 401)) {
           notifyError('Invalid username/email or password');
         } else if (error.data?.data) {
-          // Handle validation errors
+          // Handle validation errors returned from server
           setErrors(error.data.data);
         } else {
           notifyError(error.message || 'Login failed. Please try again.');

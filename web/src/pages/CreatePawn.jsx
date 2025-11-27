@@ -18,6 +18,10 @@ function CreatePawn() {
   const [imagePreview, setImagePreview] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+  // If API_BASE is set (e.g. "http://localhost:8080"), use that to contact backend.
+  // If not set, default to http://localhost:8080 so dev requests don't go to the Vite dev server.
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -61,26 +65,81 @@ function CreatePawn() {
     setIsSubmitting(true);
 
     try {
-      // TODO: Replace with actual API call
+      // Validation
+      if (formData.images.length === 0) {
+        alert('Please upload at least one image');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Prepare multipart form data
       const formDataToSend = new FormData();
-      
-      // Add text fields
-      Object.keys(formData).forEach(key => {
-        if (key !== 'images') {
-          formDataToSend.append(key, formData[key]);
+
+      // Text fields
+      formDataToSend.append('itemName', formData.itemName);
+      formDataToSend.append('brand', formData.brand || '');
+      formDataToSend.append('size', formData.size || '');
+      formDataToSend.append('condition', formData.condition || '');
+      formDataToSend.append('description', formData.description || '');
+      formDataToSend.append('requestedAmount', formData.requestedAmount || '');
+      formDataToSend.append('estimatedValue', formData.estimatedValue || '');
+
+      // Add images - backend expects 'images' multipart files
+      formData.images.forEach((image) => {
+        formDataToSend.append('images', image);
+      });
+
+      // Build destination url: if API_BASE provided, use it + '/api', otherwise use '/api'
+      const url = `${API_BASE}/api/pawnrequests`;
+
+      // DEBUG: Log outgoing URL
+      console.log('Submitting pawn request to:', url);
+
+      // Send to backend
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+      const headers = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        // If backend uses cookie-based session, include credentials. If not, this won't hurt.
+        credentials: 'include',
+        body: formDataToSend
+      });
+
+      if (!response.ok) {
+        // Try to parse body for helpful message
+        let message = `Server responded with ${response.status}`;
+        try {
+          const resBodyText = await response.text();
+          // Attempt to parse JSON; fallback to raw string if not JSON
+          try {
+            const resJson = JSON.parse(resBodyText);
+            message += ': ' + (resJson.message || JSON.stringify(resJson));
+          } catch {
+            if (resBodyText) {
+              message += ': ' + resBodyText;
+            }
+          }
+        } catch (parseErr) {
+          // ignore
         }
-      });
 
-      // Add images
-      formData.images.forEach((image, index) => {
-        formDataToSend.append(`image${index}`, image);
-      });
+        if (response.status === 403) {
+          message = `Forbidden (403). Check the API base URL / CORS settings or authentication token. (${message})`;
+        }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+        throw new Error(message);
+      }
 
-      alert('Pawn request submitted successfully! You will be notified once it\'s reviewed.');
-      
+      const json = await response.json();
+
+      alert('Pawn request submitted successfully! Request ID: ' + json.id);
+
       // Reset form
       setFormData({
         itemName: '',

@@ -17,10 +17,15 @@ public class Loan {
 
     private Double loanAmount;
     private Integer interestRate;
+
+    @Temporal(TemporalType.DATE)
     private Date dueDate;
+
     private String status; // Active, Overdue, Redeemed
 
     private Double penalty;
+
+    @Temporal(TemporalType.DATE)
     private Date dateRedeemed;
 
     public Long getLoanId() {

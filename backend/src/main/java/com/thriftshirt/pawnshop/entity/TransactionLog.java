@@ -16,6 +16,7 @@ public class TransactionLog {
     private User user;
 
     private String action;     // e.g. "Pawning request submitted"
+    @Temporal(TemporalType.TIMESTAMP)
     private Date timestamp;
 
     private String remarks;

@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,6 +16,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
@@ -116,9 +118,31 @@ public class User implements UserDetails {
     }
     
     // Lifecycle methods
+    @PrePersist
+    public void prePersist() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        this.updatedAt = LocalDateTime.now();
+        encodePasswordIfNeeded();
+    }
+    
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
+        encodePasswordIfNeeded();
+    }
+
+    /**
+     * Encode password if it is not encoded already (BCrypt hashes start with "$2").
+     */
+    private void encodePasswordIfNeeded() {
+        if (this.password == null || this.password.isBlank()) return;
+        if (!this.password.startsWith("$2")) {
+            // safe to instantiate a local encoder to avoid coupling the entity to Spring beans
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+            this.password = encoder.encode(this.password);
+        }
     }
     
     // Getters and Setters

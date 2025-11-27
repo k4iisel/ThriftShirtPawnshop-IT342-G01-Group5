@@ -27,6 +27,7 @@ public class ResaleItem {
 
     private String status; // Available / Sold
 
+    @Temporal(TemporalType.DATE)    
     private Date dateListed;
     private String listedBy;
 
