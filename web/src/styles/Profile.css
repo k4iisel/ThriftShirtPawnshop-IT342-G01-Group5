@@ -2,7 +2,7 @@
 .profile-page {
   display: flex;
   min-height: 100vh;
-  background: #f9f3d4;
+  background: #ffffff;
 }
 
 .profile-content {
@@ -10,6 +10,8 @@
   padding: 30px;
   padding-bottom: 100px;
   overflow-y: auto;
+  background: #ffffff;
+  color: #ffffff;
 }
 
 /* Profile Header */
@@ -20,13 +22,13 @@
 .profile-header h1 {
   font-size: 32px;
   font-weight: 700;
-  color: #333;
+  color: #4B352A;
   margin: 0 0 8px 0;
 }
 
 .profile-header p {
   font-size: 14px;
-  color: #666;
+  color: #4B352A;
   margin: 0;
 }
 
@@ -39,10 +41,11 @@
 
 /* Profile Card */
 .profile-card {
-  background: white;
+  background: linear-gradient(135deg, #4B352A 0%, #4B352A 100%);
+  color: #4B352A;
   border-radius: 12px;
   padding: 32px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgb(75, 53, 42);
 }
 
 /* Profile Avatar Section */
@@ -51,7 +54,7 @@
   flex-direction: column;
   align-items: center;
   padding-bottom: 32px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #CA7842;
   margin-bottom: 32px;
 }
 
@@ -59,18 +62,18 @@
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #F5C857 0%, #FFEE91 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 16px;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgb(245, 200, 87);
 }
 
 .profile-avatar svg {
   width: 60px;
   height: 60px;
-  stroke: white;
+  stroke: rgb(75, 53, 42);
   stroke-width: 2;
 }
 
@@ -79,12 +82,12 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
+  background: #CA7842;
+  border: 1px solid #CA7842;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #666;
+  color: #4B352A;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
@@ -93,17 +96,17 @@
 .btn-upload svg {
   width: 18px;
   height: 18px;
-  stroke: #666;
+  stroke: #4B352A;
 }
 
 .btn-upload:hover {
-  background: #e67e22;
-  border-color: #e67e22;
-  color: white;
+  background: #F5C857;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgb(255, 238, 145);
 }
 
 .btn-upload:hover svg {
-  stroke: white;
+  background: #F5C857;
 }
 
 /* Profile Info Section */
@@ -121,12 +124,12 @@
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  background: #e67e22;
+  background: #CA7842;
   border: none;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: white;
+  color: #4B352A;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
@@ -135,14 +138,14 @@
 .btn-primary svg {
   width: 18px;
   height: 18px;
-  stroke: white;
+  stroke: #4B352A;
   stroke-width: 2;
 }
 
 .btn-primary:hover {
-  background: #d35400;
+  background: #F5C857;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3);
+  box-shadow: 0 4px 12px rgb(255, 238, 145);
 }
 
 .edit-actions {
@@ -152,20 +155,21 @@
 
 .btn-secondary {
   padding: 12px 24px;
-  background: white;
-  border: 1px solid #ddd;
+  background: rgb(202, 120, 66);
+  border: 1px solid #CA7842;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #666;
+  color: #4B352A;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
 }
 
 .btn-secondary:hover {
-  background: #f5f5f5;
-  border-color: #ccc;
+  background: #F5C857;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgb(255, 238, 145);
 }
 
 /* Profile Form */
@@ -190,7 +194,7 @@
 .form-group label {
   font-size: 13px;
   font-weight: 600;
-  color: #666;
+  color: #FFEE91;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -198,7 +202,7 @@
 .form-group input,
 .form-group textarea {
   padding: 12px 16px;
-  border: 1px solid #ddd;
+  border: 1px solid #F5C857;
   border-radius: 8px;
   font-size: 14px;
   font-family: inherit;
@@ -208,8 +212,8 @@
 
 .form-group input:focus,
 .form-group textarea:focus {
-  border-color: #e67e22;
-  box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1);
+  border-color: #F5C857;
+  box-shadow: 0 0 0 3px rgb(245, 200, 87);
 }
 
 .form-group textarea {
@@ -219,24 +223,25 @@
 
 .form-value {
   font-size: 15px;
-  color: #333;
+  font-family: inherit;
+  color: #FFEE91;
   margin: 0;
   padding: 12px 0;
 }
 
 /* Settings Card */
 .settings-card {
-  background: white;
+  background: rgb(75, 53, 42);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgb(75, 53, 42);
   height: fit-content;
 }
 
 .settings-card h2 {
   font-size: 20px;
   font-weight: 600;
-  color: #333;
+  color: #E2852E;
   margin: 0 0 20px 0;
 }
 
@@ -251,7 +256,7 @@
 .settings-section h3 {
   font-size: 13px;
   font-weight: 600;
-  color: #999;
+  color: #F5C857;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin: 0 0 12px 0;
@@ -263,8 +268,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: #f9f9f9;
-  border: 1px solid #eee;
+  background: #CA7842;
+  border: 1px solid #CA7842;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -277,8 +282,9 @@
 }
 
 .settings-button:hover {
-  background: white;
-  border-color: #e67e22;
+  background: #FFEE91;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgb(255, 238, 145) ;
 }
 
 .settings-button-content {
@@ -290,7 +296,7 @@
 .settings-button-content svg {
   width: 24px;
   height: 24px;
-  stroke: #666;
+  stroke: #4B352A;
   stroke-width: 2;
   flex-shrink: 0;
 }
@@ -298,14 +304,14 @@
 .settings-button-content div h4 {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: #4B352A;
   margin: 0 0 4px 0;
   text-align: left;
 }
 
 .settings-button-content div p {
   font-size: 12px;
-  color: #999;
+  color: #4B352A;
   margin: 0;
   text-align: left;
 }
@@ -313,20 +319,20 @@
 .arrow-icon {
   width: 20px;
   height: 20px;
-  stroke: #999;
+  stroke: #4B352A;
   stroke-width: 2;
   flex-shrink: 0;
 }
 
 .settings-button:hover .arrow-icon {
-  stroke: #e67e22;
+  stroke: #4B352A;
 }
 
 /* Modal */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgb(75, 53, 42);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -336,9 +342,9 @@
 .modal {
   width: 100%;
   max-width: 480px;
-  background: #fff;
+  background: #4B352A;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 30px rgb(75, 53, 42);
   padding: 20px;
 }
 
@@ -360,7 +366,7 @@
 }
 
 .error-text {
-  color: #c62828;
+  color: #fe0303;
   font-size: 13px;
   margin: 4px 0 0 0;
 }
