@@ -2,7 +2,7 @@
 .profile-page {
   display: flex;
   min-height: 100vh;
-  background: #f9f3d4;
+  background: #016B61;
 }
 
 .profile-content {
@@ -10,6 +10,8 @@
   padding: 30px;
   padding-bottom: 100px;
   overflow-y: auto;
+  background: #016B61;
+  color: #F0F0F0;
 }
 
 /* Profile Header */
@@ -20,13 +22,13 @@
 .profile-header h1 {
   font-size: 32px;
   font-weight: 700;
-  color: #333;
+  color: #F0F0F0;
   margin: 0 0 8px 0;
 }
 
 .profile-header p {
   font-size: 14px;
-  color: #666;
+  color: #F0F0F0;
   margin: 0;
 }
 
@@ -39,10 +41,11 @@
 
 /* Profile Card */
 .profile-card {
-  background: white;
+  background: linear-gradient(135deg, #70B2B2 0%, #9ECFD4 100%);
+  color: #444;
   border-radius: 12px;
   padding: 32px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgb(112, 178, 178);
 }
 
 /* Profile Avatar Section */
@@ -51,7 +54,7 @@
   flex-direction: column;
   align-items: center;
   padding-bottom: 32px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #70B2B2;
   margin-bottom: 32px;
 }
 
@@ -59,18 +62,18 @@
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #016B61 0%, #70B2B2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 16px;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .profile-avatar svg {
   width: 60px;
   height: 60px;
-  stroke: white;
+  stroke: rgb(255, 255, 255);
   stroke-width: 2;
 }
 
@@ -79,12 +82,12 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
+  background: #016B61;
+  border: 1px solid #016B61;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #666;
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
@@ -93,17 +96,17 @@
 .btn-upload svg {
   width: 18px;
   height: 18px;
-  stroke: #666;
+  stroke: #ffffff;
 }
 
 .btn-upload:hover {
-  background: #e67e22;
-  border-color: #e67e22;
-  color: white;
+  background: #444;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(44, 43, 41, 0.3);
 }
 
 .btn-upload:hover svg {
-  stroke: white;
+  background: #444;
 }
 
 /* Profile Info Section */
@@ -121,7 +124,7 @@
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  background: #e67e22;
+  background: #016B61;
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -140,9 +143,9 @@
 }
 
 .btn-primary:hover {
-  background: #d35400;
+  background: #444;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3);
+  box-shadow: 0 4px 12px rgba(44, 43, 41, 0.3);
 }
 
 .edit-actions {
@@ -152,20 +155,21 @@
 
 .btn-secondary {
   padding: 12px 24px;
-  background: white;
-  border: 1px solid #ddd;
+  background: rgb(1, 107, 97);
+  border: 1px solid #016B61;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #666;
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
 }
 
 .btn-secondary:hover {
-  background: #f5f5f5;
-  border-color: #ccc;
+  background: #444;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(44, 43, 41, 0.3);
 }
 
 /* Profile Form */
@@ -190,7 +194,7 @@
 .form-group label {
   font-size: 13px;
   font-weight: 600;
-  color: #666;
+  color: #fffefe;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -208,8 +212,8 @@
 
 .form-group input:focus,
 .form-group textarea:focus {
-  border-color: #e67e22;
-  box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1);
+  border-color: #016B61;
+  box-shadow: 0 0 0 3px rgb(1, 107, 97);
 }
 
 .form-group textarea {
@@ -219,24 +223,25 @@
 
 .form-value {
   font-size: 15px;
-  color: #333;
+  font-family: inherit;
+  color: #444;
   margin: 0;
   padding: 12px 0;
 }
 
 /* Settings Card */
 .settings-card {
-  background: white;
+  background: rgb(112, 178, 178);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgb(112, 178, 178);
   height: fit-content;
 }
 
 .settings-card h2 {
   font-size: 20px;
   font-weight: 600;
-  color: #333;
+  color: #ffffff;
   margin: 0 0 20px 0;
 }
 
@@ -251,7 +256,7 @@
 .settings-section h3 {
   font-size: 13px;
   font-weight: 600;
-  color: #999;
+  color: #ffffff;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin: 0 0 12px 0;
@@ -263,8 +268,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: #f9f9f9;
-  border: 1px solid #eee;
+  background: #016B61;
+  border: 1px solid #016B61;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -277,8 +282,9 @@
 }
 
 .settings-button:hover {
-  background: white;
-  border-color: #e67e22;
+  background: #444;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(44, 43, 41, 0.3);
 }
 
 .settings-button-content {
@@ -290,7 +296,7 @@
 .settings-button-content svg {
   width: 24px;
   height: 24px;
-  stroke: #666;
+  stroke: #ffffff;
   stroke-width: 2;
   flex-shrink: 0;
 }
@@ -298,14 +304,14 @@
 .settings-button-content div h4 {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: #ffffff;
   margin: 0 0 4px 0;
   text-align: left;
 }
 
 .settings-button-content div p {
   font-size: 12px;
-  color: #999;
+  color: #ffffff;
   margin: 0;
   text-align: left;
 }
@@ -313,20 +319,20 @@
 .arrow-icon {
   width: 20px;
   height: 20px;
-  stroke: #999;
+  stroke: #ffffff;
   stroke-width: 2;
   flex-shrink: 0;
 }
 
 .settings-button:hover .arrow-icon {
-  stroke: #e67e22;
+  stroke: #ffffff;
 }
 
 /* Modal */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgb(1, 107, 97);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -336,9 +342,9 @@
 .modal {
   width: 100%;
   max-width: 480px;
-  background: #fff;
+  background: #016B61;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 30px rgb(1, 107, 97);
   padding: 20px;
 }
 
@@ -360,7 +366,7 @@
 }
 
 .error-text {
-  color: #c62828;
+  color: #fe0303;
   font-size: 13px;
   margin: 4px 0 0 0;
 }
