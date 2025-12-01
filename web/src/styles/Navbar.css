@@ -1,7 +1,7 @@
 /* Navbar Base Styles */
 .navbar {
-  background: rgb(75, 53, 42);
-  box-shadow: 0 2px 8px rgb(75, 53, 42);
+  background: #CA7842;
+  box-shadow: 0 2px 8px #4B352A;
   position: fixed;
   z-index: 1000;
   transition: all 0.3s ease;
@@ -79,7 +79,7 @@
 
 .navbar.sidebar .logout-button {
   margin-top: auto;
-  border-top: 1px solid #FFEE91;
+  border-top: 1px solid #4B352A;
   padding-top: 14px;
   margin-bottom: 6px;
 }
@@ -88,19 +88,19 @@
 .navbar.sidebar .logout-button .nav-label {
   font-size: 14px;
   font-weight: 800;
-  color: #F5C857;
+  color: #4B352A;
 }
 
 .navbar.sidebar .logout-button .nav-icon {
-  stroke: #F5C857 ;
+  stroke: #4B352A;
 }
 
 .navbar.sidebar .logout-button:hover .nav-label {
-  color: #F5C857;
+  color: #4B352A;
 }
 
 .navbar.sidebar .logout-button:hover .nav-icon {
-  stroke: #FFEE91;
+  stroke: #4B352A;
 }
 
 /* Profile and Logout Group */
@@ -111,7 +111,7 @@
   flex-direction: column;
   gap: 2px;
   padding-top: 10px;
-  border-top: 1px solid #FFEE91;
+  border-top: 1px solid #4B352A;
 }
 
 .profile-logout-group .nav-button {
@@ -136,25 +136,25 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  color: #F5C857; /* slightly darker for better contrast */
+  color: #4B352A; /* slightly darker for better contrast */
   transition: all 0.2s ease;
   border-radius: 8px;
   font-family: inherit;
 }
 
 .nav-button:hover {
-  background: #B87C4C;
+  background: #FFEE91;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgb(184, 124, 76);
+  box-shadow: 0 4px 12px rgb(255, 238, 145);
 }
 
 .nav-button.active {
-  color: #F5C857;
-  background: #4B352A;
+  color: #4B352A;
+  background: #CA7842;
 }
 
 .nav-button.active .nav-icon {
-  stroke: #F5C857;
+  stroke: #4B352A;
 }
 
 /* Nav Icon */
@@ -175,15 +175,15 @@
 }
 
 .logout-button:hover {
-  background: #B87C4C;
+  background: #FFEE91;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgb(184, 124, 76);
+  box-shadow: 0 4px 12px rgb(255, 238, 145);
 }
 
 /* Toggle Button (unused in sidebar-only, kept for compatibility) */
 .nav-toggle {
   position: absolute;
-  background: #9ECFD4;
+  background: #CA7842;
   border: none;
   width: 36px;
   height: 36px;
@@ -192,7 +192,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgb(158, 207, 212);
+  box-shadow: 0 2px 8px rgb(202, 120, 66)
   transition: all 0.3s ease;
 }
 

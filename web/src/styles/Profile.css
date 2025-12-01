@@ -2,7 +2,7 @@
 .profile-page {
   display: flex;
   min-height: 100vh;
-  background: #ffffff;
+  background: #CA7842;
 }
 
 .profile-content {
@@ -11,7 +11,7 @@
   padding-bottom: 100px;
   overflow-y: auto;
   background: #ffffff;
-  color: #ffffff;
+  color: #F0F0F0;
 }
 
 /* Profile Header */
@@ -41,8 +41,8 @@
 
 /* Profile Card */
 .profile-card {
-  background: linear-gradient(135deg, #4B352A 0%, #4B352A 100%);
-  color: #4B352A;
+  background: linear-gradient(135deg, #CA7842 0%, #CA7842 100%);
+  color: #CA7842;
   border-radius: 12px;
   padding: 32px;
   box-shadow: 0 2px 8px rgb(75, 53, 42);
@@ -54,7 +54,7 @@
   flex-direction: column;
   align-items: center;
   padding-bottom: 32px;
-  border-bottom: 1px solid #CA7842;
+  border-bottom: 1px solid #4B352A;
   margin-bottom: 32px;
 }
 
@@ -67,7 +67,7 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 16px;
-  box-shadow: 0 4px 12px rgb(245, 200, 87);
+  box-shadow: 0 4px 12px rgb(255, 238, 145);
 }
 
 .profile-avatar svg {
@@ -82,12 +82,12 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #CA7842;
-  border: 1px solid #CA7842;
+  background: #4B352A;
+  border: 1px solid #4B352A;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #4B352A;
+  color: #CA7842;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
@@ -96,17 +96,17 @@
 .btn-upload svg {
   width: 18px;
   height: 18px;
-  stroke: #4B352A;
+  stroke: #CA7842;
 }
 
 .btn-upload:hover {
-  background: #F5C857;
+  background: #FFEE91;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgb(255, 238, 145);
 }
 
 .btn-upload:hover svg {
-  background: #F5C857;
+  background: #FFEE91;
 }
 
 /* Profile Info Section */
@@ -124,12 +124,12 @@
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  background: #CA7842;
-  border: none;
+  background: #4B352A;
+  border: 1px solid #4B352A;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #4B352A;
+  color: #E2852E;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
@@ -138,12 +138,12 @@
 .btn-primary svg {
   width: 18px;
   height: 18px;
-  stroke: #4B352A;
+  stroke: #E2852E;
   stroke-width: 2;
 }
 
 .btn-primary:hover {
-  background: #F5C857;
+  background: #FFEE91;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgb(255, 238, 145);
 }
@@ -155,19 +155,19 @@
 
 .btn-secondary {
   padding: 12px 24px;
-  background: rgb(202, 120, 66);
-  border: 1px solid #CA7842;
+  background: #4B352A;
+  border: 1px solid #4B352A;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #4B352A;
+  color: #E2852E;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
 }
 
 .btn-secondary:hover {
-  background: #F5C857;
+  background: #FFEE91;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgb(255, 238, 145);
 }
@@ -194,7 +194,7 @@
 .form-group label {
   font-size: 13px;
   font-weight: 600;
-  color: #FFEE91;
+  color: #CA7842;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -202,7 +202,7 @@
 .form-group input,
 .form-group textarea {
   padding: 12px 16px;
-  border: 1px solid #F5C857;
+  border: 1px solid #CA7842;
   border-radius: 8px;
   font-size: 14px;
   font-family: inherit;
@@ -212,8 +212,8 @@
 
 .form-group input:focus,
 .form-group textarea:focus {
-  border-color: #F5C857;
-  box-shadow: 0 0 0 3px rgb(245, 200, 87);
+  border-color: #CA7842;
+  box-shadow: 0 0 0 3px rgb(202, 120, 66);
 }
 
 .form-group textarea {
@@ -231,17 +231,17 @@
 
 /* Settings Card */
 .settings-card {
-  background: rgb(75, 53, 42);
+  background: #CA7842;
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgb(75, 53, 42);
+  box-shadow: 0 2px 8px #CA7842;
   height: fit-content;
 }
 
 .settings-card h2 {
   font-size: 20px;
   font-weight: 600;
-  color: #E2852E;
+  color: #4B352A;
   margin: 0 0 20px 0;
 }
 
@@ -256,7 +256,7 @@
 .settings-section h3 {
   font-size: 13px;
   font-weight: 600;
-  color: #F5C857;
+  color: #FFEE91;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin: 0 0 12px 0;
@@ -268,8 +268,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: #CA7842;
-  border: 1px solid #CA7842;
+  background: #4B352A;
+  border: 1px solid #4B352A;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -284,7 +284,7 @@
 .settings-button:hover {
   background: #FFEE91;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgb(255, 238, 145) ;
+  box-shadow: 0 4px 12px rgb(255, 238, 145);
 }
 
 .settings-button-content {
@@ -296,7 +296,7 @@
 .settings-button-content svg {
   width: 24px;
   height: 24px;
-  stroke: #4B352A;
+  stroke: #CA7842;
   stroke-width: 2;
   flex-shrink: 0;
 }
@@ -304,14 +304,14 @@
 .settings-button-content div h4 {
   font-size: 14px;
   font-weight: 600;
-  color: #4B352A;
+  color: #CA7842;
   margin: 0 0 4px 0;
   text-align: left;
 }
 
 .settings-button-content div p {
   font-size: 12px;
-  color: #4B352A;
+  color: #CA7842;
   margin: 0;
   text-align: left;
 }
@@ -319,7 +319,7 @@
 .arrow-icon {
   width: 20px;
   height: 20px;
-  stroke: #4B352A;
+  stroke: #CA7842;
   stroke-width: 2;
   flex-shrink: 0;
 }
@@ -332,7 +332,7 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgb(75, 53, 42);
+  background: #CA7842;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -342,9 +342,9 @@
 .modal {
   width: 100%;
   max-width: 480px;
-  background: #4B352A;
+  background: #CA7842;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgb(75, 53, 42);
+  box-shadow: 0 10px 30px #CA7842;
   padding: 20px;
 }
 
