@@ -2,7 +2,7 @@
 .pawn-status-page {
   display: flex;
   min-height: 100vh;
-  background: #f9f3d4;
+  background: #ffffff;
 }
 
 .pawn-status-content {
@@ -13,10 +13,10 @@
 
 /* Header matching Dashboard style */
 .page-header {
-  background: var(--bg-primary);
+  background: #CA7842;
   padding: 16px 30px;
-  box-shadow: 0 2px 4px var(--shadow);
-  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px #4B352A;
+  border-bottom: 1px solid #4B352A;
 }
 
 .header-logo {
@@ -28,7 +28,7 @@
 .logo-icon {
   width: 40px;
   height: 40px;
-  background: var(--brand-primary);
+  background: #CA7842;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -38,14 +38,14 @@
 .logo-icon svg {
   width: 24px;
   height: 24px;
-  stroke: var(--bg-primary);
+  stroke: #4B352A;
   stroke-width: 2;
 }
 
 .page-header h1 {
   font-size: 20px;
   font-weight: 700;
-  color: var(--brand-primary);
+  color: #4B352A;
   margin: 0;
 }
 
@@ -58,13 +58,13 @@
 .status-header h2 {
   font-size: 36px;
   font-weight: 700;
-  color: var(--brand-primary);
+  color: #4B352A;
   margin: 0 0 8px 0;
 }
 
 .status-header p {
   font-size: 16px;
-  color: var(--text-secondary);
+  color: #4B352A;
   margin: 0;
 }
 
@@ -78,31 +78,31 @@
 .no-pawns {
   text-align: center;
   padding: 4rem 2rem;
-  background: var(--bg-primary);
+  background: #CA7842;
   border-radius: 12px;
-  box-shadow: 0 4px 6px var(--shadow);
-  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px #4B352A;
+  border: 1px solid #4B352A;
 }
 
 .no-pawns h3 {
-  color: var(--text-primary);
+  color: #4B352A;
   margin-bottom: 1rem;
   font-size: 1.5rem;
 }
 
 .no-pawns p {
-  color: var(--text-secondary);
+  color: #4B352A;
   font-size: 1.1rem;
 }
 
 /* Individual pawn card */
 .pawn-card {
-  background: var(--bg-primary);
+  background: #CA7842;
   border-radius: 12px;
-  box-shadow: 0 4px 6px var(--shadow);
+  box-shadow: 0 4px 6px #CA7842;
   margin-bottom: 1.5rem;
   overflow: hidden;
-  border: 1px solid var(--border-color);
+  border: 1px solid #4B352A;
 }
 
 .pawn-header {
@@ -118,7 +118,7 @@
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
-  background: var(--bg-tertiary);
+  background: #4B352A;
 }
 
 .item-image img {
@@ -132,14 +132,14 @@
 }
 
 .item-info h3 {
-  color: var(--text-primary);
+  color: #4B352A;
   margin: 0 0 0.25rem 0;
   font-size: 1.2rem;
   font-weight: 600;
 }
 
 .loan-id {
-  color: var(--text-muted);
+  color: #4B352A;
   font-size: 0.875rem;
   margin: 0 0 0.5rem 0;
   font-family: monospace;
@@ -154,8 +154,8 @@
 }
 
 .status-badge.active {
-  background: var(--success-light);
-  color: var(--success);
+  background: #4B352A;
+  color: #E2852E;
 }
 
 /* Loan details section */
@@ -164,13 +164,13 @@
 }
 
 .submission-date {
-  color: var(--text-secondary);
+  color: #4B352A;
   font-size: 0.9rem;
   margin: 0 0 1rem 0;
 }
 
 .financial-summary {
-  background: var(--bg-secondary);
+  background: #4B352A;
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
@@ -188,7 +188,7 @@
 }
 
 .summary-row.total {
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid #4B352A;
   padding-top: 0.5rem;
   margin-top: 0.5rem;
   font-weight: 600;
@@ -196,21 +196,21 @@
 }
 
 .summary-row span:first-child {
-  color: var(--text-secondary);
+  color: #CA7842;
 }
 
 .summary-row .amount {
-  color: var(--text-primary);
+  color: #CA7842;
   font-weight: 600;
 }
 
 .summary-row .period {
-  color: var(--info);
+  color: #CA7842;
   font-weight: 600;
 }
 
 .due-date {
-  color: var(--text-secondary);
+  color: #4B352A;
   font-size: 0.9rem;
   margin: 0;
 }
@@ -243,13 +243,13 @@
 .redeem-btn:hover {
   background: #006400; /* Darker green on hover */
   transform: translateY(-1px);
-  color: white;
+  color: rgb(0, 0, 0);
 }
 
 .renew-btn {
   background: transparent;
-  color: var(--text-secondary);
-  border: 2px solid var(--border-color);
+  color: #4B352A;
+  border: 2px solid #4B352A;
 }
 
 .renew-btn:hover {
@@ -283,7 +283,7 @@
 .status-filters button {
   padding: 0.75rem 1.5rem;
   border: 2px solid #e9ecef;
-  background: white;
+  background: rgb(0, 0, 0);
   color: #6c757d;
   border-radius: 25px;
   cursor: pointer;
@@ -332,9 +332,9 @@
 }
 
 .pawn-card {
-  background: white;
+  background: #CA7842;
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px #4B352A;
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -364,7 +364,7 @@
   display: flex;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid #4B352A;
   position: relative;
 }
 
@@ -475,7 +475,7 @@
 
 .pawn-actions {
   padding: 1.5rem;
-  background: #f8f9fa;
+  background: #CA7842;
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
