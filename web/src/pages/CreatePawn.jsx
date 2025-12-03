@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Header from '../components/Header';
@@ -9,6 +9,7 @@ import '../styles/CreatePawn.css';
 function CreatePawn() {
   const navigate = useNavigate();
   const notify = useNotify();
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     itemName: '',
@@ -141,6 +142,11 @@ function CreatePawn() {
           images: []
         });
         setImagePreview([]);
+        
+        // Clear file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       } else {
         notify.notifyError(response.message || 'Error submitting pawn request. Please try again.');
       }
@@ -252,6 +258,7 @@ function CreatePawn() {
           <div className="form-group">
             <label htmlFor="images">Upload Images (Max 5) *</label>
             <input
+              ref={fileInputRef}
               type="file"
               id="images"
               name="images"
