@@ -248,7 +248,29 @@ export const apiService = {
     },
   },
 
-  // Add more service endpoints here as needed (pawn items, transactions, etc.)
+  // Pawn Request endpoints
+  pawnRequest: {
+    create: async (pawnData) => {
+      const response = await fetch(`${API_BASE_URL}/user/pawn-requests`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(pawnData),
+      });
+
+      return await handleResponse(response);
+    },
+
+    getAll: async () => {
+      const response = await fetch(`${API_BASE_URL}/user/pawn-requests`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      return await handleResponse(response);
+    },
+  },
+
+  // Add more service endpoints here as needed (transactions, etc.)
 
   // Generic API call method
   call: async (endpoint, options = {}) => {
