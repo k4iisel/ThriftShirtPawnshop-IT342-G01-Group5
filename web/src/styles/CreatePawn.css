@@ -13,10 +13,10 @@
 
 /* Header matching Dashboard style */
 .page-header {
-  background: var(--bg-primary);
+  background: white;
   padding: 16px 30px;
-  box-shadow: 0 2px 4px var(--shadow);
-  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid #ddd;
 }
 
 .header-logo {
@@ -28,7 +28,7 @@
 .logo-icon {
   width: 40px;
   height: 40px;
-  background: var(--brand-primary);
+  background: #e67e22;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -38,14 +38,14 @@
 .logo-icon svg {
   width: 24px;
   height: 24px;
-  stroke: var(--bg-primary);
+  stroke: white;
   stroke-width: 2;
 }
 
 .page-header h1 {
   font-size: 20px;
   font-weight: 700;
-  color: var(--brand-primary);
+  color: #e67e22;
   margin: 0;
 }
 
@@ -58,13 +58,13 @@
 .content-header h2 {
   font-size: 36px;
   font-weight: 700;
-  color: var(--brand-primary);
+  color: #e67e22;
   margin: 0 0 8px 0;
 }
 
 .content-header p {
   font-size: 16px;
-  color: var(--text-secondary);
+  color: #666;
   margin: 0;
 }
 
@@ -74,12 +74,14 @@
   margin: 0 auto;
 }
 
+
+
 .pawn-form {
   background: white;
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 4px 6px var(--shadow);
-  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ddd;
 }
 
 .form-section {

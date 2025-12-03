@@ -1,15 +1,38 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Header from '../components/Header';
 import useAuth from '../hooks/useAuth';
+import useNotify from '../hooks/useNotify';
 import apiService from '../services/apiService';
 import '../styles/Dashboard.css';
 
 function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { notifyError } = useNotify();
 
-  // Use the authentication hook
+  // Check for error parameter in URL
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const error = searchParams.get('error');
+    
+    console.log('📊 Dashboard - checking for error parameter:', {
+      search: location.search,
+      error: error,
+      pathname: location.pathname
+    });
+    
+    if (error === 'admin_access_denied') {
+      console.log('🚫 Dashboard - displaying admin access denied error');
+      notifyError('🚫 Admin Access Blocked: You cannot access admin areas while logged in as a regular user. Stay on user pages or logout to access admin.');
+      // Clean up the URL after showing error
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 100);
+    }
+  }, [location, navigate, notifyError]);
+
   // Check if there's an admin token and clear it if we're on the dashboard
   // This prevents redirection loops for admins who try to access the dashboard
   useEffect(() => {

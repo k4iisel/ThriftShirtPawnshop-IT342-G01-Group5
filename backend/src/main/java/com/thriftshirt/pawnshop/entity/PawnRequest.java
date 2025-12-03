@@ -1,7 +1,18 @@
 package com.thriftshirt.pawnshop.entity;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "pawn_request")
@@ -18,24 +29,31 @@ public class PawnRequest {
     @Column(nullable = false)
     private String itemName;
 
+    @Column(name = "category")
     private String category;
 
+    @Column(name = "item_condition") // Avoid 'condition' as it's a MySQL reserved word
     private String condition;
 
+    @Column(name = "brand")
     private String brand;
 
+    @Column(name = "item_size") // Avoid 'size' as it might conflict
     private String size;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "requested_amount")
     private Double requestedAmount;
 
+    @Column(name = "estimated_value")
     private Double estimatedValue;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "photos", columnDefinition = "TEXT")
     private String photos; // could store URLs or JSON (array)
 
+    @Column(name = "status")
     private String status;
 
     private LocalDate appraisalDate;

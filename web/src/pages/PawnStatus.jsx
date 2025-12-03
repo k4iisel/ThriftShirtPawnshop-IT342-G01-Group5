@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Header from '../components/Header';
+import ImageModal from '../components/ImageModal';
 import apiService from '../services/apiService';
 import useNotify from '../hooks/useNotify';
 import '../styles/PawnStatus.css';
@@ -8,6 +9,9 @@ import '../styles/PawnStatus.css';
 function PawnStatus() {
   const [pawns, setPawns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [selectedItemName, setSelectedItemName] = useState('');
   const notify = useNotify();
 
   useEffect(() => {
@@ -20,11 +24,13 @@ function PawnStatus() {
       const response = await apiService.pawnRequest.getAll();
       
       if (response.success && response.data) {
-        // Filter to only show APPROVED pawn requests
-        const approvedPawns = response.data.filter(pawn => pawn.status === 'APPROVED');
+        console.log('📋 Fetched pawn requests:', response.data);
+        
+        // Show all pawn requests with their actual status
+        const allPawns = response.data;
         
         // Transform the API response data to match the UI structure
-        const transformedPawns = approvedPawns.map((pawn, index) => ({
+        const transformedPawns = allPawns.map((pawn, index) => ({
           pawnId: pawn.pawnId,
           itemName: pawn.itemName,
           brand: pawn.brand,
@@ -32,7 +38,7 @@ function PawnStatus() {
           category: pawn.category,
           condition: pawn.condition,
           description: pawn.description,
-          status: pawn.status || 'APPROVED',
+          status: pawn.status || 'PENDING',
           requestedAmount: pawn.requestedAmount,
           estimatedValue: pawn.estimatedValue,
           appraisalDate: pawn.appraisalDate,
@@ -48,12 +54,19 @@ function PawnStatus() {
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB')
         }));
         setPawns(transformedPawns);
+        
+        if (transformedPawns.length === 0) {
+          notify.notifyInfo('No pawn requests found. Create your first pawn request!');
+        } else {
+          notify.notifySuccess(`✅ Loaded ${transformedPawns.length} pawn request(s)`);
+        }
       } else {
-        notify.notifyError('Failed to load pawn requests');
+        console.error('❌ API response error:', response);
+        notify.notifyError('Failed to load pawn requests: ' + (response.message || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Error fetching pawn requests:', error);
-      notify.notifyError('Error loading pawn requests');
+      console.error('❌ Network error fetching pawn requests:', error);
+      notify.notifyError('Network error loading pawn requests: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -67,6 +80,49 @@ function PawnStatus() {
   const handleRenewLoan = (pawnId) => {
     alert(`Renewing loan for ${pawnId}...`);
     // TODO: Implement loan renewal functionality
+  };
+
+  const handleDeletePawn = async (pawnId) => {
+    // Show confirmation dialog
+    if (window.confirm('Are you sure you want to delete this pawn request? This action cannot be undone.')) {
+      try {
+        const response = await apiService.pawnRequest.delete(pawnId);
+        
+        if (response.success) {
+          notify.notifySuccess('✅ Pawn request deleted successfully');
+          // Refresh the pawn requests list
+          fetchPawnRequests();
+        } else {
+          notify.notifyError('❌ Failed to delete pawn request: ' + (response.message || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('❌ Error deleting pawn request:', error);
+        notify.notifyError('❌ Error deleting pawn request: ' + error.message);
+      }
+    }
+  };
+
+  const handleViewImages = (pawn) => {
+    // Parse photos from JSON string or use placeholder
+    let images = [];
+    try {
+      if (pawn.photos && typeof pawn.photos === 'string') {
+        images = JSON.parse(pawn.photos);
+      } else if (Array.isArray(pawn.photos)) {
+        images = pawn.photos;
+      }
+    } catch (error) {
+      console.error('Error parsing photos:', error);
+    }
+    
+    // If no images, use placeholder
+    if (images.length === 0) {
+      images = [pawn.image || `https://via.placeholder.com/400x400?text=${encodeURIComponent(pawn.itemName)}`];
+    }
+    
+    setSelectedImages(images);
+    setSelectedItemName(pawn.itemName);
+    setShowImageModal(true);
   };
 
   return (
@@ -96,15 +152,26 @@ function PawnStatus() {
             pawns.map((pawn, index) => (
               <div key={`${pawn.pawnId}-${index}`} className="pawn-card">
                 <div className="pawn-header">
-                  <div className="item-image">
-                    <img src={pawn.image} alt={pawn.itemName} />
-                  </div>
                   <div className="item-info">
-                    <h3>{pawn.itemName}</h3>
-                    <p className="loan-id">Pawn ID: {pawn.pawnId}</p>
-                    <span className={`status-badge ${pawn.status.toLowerCase()}`}>
-                      {pawn.status}
-                    </span>
+                    <div className="item-title-row">
+                      <h3>{pawn.itemName}</h3>
+                      {pawn.status === 'PENDING' && (
+                        <button 
+                          className="delete-icon-btn"
+                          onClick={() => handleDeletePawn(pawn.pawnId)}
+                          title="Delete this pawn request"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                    <button 
+                      className="view-images-btn"
+                      onClick={() => handleViewImages(pawn)}
+                      title="Click to view item images"
+                    >
+                      View Images
+                    </button>
                   </div>
                 </div>
 
@@ -139,28 +206,52 @@ function PawnStatus() {
                     </div>
                   </div>
 
-                  <p className="due-date">Due Date: {pawn.dueDate}</p>
+                  <div className="due-date-row">
+                    <p className="due-date">Due Date: {pawn.dueDate}</p>
+                    <span className={`status-badge-inline ${pawn.status.toLowerCase()}`}>
+                      {pawn.status === 'PENDING' ? 'PENDING' : 
+                       pawn.status === 'APPROVED' ? 'APPROVED' : 
+                       pawn.status === 'REJECTED' ? 'REJECTED' : pawn.status}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="pawn-actions">
-                  <button 
-                    className="redeem-btn"
-                    onClick={() => handleRedeemItem(pawn.pawnId)}
-                  >
-                    Redeem Item
-                  </button>
-                  <button 
-                    className="renew-btn"
-                    onClick={() => handleRenewLoan(pawn.pawnId)}
-                  >
-                    Renew Loan
-                  </button>
-                </div>
+                {pawn.status === 'APPROVED' && (
+                  <div className="pawn-actions">
+                    <button 
+                      className="redeem-btn"
+                      onClick={() => handleRedeemItem(pawn.pawnId)}
+                    >
+                      Redeem Item
+                    </button>
+                    <button 
+                      className="renew-btn"
+                      onClick={() => handleRenewLoan(pawn.pawnId)}
+                    >
+                      Renew Loan
+                    </button>
+                  </div>
+                )}
+                {pawn.status === 'REJECTED' && (
+                  <div className="status-message-container">
+                    <div className="status-message">
+                      This request was rejected
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}
         </div>
       </div>
+      
+      {showImageModal && (
+        <ImageModal 
+          images={selectedImages}
+          itemName={selectedItemName}
+          onClose={() => setShowImageModal(false)}
+        />
+      )}
     </div>
   );
 }

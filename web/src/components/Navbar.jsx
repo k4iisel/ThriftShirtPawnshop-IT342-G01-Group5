@@ -1,9 +1,14 @@
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useNotify from '../hooks/useNotify';
 import apiService from '../services/apiService';
+import ProfileModal from './ProfileModal';
+import DevTeamModal from './DevTeamModal';
 import '../styles/Navbar.css';
 
 function Navbar() {
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isDevTeamModalOpen, setIsDevTeamModalOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { notifySuccess, notifyError } = useNotify();
@@ -87,34 +92,38 @@ function Navbar() {
             <span className="nav-label">My Pawns</span>
           </button>
 
+
+
           <button
-            className={`nav-button ${isActive('/browse') ? 'active' : ''}`}
-            onClick={() => navigate('/browse')}
-            title="Browse"
+            className={`nav-button ${isActive('/history') ? 'active' : ''}`}
+            onClick={() => navigate('/history')}
+            title="History"
           >
             <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
             </svg>
-            <span className="nav-label">Browse</span>
+            <span className="nav-label">History</span>
           </button>
 
           <button
-            className={`nav-button ${isActive('/notifications') ? 'active' : ''}`}
-            onClick={() => navigate('/notifications')}
-            title="Notifications"
+            className={`nav-button ${isDevTeamModalOpen ? 'active' : ''}`}
+            onClick={() => setIsDevTeamModalOpen(true)}
+            title="Dev Team"
           >
             <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
-            <span className="nav-label">Notifications</span>
+            <span className="nav-label">Dev Team</span>
           </button>
 
           <div className="profile-logout-group">
             <button
-              className={`nav-button ${isActive('/profile') ? 'active' : ''}`}
-              onClick={() => navigate('/profile')}
+              className={`nav-button ${isProfileModalOpen ? 'active' : ''}`}
+              onClick={() => setIsProfileModalOpen(true)}
               title="Profile"
             >
               <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -142,6 +151,18 @@ function Navbar() {
 
       {/* Sidebar spacer to prevent content from being hidden behind sidebar */}
       <div className={`navbar-spacer sidebar-spacer`}></div>
+
+      {/* Profile Modal */}
+      <ProfileModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)} 
+      />
+
+      {/* Dev Team Modal */}
+      <DevTeamModal 
+        isOpen={isDevTeamModalOpen} 
+        onClose={() => setIsDevTeamModalOpen(false)} 
+      />
     </>
   );
 }

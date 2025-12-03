@@ -81,12 +81,14 @@
   font-weight: 700;
   color: #e67e22;
   margin: 0 0 8px 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .welcome-section p {
   font-size: 16px;
-  color: #666;
+  color: #555;
   margin: 0;
+  font-weight: 500;
 }
 
 /* Buttons */
@@ -173,15 +175,21 @@
 
 .stat-label {
   font-size: 14px;
-  color: #999;
+  color: #000 !important;
   margin: 0 0 8px 0;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 1 !important;
+  text-shadow: none;
 }
 
 .stat-value {
   font-size: 32px;
   font-weight: 700;
-  color: #333;
+  color: #000;
   margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Alert Message */
@@ -243,9 +251,10 @@
 
 .section-title h2 {
   font-size: 20px;
-  font-weight: 600;
-  color: #333;
+  font-weight: 700;
+  color: #222;
   margin: 0;
+  letter-spacing: -0.3px;
 }
 
 .notifications-list {
@@ -275,14 +284,16 @@
 
 .notification-message {
   font-size: 14px;
-  color: #333;
+  color: #222;
   margin: 0 0 8px 0;
   line-height: 1.5;
+  font-weight: 500;
 }
 
 .notification-time {
   font-size: 12px;
-  color: #999;
+  color: #666;
+  font-weight: 500;
 }
 
 .notification-dot {
@@ -355,14 +366,15 @@
 .item-details h3 {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: #222;
   margin: 0 0 4px 0;
 }
 
 .item-category {
   font-size: 13px;
-  color: #999;
+  color: #666;
   margin: 0 0 12px 0;
+  font-weight: 500;
 }
 
 .item-footer {
@@ -429,8 +441,8 @@
 
 .action-card span {
   font-size: 14px;
-  font-weight: 500;
-  color: #666;
+  font-weight: 600;
+  color: #555;
 }
 
 .action-card:hover {

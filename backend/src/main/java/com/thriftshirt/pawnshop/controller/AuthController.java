@@ -49,9 +49,82 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/check-user-session")
+    public ResponseEntity<ApiResponse> checkUserSession() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication != null && authentication.isAuthenticated() && 
+                !authentication.getName().equals("anonymousUser")) {
+                
+                // User is already logged in
+                Map<String, Object> response = Map.of(
+                    "hasActiveSession", true,
+                    "username", authentication.getName(),
+                    "message", "Cannot access admin portal while logged in as a user"
+                );
+                
+                return ResponseEntity.ok(new ApiResponse(true, "User session detected", response));
+            }
+            
+            // No active user session
+            Map<String, Object> response = Map.of("hasActiveSession", false);
+            return ResponseEntity.ok(new ApiResponse(true, "No active user session", response));
+            
+        } catch (Exception e) {
+            logger.error("Error checking user session: {}", e.getMessage());
+            Map<String, Object> response = Map.of("hasActiveSession", false);
+            return ResponseEntity.ok(new ApiResponse(true, "Session check completed", response));
+        }
+    }
+
+    @GetMapping("/admin/access-check")
+    public ResponseEntity<ApiResponse> checkAdminAccess() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication != null && authentication.isAuthenticated() && 
+                !authentication.getName().equals("anonymousUser")) {
+                
+                logger.warn("🚫 ADMIN ACCESS BLOCKED - User '{}' attempting to access admin while logged in as regular user", 
+                    authentication.getName());
+                    
+                return ResponseEntity.status(403).body(
+                    new ApiResponse(false, 
+                        "Access Denied: You cannot access admin portal while logged in as a regular user. Please logout first.", 
+                        null)
+                );
+            }
+            
+            logger.info("✅ Admin access check passed - No active user session detected");
+            return ResponseEntity.ok(new ApiResponse(true, "Admin access allowed", null));
+            
+        } catch (Exception e) {
+            logger.error("❌ Error checking admin access: {}", e.getMessage());
+            return ResponseEntity.status(500).body(
+                new ApiResponse(false, "Error validating admin access permissions", null)
+            );
+        }
+    }
+
     @PostMapping("/admin/login")
     public ResponseEntity<AuthResponse> adminLogin(@Valid @RequestBody LoginRequest loginRequest) {
         try {
+            // Check if there's an active user session first
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication != null && authentication.isAuthenticated() && 
+                !authentication.getName().equals("anonymousUser")) {
+                
+                logger.warn("🚫 ADMIN LOGIN BLOCKED - User '{}' attempted admin login while authenticated as regular user", 
+                    authentication.getName());
+                    
+                return ResponseEntity.status(403).body(
+                    new AuthResponse(null, null, null, null, 
+                        "🚫 Access Denied: Cannot access admin login while logged in as a regular user. Please logout first.")
+                );
+            }
+            
             logger.info("Admin login attempt for: {}", loginRequest.getUsernameOrEmail());
             AuthResponse authResponse = authService.loginAdmin(loginRequest);
             logger.info("Admin login successful for: {}", loginRequest.getUsernameOrEmail());

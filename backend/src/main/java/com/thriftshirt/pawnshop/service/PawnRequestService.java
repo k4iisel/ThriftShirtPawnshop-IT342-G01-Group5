@@ -1,5 +1,8 @@
 package com.thriftshirt.pawnshop.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,9 +17,6 @@ import com.thriftshirt.pawnshop.exception.BadRequestException;
 import com.thriftshirt.pawnshop.exception.ResourceNotFoundException;
 import com.thriftshirt.pawnshop.repository.PawnRequestRepository;
 import com.thriftshirt.pawnshop.repository.UserRepository;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -51,23 +51,36 @@ public class PawnRequestService {
         
         // Create new pawn request
         PawnRequest pawnRequest = new PawnRequest();
-        pawnRequest.setUser(user);
-        pawnRequest.setItemName(requestDTO.getItemName());
-        pawnRequest.setBrand(requestDTO.getBrand());
-        pawnRequest.setSize(requestDTO.getSize());
-        pawnRequest.setCondition(requestDTO.getCondition());
-        pawnRequest.setDescription(requestDTO.getDescription());
-        pawnRequest.setPhotos(requestDTO.getPhotos());
-        pawnRequest.setRequestedAmount(requestDTO.getRequestedAmount());
-        pawnRequest.setEstimatedValue(requestDTO.getEstimatedValue());
-        pawnRequest.setStatus("PENDING"); // Default status
-        pawnRequest.setCategory(requestDTO.getCategory() != null ? requestDTO.getCategory() : "General");
         
-        // Save and return
-        PawnRequest saved = pawnRequestRepository.save(pawnRequest);
-        logger.info("Pawn request created successfully with ID: {}", saved.getPawnId());
+        try {
+            logger.info("Creating pawn request for user ID: {}", userId);
+            logger.debug("Request data - Item: {}, Brand: {}, Size: {}, Condition: {}", 
+                requestDTO.getItemName(), requestDTO.getBrand(), requestDTO.getSize(), requestDTO.getCondition());
+            
+            pawnRequest.setUser(user);
+            pawnRequest.setItemName(requestDTO.getItemName());
+            pawnRequest.setBrand(requestDTO.getBrand() != null ? requestDTO.getBrand() : "Unknown");
+            pawnRequest.setSize(requestDTO.getSize());
+            pawnRequest.setCondition(requestDTO.getCondition());
+            pawnRequest.setDescription(requestDTO.getDescription());
+            pawnRequest.setPhotos(requestDTO.getPhotos());
+            pawnRequest.setRequestedAmount(requestDTO.getRequestedAmount());
+            pawnRequest.setEstimatedValue(requestDTO.getEstimatedValue());
+            pawnRequest.setStatus("PENDING"); // Default status
+            pawnRequest.setCategory(requestDTO.getCategory() != null ? requestDTO.getCategory() : "General");
+            
+            logger.info("Attempting to save pawn request to database...");
+            // Save and return
+            PawnRequest saved = pawnRequestRepository.save(pawnRequest);
+            logger.info("✅ Pawn request created successfully with ID: {}", saved.getPawnId());
         
-        return mapToResponse(saved);
+            return mapToResponse(saved);
+            
+        } catch (Exception e) {
+            logger.error("❌ Database error while creating pawn request: {}", e.getMessage());
+            logger.error("Error details: ", e);
+            throw new RuntimeException("Failed to create pawn request: " + e.getMessage(), e);
+        }
     }
     
     /**
@@ -80,6 +93,18 @@ public class PawnRequestService {
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         
         return pawnRequestRepository.findByUser(user)
+            .stream()
+            .map(this::mapToResponse)
+            .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get all pawn requests (for admin)
+     */
+    public List<PawnRequestResponse> getAllPawnRequests() {
+        logger.info("Fetching all pawn requests");
+        
+        return pawnRequestRepository.findAll()
             .stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
@@ -122,6 +147,30 @@ public class PawnRequestService {
         PawnRequest updated = pawnRequestRepository.save(pawnRequest);
         
         return mapToResponse(updated);
+    }
+    
+    /**
+     * Delete a pawn request (only allowed for PENDING status)
+     */
+    public void deletePawnRequest(Long pawnId, Long userId) {
+        logger.info("Attempting to delete pawn request {} by user {}", pawnId, userId);
+        
+        PawnRequest pawnRequest = pawnRequestRepository.findById(pawnId)
+            .orElseThrow(() -> new ResourceNotFoundException("Pawn request not found"));
+        
+        // Verify that the pawn request belongs to the requesting user
+        if (!pawnRequest.getUser().getId().equals(userId)) {
+            throw new BadRequestException("You can only delete your own pawn requests");
+        }
+        
+        // Only allow deletion of PENDING requests
+        if (!"PENDING".equals(pawnRequest.getStatus())) {
+            throw new BadRequestException("Only pending pawn requests can be deleted");
+        }
+        
+        logger.info("Deleting pawn request with ID: {}", pawnId);
+        pawnRequestRepository.deleteById(pawnId);
+        logger.info("✅ Pawn request {} deleted successfully", pawnId);
     }
     
     /**

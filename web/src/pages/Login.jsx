@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import apiService from '../services/apiService';
 import useNotify from '../hooks/useNotify';
 import '../styles/Auth.css';
@@ -14,7 +14,20 @@ function Login() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { notifySuccess, notifyError } = useNotify();
+
+  // Check for admin block error
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const error = searchParams.get('error');
+    
+    if (error === 'admin_blocked') {
+      notifyError('Admin access blocked: Please login with your regular user account or contact administrator for admin access.');
+      // Clean up the URL
+      navigate('/login', { replace: true });
+    }
+  }, [location, navigate, notifyError]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

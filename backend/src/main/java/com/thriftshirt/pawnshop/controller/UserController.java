@@ -3,17 +3,18 @@ package com.thriftshirt.pawnshop.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import jakarta.validation.Valid;
 
 import com.thriftshirt.pawnshop.dto.request.CreatePawnRequestDTO;
 import com.thriftshirt.pawnshop.dto.response.ApiResponse;
@@ -21,6 +22,8 @@ import com.thriftshirt.pawnshop.dto.response.UserProfileResponse;
 import com.thriftshirt.pawnshop.entity.User;
 import com.thriftshirt.pawnshop.service.AuthService;
 import com.thriftshirt.pawnshop.service.PawnRequestService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/user")
@@ -127,6 +130,31 @@ public class UserController {
             logger.error("Error retrieving pawn requests: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Failed to retrieve pawn requests"));
+        }
+    }
+    
+    @DeleteMapping("/pawn-requests/{pawnId}")
+    public ResponseEntity<ApiResponse> deletePawnRequest(
+            @PathVariable Long pawnId,
+            Authentication authentication) {
+        logger.info("Pawn request deletion initiated for ID: {} by user: {}", pawnId, authentication.getName());
+        
+        User user = (User) authentication.getPrincipal();
+        
+        if (!user.getRole().name().equals("USER")) {
+            logger.warn("Non-user attempted to delete pawn request: {}", authentication.getName());
+            return ResponseEntity.status(403)
+                .body(ApiResponse.error("User privileges required"));
+        }
+        
+        try {
+            pawnRequestService.deletePawnRequest(pawnId, user.getId());
+            logger.info("Pawn request {} deleted successfully by user: {}", pawnId, user.getId());
+            return ResponseEntity.ok(ApiResponse.success("Pawn request deleted successfully"));
+        } catch (Exception e) {
+            logger.error("Error deleting pawn request: ", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Failed to delete pawn request: " + e.getMessage()));
         }
     }
 }

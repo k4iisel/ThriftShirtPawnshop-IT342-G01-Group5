@@ -1,5 +1,6 @@
 package com.thriftshirt.pawnshop.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -10,14 +11,19 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.thriftshirt.pawnshop.dto.response.ApiResponse;
+import com.thriftshirt.pawnshop.dto.response.PawnRequestResponse;
 import com.thriftshirt.pawnshop.dto.response.UserProfileResponse;
 import com.thriftshirt.pawnshop.entity.User;
 import com.thriftshirt.pawnshop.service.AuthService;
+import com.thriftshirt.pawnshop.service.PawnRequestService;
 
 @RestController
 @RequestMapping("/admin")
@@ -28,6 +34,9 @@ public class AdminController {
     
     @Autowired
     private AuthService authService;
+    
+    @Autowired
+    private PawnRequestService pawnRequestService;
     
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('ADMIN')")
@@ -88,6 +97,62 @@ public class AdminController {
         }
         
         return ResponseEntity.ok(ApiResponse.success("Admin stats placeholder - to be implemented"));
+    }
+    
+    // Get all pawn requests (admin only)
+    @GetMapping("/pawn-requests")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> getAllPawnRequests(Authentication authentication) {
+        logger.info("Admin fetching all pawn requests: {}", authentication.getName());
+        
+        User user = (User) authentication.getPrincipal();
+        
+        if (!user.getRole().name().equals("ADMIN")) {
+            return ResponseEntity.status(403)
+                .body(ApiResponse.error("Admin access required"));
+        }
+        
+        try {
+            List<PawnRequestResponse> allRequests = pawnRequestService.getAllPawnRequests();
+            return ResponseEntity.ok(ApiResponse.success("Pawn requests retrieved", allRequests));
+        } catch (Exception e) {
+            logger.error("Error fetching pawn requests: ", e);
+            return ResponseEntity.status(500)
+                .body(ApiResponse.error("Failed to fetch pawn requests: " + e.getMessage()));
+        }
+    }
+    
+    // Update pawn request status (admin only)
+    @PutMapping("/pawn-requests/{pawnId}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> updatePawnRequestStatus(
+            @PathVariable Long pawnId,
+            @RequestBody Map<String, String> request,
+            Authentication authentication) {
+        logger.info("Admin updating pawn request {} status: {}", pawnId, authentication.getName());
+        
+        User user = (User) authentication.getPrincipal();
+        
+        if (!user.getRole().name().equals("ADMIN")) {
+            return ResponseEntity.status(403)
+                .body(ApiResponse.error("Admin access required"));
+        }
+        
+        try {
+            String newStatus = request.get("status");
+            if (newStatus == null || newStatus.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Status is required"));
+            }
+            
+            PawnRequestResponse updated = pawnRequestService.updatePawnRequestStatus(pawnId, newStatus);
+            logger.info("Pawn request {} status updated to: {}", pawnId, newStatus);
+            return ResponseEntity.ok(ApiResponse.success("Status updated successfully", updated));
+        } catch (Exception e) {
+            logger.error("Error updating pawn request status: ", e);
+            return ResponseEntity.status(500)
+                .body(ApiResponse.error("Failed to update status: " + e.getMessage()));
+        }
     }
     
     // Public endpoint to create default admin (no auth required for initial setup)

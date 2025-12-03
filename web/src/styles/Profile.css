@@ -2,7 +2,7 @@
 .profile-page {
   display: flex;
   min-height: 100vh;
-  background: #CA7842;
+  background: #f9f3d4;
 }
 
 .profile-content {
@@ -10,8 +10,8 @@
   padding: 30px;
   padding-bottom: 100px;
   overflow-y: auto;
-  background: #ffffff;
-  color: #F0F0F0;
+  background: #f9f3d4;
+  color: #333;
 }
 
 /* Profile Header */
@@ -22,13 +22,13 @@
 .profile-header h1 {
   font-size: 32px;
   font-weight: 700;
-  color: #4B352A;
+  color: #e67e22;
   margin: 0 0 8px 0;
 }
 
 .profile-header p {
   font-size: 14px;
-  color: #4B352A;
+  color: #666;
   margin: 0;
 }
 
@@ -41,11 +41,11 @@
 
 /* Profile Card */
 .profile-card {
-  background: linear-gradient(135deg, #CA7842 0%, #CA7842 100%);
-  color: #CA7842;
+  background: white;
+  color: #333;
   border-radius: 12px;
   padding: 32px;
-  box-shadow: 0 2px 8px rgb(75, 53, 42);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Profile Avatar Section */

@@ -214,6 +214,24 @@ export const apiService = {
       return sessionStorage.getItem('username');
     },
 
+    // Check if user has active session (for admin access prevention)
+    checkUserSession: async () => {
+      const response = await fetch(`${API_BASE_URL}/auth/check-user-session`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    },
+
+    // Check if admin access is allowed
+    checkAdminAccess: async () => {
+      const response = await fetch(`${API_BASE_URL}/auth/admin/access-check`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    },
+
     // Health check
     health: async () => {
       const response = await fetch(`${API_BASE_URL}/auth/health`, {
@@ -246,6 +264,23 @@ export const apiService = {
       });
       return await handleResponse(response);
     },
+
+    getAllPawnRequests: async () => {
+      const response = await fetch(`${API_BASE_URL}/admin/pawn-requests`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    },
+
+    updatePawnStatus: async (pawnId, status) => {
+      const response = await fetch(`${API_BASE_URL}/admin/pawn-requests/${pawnId}/status`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ status }),
+      });
+      return await handleResponse(response);
+    },
   },
 
   // Pawn Request endpoints
@@ -263,6 +298,15 @@ export const apiService = {
     getAll: async () => {
       const response = await fetch(`${API_BASE_URL}/user/pawn-requests`, {
         method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      return await handleResponse(response);
+    },
+
+    delete: async (pawnId) => {
+      const response = await fetch(`${API_BASE_URL}/user/pawn-requests/${pawnId}`, {
+        method: 'DELETE',
         headers: getAuthHeaders(),
       });
 

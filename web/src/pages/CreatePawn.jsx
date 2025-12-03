@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Header from '../components/Header';
@@ -24,6 +24,8 @@ function CreatePawn() {
 
   const [imagePreview, setImagePreview] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -124,11 +126,15 @@ function CreatePawn() {
         category: 'Thrift Shirt' // Default category
       };
 
+      console.log('🚀 Submitting pawn request payload:', pawnRequestPayload);
+      
       // Call API to create pawn request
       const response = await apiService.pawnRequest.create(pawnRequestPayload);
       
+      console.log('✅ API response:', response);
+      
       if (response.success) {
-        notify.notifySuccess('Pawn request submitted successfully! You will be notified once it\'s reviewed.');
+        notify.notifySuccess('✅ Pawn request submitted successfully! You will be notified once it\'s reviewed.');
         
         // Reset form
         setFormData({

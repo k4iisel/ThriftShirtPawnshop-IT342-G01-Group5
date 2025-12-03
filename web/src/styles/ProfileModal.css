@@ -1,0 +1,262 @@
+/* Profile Modal */
+.profile-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.profile-modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Modal Header */
+.profile-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #eee;
+  background: #f9f3d4;
+}
+
+.profile-modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #e67e22;
+}
+
+.profile-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.profile-modal-close:hover {
+  background: rgba(230, 126, 34, 0.1);
+  color: #e67e22;
+}
+
+.profile-modal-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Modal Content */
+.profile-modal-content {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  /* Hide scrollbar while maintaining scroll functionality */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer and Edge */
+}
+
+.profile-modal-content::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Opera */
+}
+
+.profile-modal-loading {
+  padding: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner {
+  color: #e67e22;
+  font-size: 14px;
+}
+
+/* Avatar Section */
+.profile-avatar-section {
+  text-align: center;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.profile-avatar {
+  width: 60px;
+  height: 60px;
+  background: #e67e22;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  color: white;
+}
+
+.profile-avatar svg {
+  width: 30px;
+  height: 30px;
+}
+
+.profile-avatar-section h3 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.profile-role {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  text-transform: capitalize;
+  background: #f9f3d4;
+  padding: 4px 12px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+/* Form */
+.profile-form {
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #e67e22;
+  box-shadow: 0 0 0 2px rgba(230, 126, 34, 0.1);
+}
+
+.form-value {
+  padding: 10px 0;
+  font-size: 14px;
+  color: #333;
+  margin: 0;
+  min-height: 20px;
+}
+
+/* Modal Actions */
+.profile-modal-actions {
+  padding: 0;
+  border-top: 1px solid #eee;
+  margin-top: 20px;
+  padding-top: 20px;
+}
+
+.profile-modal-actions .btn-primary,
+.profile-modal-actions .btn-secondary {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-modal-actions .btn-primary {
+  background: #e67e22;
+  color: white;
+}
+
+.profile-modal-actions .btn-primary:hover {
+  background: #d35400;
+}
+
+.profile-modal-actions .btn-secondary {
+  background: #f8f9fa;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.profile-modal-actions .btn-secondary:hover {
+  background: #e9ecef;
+}
+
+.profile-modal-actions .btn-primary svg,
+.profile-modal-actions .btn-secondary svg {
+  width: 16px;
+  height: 16px;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .profile-modal {
+    margin: 10px;
+    max-width: calc(100% - 20px);
+  }
+  
+  .profile-modal-content {
+    padding: 20px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  
+  .edit-actions {
+    flex-direction: column;
+  }
+  
+  .edit-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, ChevronDown, LogOut, Lock, User } from 'lucide-react';
 import useNotify from '../hooks/useNotify';
 import apiService from '../services/apiService';
+import ProfileModal from './ProfileModal';
 import '../styles/Header.css';
 
 const Header = () => {
@@ -11,6 +12,7 @@ const Header = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -83,10 +85,8 @@ const Header = () => {
   const getPageTitle = () => {
     const path = location.pathname;
     if (path === '/dashboard') return 'Dashboard';
-    if (path === '/browse') return 'Shirts Available';
     if (path === '/create') return 'Create Pawn';
     if (path === '/status') return 'Your Pawns';
-    if (path === '/profile') return 'Profile';
     if (path === '/login') return 'Login';
     if (path === '/register') return 'Register';
     return '';
@@ -253,7 +253,10 @@ const Header = () => {
 
             {showUserMenu && (
               <div className="user-dropdown">
-                <div className="user-dropdown-item" onClick={() => navigate('/profile')}>
+                <div className="user-dropdown-item" onClick={() => {
+                  setShowProfileModal(true);
+                  setShowUserMenu(false);
+                }}>
                   <User size={16} />
                   <span>Profile</span>
                 </div>
@@ -333,6 +336,12 @@ const Header = () => {
           </div>
         </div>
       )}
+
+      {/* Profile Modal */}
+      <ProfileModal 
+        isOpen={showProfileModal} 
+        onClose={() => setShowProfileModal(false)} 
+      />
     </header>
   );
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiService from '../services/apiService';
 import useNotify from '../hooks/useNotify';
@@ -11,8 +11,95 @@ function AdminLogin() {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [userLoggedIn, setUserLoggedIn] = useState(false);
   const navigate = useNavigate();
   const { notifySuccess, notifyError } = useNotify();
+
+  // Immediate check if user is already logged in
+  const userToken = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+  const isAuthenticated = apiService.auth.isAuthenticated();
+  
+  // If user is authenticated, block access completely
+  if (isAuthenticated || userToken) {
+    useEffect(() => {
+      notifyError('Access Denied: Cannot access admin login while logged in as a regular user!');
+      setTimeout(() => {
+        navigate('/login?error=admin_blocked', { replace: true });
+      }, 2000);
+    }, [navigate, notifyError]);
+    
+    return (
+      <div className="auth-page">
+        <div className="auth-header-section">
+          <div className="logo-container">
+            <div className="logo-circle">
+              <svg className="person-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+            </div>
+            <h1 className="business-name">Thrift Shirt Pawnshop</h1>
+            <p className="business-tagline">& Lending Service - Admin Portal</p>
+          </div>
+        </div>
+
+        <div className="auth-content-section">
+          <div className="auth-form-card">
+            <div className="access-denied-content">
+              <div className="access-denied-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" y1="9" x2="9" y2="15"/>
+                  <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+              </div>
+              <h2>Access Denied</h2>
+              <p>You cannot access admin login while logged in as a regular user.</p>
+              <p>Please logout first or use the regular login page.</p>
+              <div className="access-denied-actions">
+                <button 
+                  type="button" 
+                  className="btn-login btn-primary"
+                  onClick={() => {
+                    // Clear all sessions and redirect
+                    sessionStorage.clear();
+                    localStorage.clear();
+                    navigate('/login', { replace: true });
+                  }}
+                >
+                  Logout & Go to Login
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Additional useEffect for edge cases
+  useEffect(() => {
+    const checkUserSession = () => {
+      const userToken = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+      const user = sessionStorage.getItem('user') || localStorage.getItem('user');
+      
+      if (userToken && user) {
+        try {
+          const userData = JSON.parse(user);
+          if (userData.role === 'USER') {
+            setUserLoggedIn(true);
+            notifyError('Access denied: Cannot access admin portal while logged in as user.');
+            navigate('/login?error=admin_blocked', { replace: true });
+          }
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+        }
+      }
+    };
+    
+    checkUserSession();
+  }, [navigate, notifyError]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,6 +135,13 @@ function AdminLogin() {
     e.preventDefault();
     
     if (!validateForm()) {
+      return;
+    }
+
+    // Additional check for user session before proceeding
+    const userToken = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+    if (userToken) {
+      notifyError('Cannot login as admin while logged in as user. Please logout first.');
       return;
     }
 
@@ -118,6 +212,71 @@ function AdminLogin() {
   const handleBackToUserLogin = () => {
     navigate('/login');
   };
+
+  const handleLogoutUser = () => {
+    // Clear user session
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('user');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    
+    setUserLoggedIn(false);
+    notifySuccess('User logged out successfully. You can now access admin login.');
+  };
+
+  // If user is logged in, show error message and options
+  if (userLoggedIn) {
+    return (
+      <div className="auth-page">
+        <div className="auth-header-section">
+          <div className="logo-container">
+            <div className="logo-circle">
+              <svg className="person-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <h1 className="business-name">Thrift Shirt Pawnshop</h1>
+            <p className="business-tagline">& Lending Service - Admin Portal</p>
+          </div>
+        </div>
+
+        <div className="auth-content-section">
+          <div className="auth-form-card">
+            <div className="access-denied-content">
+              <div className="access-denied-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" y1="9" x2="9" y2="15"/>
+                  <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+              </div>
+              <h2>Access Denied</h2>
+              <p>You cannot access admin login while logged in as a user.</p>
+              <p>Please choose one of the options below:</p>
+              
+              <div className="access-denied-actions">
+                <button 
+                  type="button" 
+                  className="btn-login btn-primary"
+                  onClick={handleLogoutUser}
+                >
+                  Logout & Access Admin
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-secondary"
+                  onClick={handleBackToUserLogin}
+                >
+                  Back to Dashboard
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-page">

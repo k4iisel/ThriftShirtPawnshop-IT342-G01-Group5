@@ -1,7 +1,7 @@
 /* Navbar Base Styles */
 .navbar {
-  background: #CA7842;
-  box-shadow: 0 2px 8px #4B352A;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: fixed;
   z-index: 1000;
   transition: all 0.3s ease;
@@ -79,7 +79,7 @@
 
 .navbar.sidebar .logout-button {
   margin-top: auto;
-  border-top: 1px solid #4B352A;
+  border-top: 1px solid #e67e22;
   padding-top: 14px;
   margin-bottom: 6px;
 }
@@ -88,19 +88,19 @@
 .navbar.sidebar .logout-button .nav-label {
   font-size: 14px;
   font-weight: 800;
-  color: #4B352A;
+  color: #e67e22;
 }
 
 .navbar.sidebar .logout-button .nav-icon {
-  stroke: #4B352A;
+  stroke: #e67e22;
 }
 
 .navbar.sidebar .logout-button:hover .nav-label {
-  color: #4B352A;
+  color: #d35400;
 }
 
 .navbar.sidebar .logout-button:hover .nav-icon {
-  stroke: #4B352A;
+  stroke: #d35400;
 }
 
 /* Profile and Logout Group */
@@ -111,7 +111,7 @@
   flex-direction: column;
   gap: 2px;
   padding-top: 10px;
-  border-top: 1px solid #4B352A;
+  border-top: 1px solid #e67e22;
 }
 
 .profile-logout-group .nav-button {
@@ -136,25 +136,25 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  color: #4B352A; /* slightly darker for better contrast */
+  color: #e67e22;
   transition: all 0.2s ease;
   border-radius: 8px;
   font-family: inherit;
 }
 
 .nav-button:hover {
-  background: #FFEE91;
+  background: #f9f3d4;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgb(255, 238, 145);
+  box-shadow: 0 4px 12px rgba(249, 243, 212, 0.5);
 }
 
 .nav-button.active {
-  color: #4B352A;
-  background: #CA7842;
+  color: #e67e22;
+  background: #f9f3d4;
 }
 
 .nav-button.active .nav-icon {
-  stroke: #4B352A;
+  stroke: #e67e22;
 }
 
 /* Nav Icon */
@@ -171,19 +171,19 @@
 
 /* Logout Button */
 .logout-button {
-  color: #4B352A;
+  color: #e67e22;
 }
 
 .logout-button:hover {
-  background: #FFEE91;
+  background: #f9f3d4;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgb(255, 238, 145);
+  box-shadow: 0 4px 12px rgba(249, 243, 212, 0.5);
 }
 
 /* Toggle Button (unused in sidebar-only, kept for compatibility) */
 .nav-toggle {
   position: absolute;
-  background: #CA7842;
+  background: #e67e22;
   border: none;
   width: 36px;
   height: 36px;
@@ -192,7 +192,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgb(202, 120, 66)
+  box-shadow: 0 2px 8px rgba(230, 126, 34, 0.3);
   transition: all 0.3s ease;
 }
 

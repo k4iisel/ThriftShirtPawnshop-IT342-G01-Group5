@@ -3,22 +3,25 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
-import Browse from './pages/Browse';
 import CreatePawn from './pages/CreatePawn';
 import PawnStatus from './pages/PawnStatus';
+import History from './pages/History';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import NotificationContainer from './components/NotificationContainer';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRouteProtection from './components/AdminRouteProtection';
+import useAdminAccessGuard from './hooks/useAdminAccessGuard';
 import './App.css';
 import './styles/Notification.css';
 
-function App() {
+function AppContent() {
+  // Global admin access guard - monitors all navigation
+  useAdminAccessGuard();
+
   return (
-    <NotificationProvider>
-      <Router>
-        <NotificationContainer />
+    <>
+      <NotificationContainer />
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
@@ -27,18 +30,29 @@ function App() {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/browse" element={<Browse />} />
             <Route path="/create" element={<CreatePawn />} />
             <Route path="/status" element={<PawnStatus />} />
-            <Route path="/notifications" element={<Dashboard />} />
+            <Route path="/history" element={<History />} />
           </Route>
 
-          {/* Admin Routes */}
+          {/* Admin Routes with Protection */}
           <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/login" element={
+            <AdminRouteProtection>
+              <AdminLogin />
+            </AdminRouteProtection>
+          } />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
         </Routes>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <NotificationProvider>
+      <Router>
+        <AppContent />
       </Router>
     </NotificationProvider>
   );
