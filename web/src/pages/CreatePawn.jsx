@@ -1,9 +1,16 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Header from '../components/Header';
+import apiService from '../services/apiService';
+import useNotify from '../hooks/useNotify';
 import '../styles/CreatePawn.css';
 
 function CreatePawn() {
+  const navigate = useNavigate();
+  const notify = useNotify();
+  const fileInputRef = useRef(null);
+
   const [formData, setFormData] = useState({
     itemName: '',
     brand: '',
@@ -58,45 +65,95 @@ function CreatePawn() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form data
+    if (!formData.itemName.trim()) {
+      notify.notifyError('Item name is required');
+      return;
+    }
+    
+    if (!formData.size) {
+      notify.notifyError('Size is required');
+      return;
+    }
+    
+    if (!formData.condition) {
+      notify.notifyError('Condition is required');
+      return;
+    }
+    
+    if (!formData.requestedAmount || formData.requestedAmount < 50) {
+      notify.notifyError('Requested amount must be at least ₱50');
+      return;
+    }
+    
+    if (formData.requestedAmount > 10000) {
+      notify.notifyError('Requested amount cannot exceed ₱10,000');
+      return;
+    }
+    
+    if (formData.images.length === 0) {
+      notify.notifyError('At least one image is required');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // TODO: Replace with actual API call
-      const formDataToSend = new FormData();
+      // Convert images to base64 for storage (or you can handle file upload separately)
+      const imagePromises = formData.images.map(file => 
+        new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        })
+      );
       
-      // Add text fields
-      Object.keys(formData).forEach(key => {
-        if (key !== 'images') {
-          formDataToSend.append(key, formData[key]);
+      const base64Images = await Promise.all(imagePromises);
+      
+      // Prepare payload for API
+      const pawnRequestPayload = {
+        itemName: formData.itemName,
+        brand: formData.brand || null,
+        size: formData.size,
+        condition: formData.condition,
+        description: formData.description || null,
+        requestedAmount: parseFloat(formData.requestedAmount),
+        estimatedValue: formData.estimatedValue ? parseFloat(formData.estimatedValue) : null,
+        photos: JSON.stringify(base64Images), // Store as JSON array of base64 strings
+        category: 'Thrift Shirt' // Default category
+      };
+
+      // Call API to create pawn request
+      const response = await apiService.pawnRequest.create(pawnRequestPayload);
+      
+      if (response.success) {
+        notify.notifySuccess('Pawn request submitted successfully! You will be notified once it\'s reviewed.');
+        
+        // Reset form
+        setFormData({
+          itemName: '',
+          brand: '',
+          size: '',
+          condition: '',
+          description: '',
+          requestedAmount: '',
+          estimatedValue: '',
+          images: []
+        });
+        setImagePreview([]);
+        
+        // Clear file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
         }
-      });
-
-      // Add images
-      formData.images.forEach((image, index) => {
-        formDataToSend.append(`image${index}`, image);
-      });
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      alert('Pawn request submitted successfully! You will be notified once it\'s reviewed.');
-      
-      // Reset form
-      setFormData({
-        itemName: '',
-        brand: '',
-        size: '',
-        condition: '',
-        description: '',
-        requestedAmount: '',
-        estimatedValue: '',
-        images: []
-      });
-      setImagePreview([]);
+      } else {
+        notify.notifyError(response.message || 'Error submitting pawn request. Please try again.');
+      }
 
     } catch (error) {
-      alert('Error submitting pawn request. Please try again.');
       console.error('Error:', error);
+      notify.notifyError(error.data?.message || 'Error submitting pawn request. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -201,6 +258,7 @@ function CreatePawn() {
           <div className="form-group">
             <label htmlFor="images">Upload Images (Max 5) *</label>
             <input
+              ref={fileInputRef}
               type="file"
               id="images"
               name="images"
