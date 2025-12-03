@@ -20,8 +20,11 @@ function PawnStatus() {
       const response = await apiService.pawnRequest.getAll();
       
       if (response.success && response.data) {
+        // Filter to only show APPROVED pawn requests
+        const approvedPawns = response.data.filter(pawn => pawn.status === 'APPROVED');
+        
         // Transform the API response data to match the UI structure
-        const transformedPawns = response.data.map((pawn, index) => ({
+        const transformedPawns = approvedPawns.map((pawn, index) => ({
           pawnId: pawn.pawnId,
           itemName: pawn.itemName,
           brand: pawn.brand,
@@ -29,7 +32,7 @@ function PawnStatus() {
           category: pawn.category,
           condition: pawn.condition,
           description: pawn.description,
-          status: pawn.status || 'PENDING',
+          status: pawn.status || 'APPROVED',
           requestedAmount: pawn.requestedAmount,
           estimatedValue: pawn.estimatedValue,
           appraisalDate: pawn.appraisalDate,

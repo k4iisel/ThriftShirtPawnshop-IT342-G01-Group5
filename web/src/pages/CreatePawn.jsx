@@ -141,11 +141,6 @@ function CreatePawn() {
           images: []
         });
         setImagePreview([]);
-        
-        // Redirect to pawn status page or dashboard
-        setTimeout(() => {
-          navigate('/pawn-status');
-        }, 1500);
       } else {
         notify.notifyError(response.message || 'Error submitting pawn request. Please try again.');
       }
