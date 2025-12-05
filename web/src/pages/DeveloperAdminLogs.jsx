@@ -40,7 +40,7 @@ function DeveloperAdminLogs() {
         if (!filter) return true;
         const search = filter.toLowerCase();
         return (
-            log.action.toLowerCase().includes(search) ||
+            (log.action || '').toLowerCase().includes(search) ||
             (log.user?.username || '').toLowerCase().includes(search) ||
             (log.remarks || '').toLowerCase().includes(search)
         );
@@ -62,57 +62,76 @@ function DeveloperAdminLogs() {
 
             <main className="admin-main">
                 <div className="admin-content" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                    <div className="admin-actions-bar" style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                            <input
-                                type="text"
-                                placeholder="Search logs..."
-                                value={filter}
-                                onChange={(e) => setFilter(e.target.value)}
-                                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', width: '300px' }}
-                            />
-                        </div>
-                        <div style={{ fontWeight: 'bold', fontSize: '1.1em' }}>
+
+                    <div className="admin-actions-bar">
+                        <input
+                            className="admin-search-input"
+                            type="text"
+                            placeholder="Search logs by user, action, or remarks..."
+                            value={filter}
+                            onChange={(e) => setFilter(e.target.value)}
+                        />
+                        <div className="total-count">
                             Total Logs: {filteredLogs.length}
                         </div>
                     </div>
 
                     <div className="admin-table-container">
                         {loading ? (
-                            <div className="loading-spinner">Loading logs...</div>
+                            <div className="admin-loading" style={{ minHeight: '200px', background: 'white' }}>
+                                <div className="loading-spinner"></div>
+                                <p>Loading activity logs...</p>
+                            </div>
                         ) : filteredLogs.length === 0 ? (
-                            <div className="no-data-message">No activity logs found.</div>
+                            <div className="no-data-message" style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+                                No activity logs found.
+                            </div>
                         ) : (
                             <table className="admin-table">
                                 <thead>
                                     <tr>
-                                        <th>Timestamp</th>
-                                        <th>Action</th>
-                                        <th>User</th>
-                                        <th>Remarks</th>
+                                        <th style={{ width: '20%' }}>Timestamp</th>
+                                        <th style={{ width: '15%' }}>Action</th>
+                                        <th style={{ width: '25%' }}>User</th>
+                                        <th style={{ width: '40%' }}>Remarks</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredLogs.map((log) => (
-                                        <tr key={log.logId}>
-                                            <td style={{ color: '#666', fontSize: '0.9em' }}>
-                                                {new Date(log.timestamp).toLocaleString()}
-                                            </td>
-                                            <td>
-                                                <span className="status-badge" style={{
-                                                    background: log.action.includes('REJECT') || log.action.includes('FORFEIT') ? '#ffebee' : '#e8f5e9',
-                                                    color: log.action.includes('REJECT') || log.action.includes('FORFEIT') ? '#c62828' : '#2e7d32'
-                                                }}>
-                                                    {log.action}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div style={{ fontWeight: 'bold' }}>{log.user ? log.user.username : 'System'}</div>
-                                                <div style={{ fontSize: '0.8em', color: '#888' }}>{log.user ? `ID: ${log.user.userId}` : ''}</div>
-                                            </td>
-                                            <td>{log.remarks}</td>
-                                        </tr>
-                                    ))}
+                                    {filteredLogs.map((log) => {
+                                        // Determine badge color
+                                        const action = (log.action || 'UNKNOWN').toUpperCase();
+                                        let badgeClass = 'status-badge neutral';
+                                        if (action.includes('PAY') || action.includes('CREATE') || action.includes('APPROVE') || action.includes('REDEEM')) {
+                                            badgeClass = 'status-badge success';
+                                        } else if (action.includes('REJECT') || action.includes('FORFEIT') || action.includes('DEFAULT')) {
+                                            badgeClass = 'status-badge danger';
+                                        }
+
+                                        return (
+                                            <tr key={log.logId}>
+                                                <td className="timestamp-cell">
+                                                    {new Date(log.timestamp).toLocaleString(undefined, {
+                                                        year: 'numeric', month: 'short', day: 'numeric',
+                                                        hour: '2-digit', minute: '2-digit'
+                                                    })}
+                                                </td>
+                                                <td>
+                                                    <span className={badgeClass}>
+                                                        {log.action || 'UNKNOWN'}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="user-cell">
+                                                        <span className="user-name">{log.user ? log.user.username : 'System'}</span>
+                                                        <span className="user-id">{log.user ? `ID: ${log.user.id}` : ''}</span>
+                                                    </div>
+                                                </td>
+                                                <td style={{ color: '#475569' }}>
+                                                    {log.remarks}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         )}
