@@ -19,7 +19,7 @@ function AdminDashboard() {
     sessionStorage.removeItem('user');
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
-    
+
     // Validate admin token on dashboard load
     const validateAdminToken = async () => {
       try {
@@ -33,7 +33,7 @@ function AdminDashboard() {
               'Authorization': `Bearer ${adminToken}`
             },
           });
-          
+
           if (!response.ok) {
             throw new Error('Admin session invalid');
           }
@@ -47,9 +47,9 @@ function AdminDashboard() {
         localStorage.removeItem('adminUser');
       }
     };
-    
+
     validateAdminToken();
-    
+
     const adminUserData = sessionStorage.getItem('adminUser') || localStorage.getItem('adminUser');
     if (adminUserData) {
       try {
@@ -68,7 +68,7 @@ function AdminDashboard() {
     } catch (error) {
       console.error('Admin logout API error:', error);
     }
-    
+
     // Clear admin tokens regardless of API result
     sessionStorage.removeItem('adminToken');
     sessionStorage.removeItem('adminUser');
@@ -93,13 +93,13 @@ function AdminDashboard() {
           </div>
           <span className="admin-breadcrumb">Thrift Shirt Pawnshop</span>
         </div>
-        
+
         <div className="admin-header-right">
           <div className="admin-user-info">
             <span className="admin-greeting">Welcome, {adminUser?.username}</span>
             <span className="admin-role-badge">ADMIN</span>
           </div>
-          <button 
+          <button
             className="admin-logout-btn"
             onClick={handleLogout}
             title="Logout"
@@ -115,11 +115,12 @@ function AdminDashboard() {
           <h3>Management</h3>
           <ul>
             <li><a href="#users" className="admin-nav-link">User Management</a></li>
+            <li><a href="/developer_admin_approve" className="admin-nav-link">Review Requests</a></li>
             <li><a href="#pawn" className="admin-nav-link">Pawn Management</a></li>
             <li><a href="#inventory" className="admin-nav-link">Inventory</a></li>
           </ul>
         </div>
-        
+
         <div className="admin-nav-section">
           <h3>System</h3>
           <ul>
@@ -132,7 +133,7 @@ function AdminDashboard() {
           <h3>Quick Actions</h3>
           <ul>
             <li>
-              <button 
+              <button
                 className="admin-nav-button"
                 onClick={handleGoToUserLogin}
               >
@@ -163,7 +164,7 @@ function AdminDashboard() {
                   <span className="stat-label">Users</span>
                 </div>
               </div>
-              
+
               <div className="stat-card">
                 <div className="stat-icon">💎</div>
                 <div className="stat-info">
@@ -171,7 +172,7 @@ function AdminDashboard() {
                   <span className="stat-label">Pawns</span>
                 </div>
               </div>
-              
+
               <div className="stat-card">
                 <div className="stat-icon">💰</div>
                 <div className="stat-info">
@@ -191,7 +192,7 @@ function AdminDashboard() {
                 <span className="status-label">Database</span>
                 <span className="status-value">Online</span>
               </div>
-              
+
               <div className="status-item">
                 <span className="status-indicator online"></span>
                 <span className="status-label">Authentication</span>

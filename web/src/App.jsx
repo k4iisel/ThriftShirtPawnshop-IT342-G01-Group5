@@ -8,6 +8,7 @@ import PawnStatus from './pages/PawnStatus';
 import History from './pages/History';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import DeveloperAdminApprove from './pages/DeveloperAdminApprove';
 import NotificationContainer from './components/NotificationContainer';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRouteProtection from './components/AdminRouteProtection';
@@ -22,28 +23,33 @@ function AppContent() {
   return (
     <>
       <NotificationContainer />
-        <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/create" element={<CreatePawn />} />
-            <Route path="/status" element={<PawnStatus />} />
-            <Route path="/history" element={<History />} />
-          </Route>
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/create" element={<CreatePawn />} />
+          <Route path="/status" element={<PawnStatus />} />
+          <Route path="/history" element={<History />} />
+        </Route>
 
-          {/* Admin Routes with Protection */}
-          <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
-          <Route path="/admin/login" element={
-            <AdminRouteProtection>
-              <AdminLogin />
-            </AdminRouteProtection>
-          } />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        </Routes>
+        {/* Admin Routes with Protection */}
+        <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+        <Route path="/admin/login" element={
+          <AdminRouteProtection>
+            <AdminLogin />
+          </AdminRouteProtection>
+        } />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/developer_admin_approve" element={
+          <AdminRouteProtection>
+            <DeveloperAdminApprove />
+          </AdminRouteProtection>
+        } />
+      </Routes>
     </>
   );
 }
