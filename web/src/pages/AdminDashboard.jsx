@@ -8,6 +8,11 @@ function AdminDashboard() {
   const [adminUser, setAdminUser] = useState(null);
   const navigate = useNavigate();
   const { notifySuccess, notifyError } = useNotify();
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activePawns: 0,
+    revenue: 0
+  });
 
   // Use the authentication hook for admin
   useAuth('ADMIN');
@@ -58,6 +63,21 @@ function AdminDashboard() {
         console.error('Error parsing admin user data:', error);
       }
     }
+
+    // Fetch dashboard stats
+    const fetchStats = async () => {
+      try {
+        const apiService = await import('../services/apiService');
+        const response = await apiService.default.admin.getDashboardStats();
+        if (response.data) {
+          setStats(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching admin stats:', error);
+      }
+    };
+
+    fetchStats();
   }, []);
 
   const handleLogout = async () => {
@@ -161,7 +181,7 @@ function AdminDashboard() {
               <div className="stat-card">
                 <div className="stat-icon">👥</div>
                 <div className="stat-info">
-                  <span className="stat-number">0</span>
+                  <span className="stat-number">{stats.totalUsers}</span>
                   <span className="stat-label">Users</span>
                 </div>
               </div>
@@ -169,15 +189,15 @@ function AdminDashboard() {
               <div className="stat-card">
                 <div className="stat-icon">💎</div>
                 <div className="stat-info">
-                  <span className="stat-number">0</span>
-                  <span className="stat-label">Pawns</span>
+                  <span className="stat-number">{stats.activePawns}</span>
+                  <span className="stat-label">Active Loans</span>
                 </div>
               </div>
 
               <div className="stat-card">
                 <div className="stat-icon">💰</div>
                 <div className="stat-info">
-                  <span className="stat-number">₱0</span>
+                  <span className="stat-number">₱{stats.revenue?.toFixed(2)}</span>
                   <span className="stat-label">Revenue</span>
                 </div>
               </div>

@@ -41,6 +41,12 @@ public class AdminController {
     @Autowired
     private com.thriftshirt.pawnshop.service.LoanService loanService;
 
+    @Autowired
+    private com.thriftshirt.pawnshop.repository.UserRepository userRepository;
+
+    @Autowired
+    private com.thriftshirt.pawnshop.repository.LoanRepository loanRepository;
+
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> getAdminDashboard(Authentication authentication) {
@@ -99,7 +105,24 @@ public class AdminController {
                     .body(ApiResponse.error("Admin access required"));
         }
 
-        return ResponseEntity.ok(ApiResponse.success("Admin stats placeholder - to be implemented"));
+        // 1. Total Users
+        long totalUsers = userRepository.count();
+
+        // 2. Aclive Loans (Active Pawns)
+        long activePawns = loanRepository.countByStatus("ACTIVE");
+
+        // 3. Revenue (From PAID loans)
+        java.math.BigDecimal revenue = loanRepository.sumLoanAmountByStatus("PAID");
+        if (revenue == null) {
+            revenue = java.math.BigDecimal.ZERO;
+        }
+
+        Map<String, Object> stats = Map.of(
+                "totalUsers", totalUsers,
+                "activePawns", activePawns,
+                "revenue", revenue);
+
+        return ResponseEntity.ok(ApiResponse.success("Admin stats retrieved", stats));
     }
 
     // Get all pawn requests (admin only)
