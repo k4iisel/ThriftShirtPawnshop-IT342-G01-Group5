@@ -280,6 +280,14 @@ export const apiService = {
       return await handleResponse(response);
     },
 
+    getLogs: async () => {
+      const response = await fetch(`${API_BASE_URL}/admin/logs`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    },
+
     createDefaultAccount: async () => {
       const response = await fetch(`${API_BASE_URL}/admin/create-default`, {
         method: 'POST',

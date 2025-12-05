@@ -17,6 +17,7 @@ import com.thriftshirt.pawnshop.exception.BadRequestException;
 import com.thriftshirt.pawnshop.exception.ResourceNotFoundException;
 import com.thriftshirt.pawnshop.repository.LoanRepository;
 import com.thriftshirt.pawnshop.repository.PawnRequestRepository;
+import com.thriftshirt.pawnshop.entity.TransactionLog;
 
 @Service
 @Transactional
@@ -29,6 +30,9 @@ public class LoanService {
 
     @Autowired
     private LoanRepository loanRepository;
+
+    @Autowired
+    private TransactionLogService transactionLogService;
 
     /**
      * Create a loan from an approved pawn request
@@ -78,6 +82,15 @@ public class LoanService {
         Loan savedLoan = pawnRequest.getLoan();
 
         logger.info("✅ Loan created successfully. Loan ID: {}, Pawn ID: {}", savedLoan.getLoanId(), pawnId);
+
+        // Log transaction
+        TransactionLog log = new TransactionLog();
+        log.setUser(pawnRequest.getUser());
+        log.setAction("LOAN_CREATED");
+        log.setRemarks("Loan created for item: " + pawnRequest.getItemName() + " (ID: " + pawnId + ")");
+        log.setCondition(pawnRequest.getCondition());
+        transactionLogService.logTransaction(log);
+
         return savedLoan;
     }
 
@@ -115,6 +128,15 @@ public class LoanService {
         pawnRequestRepository.save(pawn); // Explicitly save parent to ensure sync
 
         logger.info("✅ Loan {} paid and item redeemed", loanId);
+
+        // Log transaction
+        TransactionLog log = new TransactionLog();
+        log.setUser(pawn.getUser());
+        log.setAction("LOAN_PAID");
+        log.setRemarks("Loan " + loanId + " paid. Item " + pawn.getItemName() + " redeemed.");
+        log.setCondition(pawn.getCondition());
+        transactionLogService.logTransaction(log);
+
         return loan;
     }
 
@@ -142,6 +164,15 @@ public class LoanService {
         pawnRequestRepository.save(pawn);
 
         logger.info("⛔ Loan {} forfeited", loanId);
+
+        // Log transaction
+        TransactionLog log = new TransactionLog();
+        log.setUser(pawn.getUser());
+        log.setAction("LOAN_FORFEITED");
+        log.setRemarks("Loan " + loanId + " forfeited. Item " + pawn.getItemName() + " moved to inventory.");
+        log.setCondition(pawn.getCondition());
+        transactionLogService.logTransaction(log);
+
         return loan;
     }
 }

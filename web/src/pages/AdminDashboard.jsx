@@ -146,7 +146,7 @@ function AdminDashboard() {
           <h3>System</h3>
           <ul>
             <li><a href="#settings" className="admin-nav-link">Settings</a></li>
-            <li><a href="#logs" className="admin-nav-link">Activity Logs</a></li>
+            <li><a href="/developer_admin_logs" className="admin-nav-link">Activity Logs</a></li>
           </ul>
         </div>
 

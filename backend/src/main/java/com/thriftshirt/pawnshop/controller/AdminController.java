@@ -47,6 +47,9 @@ public class AdminController {
     @Autowired
     private com.thriftshirt.pawnshop.repository.LoanRepository loanRepository;
 
+    @Autowired
+    private com.thriftshirt.pawnshop.service.TransactionLogService transactionLogService;
+
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> getAdminDashboard(Authentication authentication) {
@@ -165,6 +168,26 @@ public class AdminController {
         } catch (Exception e) {
             logger.error("Error fetching inventory: ", e);
             return ResponseEntity.status(500).body(ApiResponse.error("Failed to fetch inventory: " + e.getMessage()));
+        }
+    }
+
+    // Get all activity logs (admin only)
+    @GetMapping("/logs")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> getActivityLogs(Authentication authentication) {
+        logger.info("Admin fetching activity logs: {}", authentication.getName());
+
+        User user = (User) authentication.getPrincipal();
+        if (!user.getRole().name().equals("ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
+        }
+
+        try {
+            List<com.thriftshirt.pawnshop.entity.TransactionLog> logs = transactionLogService.getAllLogs();
+            return ResponseEntity.ok(ApiResponse.success("Activity logs retrieved", logs));
+        } catch (Exception e) {
+            logger.error("Error fetching activity logs: ", e);
+            return ResponseEntity.status(500).body(ApiResponse.error("Failed to fetch logs: " + e.getMessage()));
         }
     }
 
