@@ -183,6 +183,70 @@ public class AdminController {
         }
     }
 
+    // Get all active loans (admin only)
+    @GetMapping("/loans/active")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> getActiveLoans(Authentication authentication) {
+        logger.info("Admin fetching active loans: {}", authentication.getName());
+
+        User user = (User) authentication.getPrincipal();
+        if (!user.getRole().name().equals("ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
+        }
+
+        try {
+            List<com.thriftshirt.pawnshop.entity.Loan> activeLoans = loanService.getAllActiveLoans();
+            return ResponseEntity.ok(ApiResponse.success("Active loans retrieved", activeLoans));
+        } catch (Exception e) {
+            logger.error("Error fetching active loans: ", e);
+            return ResponseEntity.status(500).body(ApiResponse.error("Failed to fetch active loans"));
+        }
+    }
+
+    // Process loan payment (admin only)
+    @PostMapping("/loans/{loanId}/payment")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> processLoanPayment(
+            @PathVariable Long loanId,
+            Authentication authentication) {
+        logger.info("Admin processing payment for loan {}: {}", loanId, authentication.getName());
+
+        User user = (User) authentication.getPrincipal();
+        if (!user.getRole().name().equals("ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
+        }
+
+        try {
+            com.thriftshirt.pawnshop.entity.Loan loan = loanService.processPayment(loanId);
+            return ResponseEntity.ok(ApiResponse.success("Payment processed successfully", loan));
+        } catch (Exception e) {
+            logger.error("Error processing payment: ", e);
+            return ResponseEntity.status(500).body(ApiResponse.error("Failed to process payment: " + e.getMessage()));
+        }
+    }
+
+    // Forfeit loan (admin only)
+    @PostMapping("/loans/{loanId}/forfeit")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> forfeitLoan(
+            @PathVariable Long loanId,
+            Authentication authentication) {
+        logger.info("Admin forfeiting loan {}: {}", loanId, authentication.getName());
+
+        User user = (User) authentication.getPrincipal();
+        if (!user.getRole().name().equals("ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
+        }
+
+        try {
+            com.thriftshirt.pawnshop.entity.Loan loan = loanService.forfeitLoan(loanId);
+            return ResponseEntity.ok(ApiResponse.success("Loan forfeited successfully", loan));
+        } catch (Exception e) {
+            logger.error("Error forfeiting loan: ", e);
+            return ResponseEntity.status(500).body(ApiResponse.error("Failed to forfeit loan: " + e.getMessage()));
+        }
+    }
+
     // Public endpoint to create default admin (no auth required for initial setup)
     @PostMapping("/create-default")
     public ResponseEntity<?> createDefaultAdmin() {

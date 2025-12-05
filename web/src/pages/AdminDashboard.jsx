@@ -117,7 +117,7 @@ function AdminDashboard() {
             <li><a href="#users" className="admin-nav-link">User Management</a></li>
             <li><a href="/developer_admin_approve" className="admin-nav-link">Review Requests</a></li>
             <li><a href="/developer_admin_validate" className="admin-nav-link">Item Validation</a></li>
-            <li><a href="#pawn" className="admin-nav-link">Pawn Management</a></li>
+            <li><a href="/developer_admin_loan_manager" className="admin-nav-link">Pawn Management</a></li>
             <li><a href="#inventory" className="admin-nav-link">Inventory</a></li>
           </ul>
         </div>

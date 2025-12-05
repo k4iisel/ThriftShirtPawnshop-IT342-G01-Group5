@@ -289,6 +289,29 @@ export const apiService = {
       });
       return await handleResponse(response);
     },
+
+    getActiveLoans: async () => {
+      const response = await fetch(`${API_BASE_URL}/admin/loans/active`, {
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    },
+
+    processLoanPayment: async (loanId) => {
+      const response = await fetch(`${API_BASE_URL}/admin/loans/${loanId}/payment`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    },
+
+    forfeitLoan: async (loanId) => {
+      const response = await fetch(`${API_BASE_URL}/admin/loans/${loanId}/forfeit`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    },
   },
 
   // Pawn Request endpoints

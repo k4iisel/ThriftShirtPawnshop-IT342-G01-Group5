@@ -10,6 +10,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import DeveloperAdminApprove from './pages/DeveloperAdminApprove';
 import DeveloperAdminValidate from './pages/DeveloperAdminValidate';
+import DeveloperAdminLoanManager from './pages/DeveloperAdminLoanManager';
 import NotificationContainer from './components/NotificationContainer';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRouteProtection from './components/AdminRouteProtection';
@@ -53,6 +54,11 @@ function AppContent() {
         <Route path="/developer_admin_validate" element={
           <AdminRouteProtection>
             <DeveloperAdminValidate />
+          </AdminRouteProtection>
+        } />
+        <Route path="/developer_admin_loan_manager" element={
+          <AdminRouteProtection>
+            <DeveloperAdminLoanManager />
           </AdminRouteProtection>
         } />
       </Routes>

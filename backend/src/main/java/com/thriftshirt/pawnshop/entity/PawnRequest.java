@@ -1,6 +1,7 @@
 package com.thriftshirt.pawnshop.entity;
 
 import java.time.LocalDate;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -24,6 +25,7 @@ public class PawnRequest {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private User user;
 
     @Column(nullable = false)
@@ -61,98 +63,128 @@ public class PawnRequest {
     private String appraisedBy;
 
     @OneToOne(mappedBy = "pawnItem", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties("pawnItem")
     private Loan loan;
 
     // Getters & Setters
     public Long getPawnId() {
         return pawnId;
     }
+
     public void setPawnId(Long pawnId) {
         this.pawnId = pawnId;
     }
+
     public User getUser() {
         return user;
     }
+
     public void setUser(User user) {
         this.user = user;
     }
+
     public String getItemName() {
         return itemName;
     }
+
     public void setItemName(String itemName) {
         this.itemName = itemName;
     }
+
     public String getCategory() {
         return category;
     }
+
     public void setCategory(String category) {
         this.category = category;
     }
+
     public String getCondition() {
         return condition;
     }
+
     public void setCondition(String condition) {
         this.condition = condition;
     }
+
     public String getBrand() {
         return brand;
     }
+
     public void setBrand(String brand) {
         this.brand = brand;
     }
+
     public String getSize() {
         return size;
     }
+
     public void setSize(String size) {
         this.size = size;
     }
+
     public String getDescription() {
         return description;
     }
+
     public void setDescription(String description) {
         this.description = description;
     }
+
     public Double getRequestedAmount() {
         return requestedAmount;
     }
+
     public void setRequestedAmount(Double requestedAmount) {
         this.requestedAmount = requestedAmount;
     }
+
     public Double getEstimatedValue() {
         return estimatedValue;
     }
+
     public void setEstimatedValue(Double estimatedValue) {
         this.estimatedValue = estimatedValue;
     }
+
     public String getPhotos() {
         return photos;
     }
+
     public void setPhotos(String photos) {
         this.photos = photos;
     }
+
     public String getStatus() {
         return status;
     }
+
     public void setStatus(String status) {
         this.status = status;
     }
+
     public LocalDate getAppraisalDate() {
         return appraisalDate;
     }
+
     public void setAppraisalDate(LocalDate appraisalDate) {
         this.appraisalDate = appraisalDate;
     }
+
     public String getAppraisedBy() {
         return appraisedBy;
     }
+
     public void setAppraisedBy(String appraisedBy) {
         this.appraisedBy = appraisedBy;
     }
+
     public Loan getLoan() {
         return loan;
     }
+
     public void setLoan(Loan loan) {
         this.loan = loan;
     }
-    
+
 }

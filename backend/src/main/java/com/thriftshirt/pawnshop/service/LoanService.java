@@ -2,6 +2,8 @@ package com.thriftshirt.pawnshop.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +15,7 @@ import com.thriftshirt.pawnshop.entity.Loan;
 import com.thriftshirt.pawnshop.entity.PawnRequest;
 import com.thriftshirt.pawnshop.exception.BadRequestException;
 import com.thriftshirt.pawnshop.exception.ResourceNotFoundException;
+import com.thriftshirt.pawnshop.repository.LoanRepository;
 import com.thriftshirt.pawnshop.repository.PawnRequestRepository;
 
 @Service
@@ -23,6 +26,9 @@ public class LoanService {
 
     @Autowired
     private PawnRequestRepository pawnRequestRepository;
+
+    @Autowired
+    private LoanRepository loanRepository;
 
     /**
      * Create a loan from an approved pawn request
@@ -73,5 +79,69 @@ public class LoanService {
 
         logger.info("✅ Loan created successfully. Loan ID: {}, Pawn ID: {}", savedLoan.getLoanId(), pawnId);
         return savedLoan;
+    }
+
+    /**
+     * Get all active loans
+     */
+    public List<Loan> getAllActiveLoans() {
+        return loanRepository.findAll().stream()
+                .filter(loan -> "ACTIVE".equals(loan.getStatus()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Process loan payment (Redeem item)
+     */
+    public Loan processPayment(Long loanId) {
+        logger.info("Processing payment for loan ID: {}", loanId);
+
+        Loan loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
+
+        if (!"ACTIVE".equals(loan.getStatus())) {
+            throw new BadRequestException("Loan is not active. Current status: " + loan.getStatus());
+        }
+
+        // Update Loan
+        loan.setStatus("PAID");
+        loan.setDateRedeemed(LocalDate.now());
+
+        // Update Pawn Item
+        PawnRequest pawn = loan.getPawnItem();
+        pawn.setStatus("REDEEMED");
+
+        loanRepository.save(loan);
+        pawnRequestRepository.save(pawn); // Explicitly save parent to ensure sync
+
+        logger.info("✅ Loan {} paid and item redeemed", loanId);
+        return loan;
+    }
+
+    /**
+     * Forfeit loan (Default on item)
+     */
+    public Loan forfeitLoan(Long loanId) {
+        logger.info("Forfeiting loan ID: {}", loanId);
+
+        Loan loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
+
+        if (!"ACTIVE".equals(loan.getStatus())) {
+            throw new BadRequestException("Loan is not active. Current status: " + loan.getStatus());
+        }
+
+        // Update Loan
+        loan.setStatus("DEFAULTED");
+
+        // Update Pawn Item
+        PawnRequest pawn = loan.getPawnItem();
+        pawn.setStatus("FORFEITED");
+
+        loanRepository.save(loan);
+        pawnRequestRepository.save(pawn);
+
+        logger.info("⛔ Loan {} forfeited", loanId);
+        return loan;
     }
 }
