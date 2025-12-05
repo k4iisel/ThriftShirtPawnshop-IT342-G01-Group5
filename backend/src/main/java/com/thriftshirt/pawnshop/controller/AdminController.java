@@ -148,6 +148,26 @@ public class AdminController {
         }
     }
 
+    // Get all forfeited items (Inventory)
+    @GetMapping("/inventory")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> getInventory(Authentication authentication) {
+        logger.info("Admin fetching inventory (forfeited items): {}", authentication.getName());
+
+        User user = (User) authentication.getPrincipal();
+        if (!user.getRole().name().equals("ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
+        }
+
+        try {
+            List<PawnRequestResponse> inventory = pawnRequestService.getPawnRequestsByStatus("FORFEITED");
+            return ResponseEntity.ok(ApiResponse.success("Inventory retrieved", inventory));
+        } catch (Exception e) {
+            logger.error("Error fetching inventory: ", e);
+            return ResponseEntity.status(500).body(ApiResponse.error("Failed to fetch inventory: " + e.getMessage()));
+        }
+    }
+
     // Update pawn request status (admin only)
     @PutMapping("/pawn-requests/{pawnId}/status")
     @PreAuthorize("hasRole('ADMIN')")
