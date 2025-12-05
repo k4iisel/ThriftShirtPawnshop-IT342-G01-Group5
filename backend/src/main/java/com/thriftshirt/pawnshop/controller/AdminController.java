@@ -50,6 +50,9 @@ public class AdminController {
     @Autowired
     private com.thriftshirt.pawnshop.service.TransactionLogService transactionLogService;
 
+    @Autowired
+    private com.thriftshirt.pawnshop.service.UserService userService;
+
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> getAdminDashboard(Authentication authentication) {
@@ -188,6 +191,48 @@ public class AdminController {
         } catch (Exception e) {
             logger.error("Error fetching activity logs: ", e);
             return ResponseEntity.status(500).body(ApiResponse.error("Failed to fetch logs: " + e.getMessage()));
+        }
+    }
+
+    // Get all users
+    @GetMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> getAllUsers(Authentication authentication) {
+        logger.info("Admin fetching all users: {}", authentication.getName());
+
+        User user = (User) authentication.getPrincipal();
+        if (!user.getRole().name().equals("ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
+        }
+
+        try {
+            List<User> users = userService.getAllUsers();
+            return ResponseEntity.ok(ApiResponse.success("Users retrieved", users));
+        } catch (Exception e) {
+            logger.error("Error fetching users: ", e);
+            return ResponseEntity.status(500).body(ApiResponse.error("Failed to fetch users: " + e.getMessage()));
+        }
+    }
+
+    // Toggle User Status (Ban/Unban)
+    @PostMapping("/users/{userId}/toggle-status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> toggleUserStatus(@PathVariable Long userId, Authentication authentication) {
+        logger.info("Admin toggling status for user {}: {}", userId, authentication.getName());
+
+        User adminUser = (User) authentication.getPrincipal(); // Get logged-in admin
+        if (!adminUser.getRole().name().equals("ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
+        }
+
+        try {
+            User updatedUser = userService.toggleUserStatus(userId, adminUser); // Pass adminUser for logging
+            String status = updatedUser.isEnabled() ? "Unbanned" : "Banned";
+            return ResponseEntity.ok(ApiResponse.success("User " + status + " successfully", updatedUser));
+        } catch (Exception e) {
+            logger.error("Error toggling user status: ", e);
+            return ResponseEntity.status(500)
+                    .body(ApiResponse.error("Failed to toggle user status: " + e.getMessage()));
         }
     }
 

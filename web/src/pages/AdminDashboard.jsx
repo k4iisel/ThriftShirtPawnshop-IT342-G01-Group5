@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import useNotify from '../hooks/useNotify';
 import useAuth from '../hooks/useAuth';
 import '../styles/AdminDashboard.css';
@@ -134,19 +134,42 @@ function AdminDashboard() {
         <div className="admin-nav-section">
           <h3>Management</h3>
           <ul>
-            <li><a href="#users" className="admin-nav-link">User Management</a></li>
-            <li><a href="/developer_admin_approve" className="admin-nav-link">Review Requests</a></li>
-            <li><a href="/developer_admin_validate" className="admin-nav-link">Item Validation</a></li>
-            <li><a href="/developer_admin_loan_manager" className="admin-nav-link">Pawn Management</a></li>
-            <li><a href="/developer_admin_inventory" className="admin-nav-link">Inventory</a></li>
+            <li>
+              <Link to="/developer_admin_users" className="admin-nav-link">
+                <span>👥</span> User Management
+              </Link>
+            </li>
+            <li>
+              <Link to="/developer_admin_approve" className="admin-nav-link">
+                <span>📝</span> Review Requests
+              </Link>
+            </li>
+            <li>
+              <Link to="/developer_admin_validate" className="admin-nav-link">
+                <span>✅</span> Item Validation
+              </Link>
+            </li>
+            <li>
+              <Link to="/developer_admin_loan_manager" className="admin-nav-link">
+                <span>💰</span> Pawn Management
+              </Link>
+            </li>
+            <li>
+              <Link to="/developer_admin_inventory" className="admin-nav-link">
+                <span>📦</span> Inventory
+              </Link>
+            </li>
           </ul>
         </div>
 
         <div className="admin-nav-section">
           <h3>System</h3>
           <ul>
-            <li><a href="#settings" className="admin-nav-link">Settings</a></li>
-            <li><a href="/developer_admin_logs" className="admin-nav-link">Activity Logs</a></li>
+            <li>
+              <Link to="/developer_admin_logs" className="admin-nav-link">
+                <span>📜</span> Activity Logs
+              </Link>
+            </li>
           </ul>
         </div>
 

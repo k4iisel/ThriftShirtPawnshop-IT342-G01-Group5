@@ -13,6 +13,7 @@ import DeveloperAdminValidate from './pages/DeveloperAdminValidate';
 import DeveloperAdminLoanManager from './pages/DeveloperAdminLoanManager';
 import DeveloperAdminInventory from './pages/DeveloperAdminInventory';
 import DeveloperAdminLogs from './pages/DeveloperAdminLogs';
+import DeveloperAdminUsers from './pages/DeveloperAdminUsers';
 import NotificationContainer from './components/NotificationContainer';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRouteProtection from './components/AdminRouteProtection';
@@ -71,6 +72,11 @@ function AppContent() {
         <Route path="/developer_admin_logs" element={
           <AdminRouteProtection>
             <DeveloperAdminLogs />
+          </AdminRouteProtection>
+        } />
+        <Route path="/developer_admin_users" element={
+          <AdminRouteProtection>
+            <DeveloperAdminUsers />
           </AdminRouteProtection>
         } />
       </Routes>
