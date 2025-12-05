@@ -27,126 +27,133 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/user")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173" })
 @PreAuthorize("hasRole('USER')")
 public class UserController {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
-    
+
     @Autowired
     private AuthService authService;
-    
+
     @Autowired
     private PawnRequestService pawnRequestService;
-    
+
     @GetMapping("/dashboard")
     public ResponseEntity<ApiResponse> getUserDashboard(Authentication authentication) {
         logger.info("User dashboard accessed by: {}", authentication.getName());
-        
+
         User user = (User) authentication.getPrincipal();
-        
+
         if (!user.getRole().name().equals("USER")) {
             logger.warn("Non-user attempted to access user dashboard: {}", authentication.getName());
             return ResponseEntity.status(403)
-                .body(ApiResponse.error("Access denied. User privileges required."));
+                    .body(ApiResponse.error("Access denied. User privileges required."));
         }
-        
+
         return ResponseEntity.ok(ApiResponse.success("User dashboard access granted"));
     }
-    
+
     @GetMapping("/profile")
     public ResponseEntity<UserProfileResponse> getUserProfile(Authentication authentication) {
         logger.info("User profile requested by: {}", authentication.getName());
-        
+
         String username = authentication.getName();
         User user = (User) authentication.getPrincipal();
-        
+
         if (!user.getRole().name().equals("USER")) {
             logger.warn("Non-user attempted to access user profile: {}", username);
             return ResponseEntity.status(403)
-                .body(null);
+                    .body(null);
         }
-        
+
         UserProfileResponse userProfile = authService.getCurrentUser(username);
         return ResponseEntity.ok(userProfile);
     }
-    
+
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse> getUserStats(Authentication authentication) {
         logger.info("User stats requested by: {}", authentication.getName());
-        
+
         User user = (User) authentication.getPrincipal();
-        
+
         if (!user.getRole().name().equals("USER")) {
             return ResponseEntity.status(403)
-                .body(ApiResponse.error("User access required"));
+                    .body(ApiResponse.error("User access required"));
         }
-        
-        return ResponseEntity.ok(ApiResponse.success("User stats - placeholder implementation"));
+
+        try {
+            var stats = pawnRequestService.getUserDashboardStats(user.getId());
+            return ResponseEntity.ok(ApiResponse.success("User stats retrieved successfully", stats));
+        } catch (Exception e) {
+            logger.error("Error retrieving user stats: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to retrieve user stats"));
+        }
     }
-    
+
     @PostMapping("/pawn-requests")
     public ResponseEntity<ApiResponse> createPawnRequest(
             @Valid @RequestBody CreatePawnRequestDTO requestDTO,
             Authentication authentication) {
         logger.info("Pawn request creation initiated by: {}", authentication.getName());
-        
+
         User user = (User) authentication.getPrincipal();
-        
+
         if (!user.getRole().name().equals("USER")) {
             logger.warn("Non-user attempted to create pawn request: {}", authentication.getName());
             return ResponseEntity.status(403)
-                .body(ApiResponse.error("User privileges required to create pawn requests"));
+                    .body(ApiResponse.error("User privileges required to create pawn requests"));
         }
-        
+
         try {
             var response = pawnRequestService.createPawnRequest(user.getId(), requestDTO);
             logger.info("Pawn request created successfully for user: {}", user.getId());
             return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Pawn request created successfully", response));
+                    .body(ApiResponse.success("Pawn request created successfully", response));
         } catch (Exception e) {
             logger.error("Error creating pawn request: ", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error("Failed to create pawn request: " + e.getMessage()));
+                    .body(ApiResponse.error("Failed to create pawn request: " + e.getMessage()));
         }
     }
-    
+
     @GetMapping("/pawn-requests")
     public ResponseEntity<ApiResponse> getUserPawnRequests(Authentication authentication) {
         logger.info("User pawn requests retrieved by: {}", authentication.getName());
-        
+
         User user = (User) authentication.getPrincipal();
-        
+
         if (!user.getRole().name().equals("USER")) {
             logger.warn("Non-user attempted to retrieve pawn requests: {}", authentication.getName());
             return ResponseEntity.status(403)
-                .body(ApiResponse.error("User privileges required"));
+                    .body(ApiResponse.error("User privileges required"));
         }
-        
+
         try {
             var requests = pawnRequestService.getUserPawnRequests(user.getId());
             return ResponseEntity.ok(ApiResponse.success("Pawn requests retrieved successfully", requests));
         } catch (Exception e) {
             logger.error("Error retrieving pawn requests: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Failed to retrieve pawn requests"));
+                    .body(ApiResponse.error("Failed to retrieve pawn requests"));
         }
     }
-    
+
     @DeleteMapping("/pawn-requests/{pawnId}")
     public ResponseEntity<ApiResponse> deletePawnRequest(
             @PathVariable Long pawnId,
             Authentication authentication) {
         logger.info("Pawn request deletion initiated for ID: {} by user: {}", pawnId, authentication.getName());
-        
+
         User user = (User) authentication.getPrincipal();
-        
+
         if (!user.getRole().name().equals("USER")) {
             logger.warn("Non-user attempted to delete pawn request: {}", authentication.getName());
             return ResponseEntity.status(403)
-                .body(ApiResponse.error("User privileges required"));
+                    .body(ApiResponse.error("User privileges required"));
         }
-        
+
         try {
             pawnRequestService.deletePawnRequest(pawnId, user.getId());
             logger.info("Pawn request {} deleted successfully by user: {}", pawnId, user.getId());
@@ -154,7 +161,7 @@ public class UserController {
         } catch (Exception e) {
             logger.error("Error deleting pawn request: ", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error("Failed to delete pawn request: " + e.getMessage()));
+                    .body(ApiResponse.error("Failed to delete pawn request: " + e.getMessage()));
         }
     }
 }

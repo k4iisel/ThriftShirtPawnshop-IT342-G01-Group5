@@ -16,13 +16,13 @@ function Dashboard() {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const error = searchParams.get('error');
-    
+
     console.log('📊 Dashboard - checking for error parameter:', {
       search: location.search,
       error: error,
       pathname: location.pathname
     });
-    
+
     if (error === 'admin_access_denied') {
       console.log('🚫 Dashboard - displaying admin access denied error');
       notifyError('🚫 Admin Access Blocked: You cannot access admin areas while logged in as a regular user. Stay on user pages or logout to access admin.');
@@ -83,11 +83,28 @@ function Dashboard() {
     }
   }, []);
 
-  const [userStats] = useState({
-    activePawns: 3,
-    loanAmount: 500,
-    dueSoon: 1
+  const [userStats, setUserStats] = useState({
+    activePawns: 0,
+    loanAmount: 0,
+    dueSoon: 0
   });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await apiService.auth.getUserStats();
+        if (response && response.data) {
+          setUserStats(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching user stats:', error);
+      }
+    };
+
+    if (userData) {
+      fetchStats();
+    }
+  }, [userData]);
 
   const [notifications] = useState([
     {
@@ -143,7 +160,7 @@ function Dashboard() {
               </svg>
             </div>
             <p className="stat-label">Loan Amount</p>
-            <h3 className="stat-value">{userStats.loanAmount}</h3>
+            <h3 className="stat-value">₱{userStats.loanAmount?.toFixed(2)}</h3>
           </div>
 
           <div className="user-stat-card">
@@ -159,10 +176,12 @@ function Dashboard() {
         </div>
 
         {/* Alert Message */}
-        <div className="alert-message">
-          <p>You have 1 loan(s) due soon.</p>
-          <a href="#" className="alert-link">View Details</a>
-        </div>
+        {userStats.dueSoon > 0 && (
+          <div className="alert-message">
+            <p>You have {userStats.dueSoon} loan(s) due soon.</p>
+            <a href="#" onClick={() => navigate('/history')} className="alert-link">View Details</a>
+          </div>
+        )}
 
         {/* Notifications Section */}
         <div className="notifications-section">

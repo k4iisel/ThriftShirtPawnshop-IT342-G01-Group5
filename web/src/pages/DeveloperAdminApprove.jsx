@@ -118,6 +118,7 @@ function DeveloperAdminApprove() {
                                 <thead style={{ background: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
                                     <tr>
                                         <th style={{ padding: '12px', textAlign: 'left' }}>Item</th>
+                                        <th style={{ padding: '12px', textAlign: 'left' }}>Photos</th>
                                         <th style={{ padding: '12px', textAlign: 'left' }}>Category</th>
                                         <th style={{ padding: '12px', textAlign: 'left' }}>Condition</th>
                                         <th style={{ padding: '12px', textAlign: 'left' }}>Amount</th>
@@ -138,6 +139,23 @@ function DeveloperAdminApprove() {
                                                 <td style={{ padding: '12px' }}>
                                                     <div style={{ fontWeight: 'bold' }}>{req.itemName}</div>
                                                     <div style={{ fontSize: '0.85em', color: '#6c757d' }}>{req.brand} - {req.size}</div>
+                                                </td>
+                                                <td style={{ padding: '12px' }}>
+                                                    {req.photos ? (
+                                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                                            {(() => {
+                                                                try {
+                                                                    const parsed = JSON.parse(req.photos);
+                                                                    const urls = Array.isArray(parsed) ? parsed : [req.photos];
+                                                                    return urls.map((url, i) => (
+                                                                        <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                                                                            <img src={url} alt="Item" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
+                                                                        </a>
+                                                                    ));
+                                                                } catch (e) { return null; }
+                                                            })()}
+                                                        </div>
+                                                    ) : '-'}
                                                 </td>
                                                 <td style={{ padding: '12px' }}>{req.category}</td>
                                                 <td style={{ padding: '12px' }}>{req.condition}</td>

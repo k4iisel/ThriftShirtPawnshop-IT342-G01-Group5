@@ -175,6 +175,14 @@ export const apiService = {
       return await handleResponse(response);
     },
 
+    getUserStats: async () => {
+      const response = await fetch(`${API_BASE_URL}/user/stats`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    },
+
     updateProfile: async (profileData) => {
       const response = await fetch(`${API_BASE_URL}/auth/profile`, {
         method: 'PUT',
@@ -343,6 +351,22 @@ export const apiService = {
 
       return await handleResponse(response);
     },
+  },
+
+  // File Upload
+  upload: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/upload`, {
+      method: 'POST',
+      headers: {
+        // Content-Type header must NOT be set manually for FormData, browser sets it with boundary
+        ...(apiService.auth.getToken() && { Authorization: `Bearer ${apiService.auth.getToken()}` })
+      },
+      body: formData,
+    });
+    return await handleResponse(response);
   },
 
   // Add more service endpoints here as needed (transactions, etc.)
