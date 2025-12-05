@@ -281,6 +281,14 @@ export const apiService = {
       });
       return await handleResponse(response);
     },
+
+    validatePawn: async (pawnId) => {
+      const response = await fetch(`${API_BASE_URL}/admin/pawn-requests/${pawnId}/validate`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    },
   },
 
   // Pawn Request endpoints

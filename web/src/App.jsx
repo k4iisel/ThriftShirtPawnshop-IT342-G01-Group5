@@ -9,6 +9,7 @@ import History from './pages/History';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import DeveloperAdminApprove from './pages/DeveloperAdminApprove';
+import DeveloperAdminValidate from './pages/DeveloperAdminValidate';
 import NotificationContainer from './components/NotificationContainer';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRouteProtection from './components/AdminRouteProtection';
@@ -47,6 +48,11 @@ function AppContent() {
         <Route path="/developer_admin_approve" element={
           <AdminRouteProtection>
             <DeveloperAdminApprove />
+          </AdminRouteProtection>
+        } />
+        <Route path="/developer_admin_validate" element={
+          <AdminRouteProtection>
+            <DeveloperAdminValidate />
           </AdminRouteProtection>
         } />
       </Routes>
