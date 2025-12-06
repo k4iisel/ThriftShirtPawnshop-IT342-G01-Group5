@@ -101,8 +101,26 @@ function History() {
         <Header />
 
         <div className="history-header">
-          <h2>Transaction History</h2>
-          <p>View all your past transactions and activities</p>
+          <div className="history-title-row">
+            <div className="history-title-section">
+              <h2>Transaction History</h2>
+              <p>View all your past transactions and activities</p>
+            </div>
+            {!loading && filteredHistory.length > 0 && (
+              <div className="history-inline-stats">
+                <div className="inline-stat">
+                  <span className="inline-stat-value">{filteredHistory.length}</span>
+                  <span className="inline-stat-label">Transactions</span>
+                </div>
+                <div className="inline-stat">
+                  <span className="inline-stat-value">
+                    ₱{filteredHistory.reduce((sum, t) => sum + t.amount, 0).toFixed(2)}
+                  </span>
+                  <span className="inline-stat-label">Total Amount</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Filter Buttons */}
@@ -190,21 +208,7 @@ function History() {
           )}
         </div>
 
-        {/* Summary Section */}
-        {!loading && filteredHistory.length > 0 && (
-          <div className="history-summary">
-            <div className="summary-card">
-              <div className="summary-label">Total Transactions</div>
-              <div className="summary-value">{filteredHistory.length}</div>
-            </div>
-            <div className="summary-card">
-              <div className="summary-label">Total Amount</div>
-              <div className="summary-value">
-                ₱{filteredHistory.reduce((sum, t) => sum + t.amount, 0).toFixed(2)}
-              </div>
-            </div>
-          </div>
-        )}
+
       </div>
     </div>
   );

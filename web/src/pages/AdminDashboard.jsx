@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import useNotify from '../hooks/useNotify';
 import useAuth from '../hooks/useAuth';
+import logo from '../assets/images/logo.png';
 import '../styles/AdminDashboard.css';
 
 function AdminDashboard() {
@@ -108,10 +109,9 @@ function AdminDashboard() {
       <header className="admin-header">
         <div className="admin-header-left">
           <div className="admin-logo">
-            <span className="admin-shield">👕</span>
+            <img src={logo} alt="Thrift Shirt Pawnshop" className="admin-logo-img" />
             <h1>Admin Portal</h1>
           </div>
-          <span className="admin-breadcrumb">Thrift Shirt Pawnshop</span>
         </div>
 
         <div className="admin-header-right">
@@ -136,27 +136,27 @@ function AdminDashboard() {
           <ul>
             <li>
               <Link to="/developer_admin_users" className="admin-nav-link">
-                <span>👥</span> User Management
+                <span className="nav-icon">👥</span> User Management
               </Link>
             </li>
             <li>
               <Link to="/developer_admin_approve" className="admin-nav-link">
-                <span>📝</span> Review Requests
+                <span className="nav-icon">⚖️</span> Review Requests
               </Link>
             </li>
             <li>
               <Link to="/developer_admin_validate" className="admin-nav-link">
-                <span>✅</span> Item Validation
+                <span className="nav-icon">✅</span> Item Validation
               </Link>
             </li>
             <li>
               <Link to="/developer_admin_loan_manager" className="admin-nav-link">
-                <span>💰</span> Pawn Management
+                <span className="nav-icon">💰</span> Pawn Management
               </Link>
             </li>
             <li>
               <Link to="/developer_admin_inventory" className="admin-nav-link">
-                <span>📦</span> Inventory
+                <span className="nav-icon">📦</span> Inventory
               </Link>
             </li>
           </ul>
@@ -167,7 +167,7 @@ function AdminDashboard() {
           <ul>
             <li>
               <Link to="/developer_admin_logs" className="admin-nav-link">
-                <span>📜</span> Activity Logs
+                <span className="nav-icon">📜</span> Activity Logs
               </Link>
             </li>
           </ul>
@@ -250,7 +250,7 @@ function AdminDashboard() {
       {/* Admin Footer */}
       <footer className="admin-footer">
         <div className="admin-footer-content">
-          <p>&copy; 2024 Thrift Shirt Pawnshop</p>
+          <p>&copy; 2025 Thrift Shirt Pawnshop</p>
           <p>Logged in as: <strong>{adminUser?.username}</strong></p>
         </div>
       </footer>

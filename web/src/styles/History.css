@@ -13,15 +13,23 @@
 
 /* History Header */
 .history-header {
-  text-align: center;
-  padding: 40px 30px 30px;
-  background: white;
+  padding: 30px;
   margin-bottom: 30px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.history-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.history-title-section {
+  flex: 1;
 }
 
 .history-header h2 {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
   color: #333;
   margin: 0 0 8px 0;
@@ -33,6 +41,40 @@
   color: #666;
   margin: 0;
   font-weight: 500;
+}
+
+/* Inline Stats */
+.history-inline-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.inline-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f9f3d4;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 2px solid #e6d99a;
+  min-width: 100px;
+}
+
+.inline-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #8b6914;
+  margin-bottom: 2px;
+  line-height: 1;
+}
+
+.inline-stat-label {
+  font-size: 11px;
+  color: #9d7518;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-align: center;
 }
 
 /* Filter Buttons */
@@ -326,11 +368,37 @@
 
 @media (max-width: 768px) {
   .history-header {
-    padding: 30px 20px 20px;
+    padding: 20px 15px;
+  }
+
+  .history-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
   }
 
   .history-header h2 {
-    font-size: 26px;
+    font-size: 24px;
+  }
+
+  .history-inline-stats {
+    width: 100%;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .inline-stat {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+  }
+
+  .inline-stat-value {
+    font-size: 18px;
+  }
+
+  .inline-stat-label {
+    font-size: 10px;
   }
 
   .history-list {
@@ -362,12 +430,32 @@
 }
 
 @media (max-width: 480px) {
+  .history-header {
+    padding: 16px 12px;
+  }
+
   .history-header h2 {
-    font-size: 22px;
+    font-size: 20px;
   }
 
   .history-header p {
-    font-size: 14px;
+    font-size: 13px;
+  }
+
+  .history-inline-stats {
+    gap: 8px;
+  }
+
+  .inline-stat {
+    padding: 8px 10px;
+  }
+
+  .inline-stat-value {
+    font-size: 16px;
+  }
+
+  .inline-stat-label {
+    font-size: 9px;
   }
 
   .history-filters {

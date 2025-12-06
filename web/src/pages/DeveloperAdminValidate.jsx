@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useNotify from '../hooks/useNotify';
 import apiService from '../services/apiService';
-import '../styles/AdminDashboard.css';
+import logo from '../assets/images/logo.png';
+import '../styles/DeveloperAdminValidate.css';
 
 function DeveloperAdminValidate() {
     useAuth('ADMIN');
@@ -52,79 +53,86 @@ function DeveloperAdminValidate() {
     };
 
     return (
-        <div className="admin-dashboard">
-            <header className="admin-header">
-                <div className="admin-header-left">
-                    <div className="admin-logo">
-                        <span className="admin-shield">🏷️</span>
-                        <h1>Validate Items</h1>
+        <div className="validate-page">
+            <header className="validate-header">
+                <div className="validate-header-left">
+                    <div className="validate-logo">
+                        <img src={logo} alt="Logo" className="validate-logo-img" />
+                        <h1 className="validate-title">Validate Items</h1>
                     </div>
-                    <span className="admin-breadcrumb">Admin / Item Validation</span>
                 </div>
-                <div className="admin-header-right">
-                    <button
-                        className="admin-logout-btn"
-                        onClick={() => navigate('/admin/dashboard')}
-                    >
-                        Back to Dashboard
-                    </button>
-                </div>
+                <button
+                    className="validate-back-btn"
+                    onClick={() => navigate('/admin/dashboard')}
+                >
+                    ← Back
+                </button>
             </header>
 
-            <main className="admin-main">
-                <div className="admin-content">
-                    <div className="admin-section-header" style={{ marginBottom: '20px' }}>
-                        <h2>Ready for Loan Release</h2>
-                        <p className="text-muted">These items have been approved online. Validate the physical item to release the loan.</p>
+            <main className="validate-main">
+                <div className="validate-content">
+                    <div className="validate-section-header">
+                        <h2 className="validate-section-title">Ready for Loan Release</h2>
+                        <p className="validate-section-description">These items have been approved online. Validate the physical item to release the loan.</p>
                     </div>
 
                     {loading ? (
-                        <div className="loading-spinner">Loading requests...</div>
+                        <div className="validate-loading">
+                            <div className="validate-loading-spinner"></div>
+                            <div className="validate-loading-text">Loading requests...</div>
+                        </div>
                     ) : (
-                        <div className="table-container" style={{ overflowX: 'auto', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead style={{ background: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
+                        <div className="validate-table-container">
+                            <table className="validate-table">
+                                <thead>
                                     <tr>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Item Details</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Condition</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Approved Amount</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Appraisal Date</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Actions</th>
+                                        <th>Item Details</th>
+                                        <th>Condition</th>
+                                        <th>Approved Amount</th>
+                                        <th>Appraisal Date</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {requests.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#6c757d' }}>
+                                            <td colSpan="5" className="validate-empty">
                                                 No approved requests waiting for validation.
                                             </td>
                                         </tr>
                                     ) : (
                                         requests.map(req => (
-                                            <tr key={req.pawnId} style={{ borderBottom: '1px solid #dee2e6' }}>
-                                                <td style={{ padding: '12px' }}>
-                                                    <div style={{ fontWeight: 'bold' }}>{req.itemName}</div>
-                                                    <div style={{ fontSize: '0.85em', color: '#6c757d' }}>{req.brand} - {req.size}</div>
+                                            <tr key={req.pawnId}>
+                                                <td>
+                                                    <div className="validate-item-details">
+                                                        <div className="validate-item-name">{req.itemName}</div>
+                                                        <div className="validate-item-info">{req.brand} - {req.size}</div>
+                                                    </div>
                                                 </td>
-                                                <td style={{ padding: '12px' }}>{req.condition}</td>
-                                                <td style={{ padding: '12px', fontWeight: 'bold', color: '#28a745' }}>
+                                                <td>
+                                                    <span className="validate-condition">{req.condition}</span>
+                                                </td>
+                                                <td className="validate-amount">
                                                     ₱{(req.estimatedValue || req.requestedAmount)?.toFixed(2)}
                                                 </td>
-                                                <td style={{ padding: '12px' }}>
-                                                    {req.appraisalDate ? new Date(req.appraisalDate).toLocaleDateString() : 'N/A'}
+                                                <td className="validate-date">
+                                                    {req.appraisalDate ? 
+                                                        new Date(req.appraisalDate).toLocaleDateString('en-US', {
+                                                            year: 'numeric',
+                                                            month: 'short',
+                                                            day: 'numeric'
+                                                        }) : 
+                                                        new Date().toLocaleDateString('en-US', {
+                                                            year: 'numeric',
+                                                            month: 'short',
+                                                            day: 'numeric'
+                                                        })
+                                                    }
                                                 </td>
-                                                <td style={{ padding: '12px' }}>
+                                                <td>
                                                     <button
+                                                        className="validate-action-btn"
                                                         onClick={() => handleValidate(req.pawnId, (req.estimatedValue || req.requestedAmount))}
-                                                        style={{
-                                                            padding: '8px 16px',
-                                                            background: '#007bff',
-                                                            color: 'white',
-                                                            border: 'none',
-                                                            borderRadius: '4px',
-                                                            cursor: 'pointer',
-                                                            fontWeight: '500'
-                                                        }}
                                                     >
                                                         Validate & Release Loan
                                                     </button>

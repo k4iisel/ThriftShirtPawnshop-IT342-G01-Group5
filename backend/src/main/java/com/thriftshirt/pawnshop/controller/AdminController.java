@@ -154,11 +154,11 @@ public class AdminController {
         }
     }
 
-    // Get all forfeited items (Inventory)
+    // Get all inventory items (APPROVED and FORFEITED)
     @GetMapping("/inventory")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> getInventory(Authentication authentication) {
-        logger.info("Admin fetching inventory (forfeited items): {}", authentication.getName());
+        logger.info("Admin fetching inventory (approved and forfeited items): {}", authentication.getName());
 
         User user = (User) authentication.getPrincipal();
         if (!user.getRole().name().equals("ADMIN")) {
@@ -166,7 +166,7 @@ public class AdminController {
         }
 
         try {
-            List<PawnRequestResponse> inventory = pawnRequestService.getPawnRequestsByStatus("FORFEITED");
+            List<PawnRequestResponse> inventory = pawnRequestService.getInventoryItems();
             return ResponseEntity.ok(ApiResponse.success("Inventory retrieved", inventory));
         } catch (Exception e) {
             logger.error("Error fetching inventory: ", e);
@@ -259,7 +259,7 @@ public class AdminController {
                         .body(ApiResponse.error("Status is required"));
             }
 
-            PawnRequestResponse updated = pawnRequestService.updatePawnRequestStatus(pawnId, newStatus);
+            PawnRequestResponse updated = pawnRequestService.updatePawnRequestStatus(pawnId, newStatus, user);
             logger.info("Pawn request {} status updated to: {}", pawnId, newStatus);
             return ResponseEntity.ok(ApiResponse.success("Status updated successfully", updated));
         } catch (Exception e) {

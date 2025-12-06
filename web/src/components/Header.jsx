@@ -87,6 +87,7 @@ const Header = () => {
     if (path === '/dashboard') return 'Dashboard';
     if (path === '/create') return 'Create Pawn';
     if (path === '/status') return 'Your Pawns';
+    if (path === '/history') return 'History';
     if (path === '/login') return 'Login';
     if (path === '/register') return 'Register';
     return '';

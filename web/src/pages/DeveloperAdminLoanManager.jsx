@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useNotify from '../hooks/useNotify';
 import apiService from '../services/apiService';
-import '../styles/AdminDashboard.css';
+import logo from '../assets/images/logo.png';
+import '../styles/DeveloperAdminLoanManager.css';
 
 function DeveloperAdminLoanManager() {
     useAuth('ADMIN');
@@ -65,109 +66,89 @@ function DeveloperAdminLoanManager() {
     };
 
     return (
-        <div className="admin-dashboard">
-            <header className="admin-header">
-                <div className="admin-header-left">
-                    <div className="admin-logo">
-                        <span className="admin-shield">💰</span>
-                        <h1>Loan Manager</h1>
+        <div className="loan-manager-page">
+            <header className="loan-manager-header">
+                <div className="loan-manager-header-left">
+                    <div className="loan-manager-logo">
+                        <img src={logo} alt="Logo" className="loan-manager-logo-img" />
+                        <h1 className="loan-manager-title">Loan Manager</h1>
                     </div>
-                    <span className="admin-breadcrumb">Admin / Loan Management</span>
                 </div>
-                <div className="admin-header-right">
-                    <button
-                        className="admin-logout-btn"
-                        onClick={() => navigate('/admin/dashboard')}
-                    >
-                        Back to Dashboard
-                    </button>
-                </div>
+                <button
+                    className="loan-manager-back-btn"
+                    onClick={() => navigate('/admin/dashboard')}
+                >
+                    ← Back
+                </button>
             </header>
 
-            <main className="admin-main">
-                <div className="admin-content">
-                    <div className="admin-section-header" style={{ marginBottom: '20px' }}>
-                        <h2>Active Loans</h2>
-                        <p className="text-muted">Monitor due dates, collect payments, or forfeit overdue items.</p>
+            <main className="loan-manager-main">
+                <div className="loan-manager-content">
+                    <div className="loan-manager-section-header">
+                        <h2 className="loan-manager-section-title">Active Loans</h2>
+                        <p className="loan-manager-section-description">Monitor due dates, collect payments, or forfeit overdue items.</p>
                     </div>
 
                     {loading ? (
-                        <div className="loading-spinner">Loading loans...</div>
+                        <div className="loan-manager-loading">
+                            <div className="loan-manager-loading-spinner"></div>
+                            <div className="loan-manager-loading-text">Loading loans...</div>
+                        </div>
                     ) : (
-                        <div className="table-container" style={{ overflowX: 'auto', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead style={{ background: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
+                        <div className="loan-manager-table-container">
+                            <table className="loan-manager-table">
+                                <thead>
                                     <tr>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Item Details</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Loan Amount</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Interest</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Due Date</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Status</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Actions</th>
+                                        <th>Item Details</th>
+                                        <th>Loan Amount</th>
+                                        <th>Interest</th>
+                                        <th>Due Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {loans.length === 0 ? (
                                         <tr>
-                                            <td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: '#6c757d' }}>
+                                            <td colSpan="6" className="loan-manager-empty">
                                                 No active loans found.
                                             </td>
                                         </tr>
                                     ) : (
                                         loans.map(loan => (
-                                            <tr key={loan.loanId} style={{ borderBottom: '1px solid #dee2e6' }}>
-                                                <td style={{ padding: '12px' }}>
-                                                    <div style={{ fontWeight: 'bold' }}>{loan.pawnItem ? loan.pawnItem.itemName : 'Unknown Item'}</div>
-                                                    <div style={{ fontSize: '0.85em', color: '#6c757d' }}>ID: {loan.loanId}</div>
+                                            <tr key={loan.loanId}>
+                                                <td>
+                                                    <div className="loan-manager-item-details">
+                                                        <div className="loan-manager-item-name">{loan.pawnItem ? loan.pawnItem.itemName : 'Unknown Item'}</div>
+                                                        <div className="loan-manager-item-id">ID: {loan.loanId}</div>
+                                                    </div>
                                                 </td>
-                                                <td style={{ padding: '12px', fontWeight: 'bold', color: '#28a745' }}>
+                                                <td className="loan-manager-amount">
                                                     ₱{loan.loanAmount?.toFixed(2)}
                                                 </td>
-                                                <td style={{ padding: '12px' }}>
+                                                <td className="loan-manager-interest">
                                                     {loan.interestRate}%
                                                 </td>
-                                                <td style={{ padding: '12px' }}>
+                                                <td className="loan-manager-due-date">
                                                     {loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : 'N/A'}
                                                 </td>
-                                                <td style={{ padding: '12px' }}>
-                                                    <span style={{
-                                                        padding: '4px 8px',
-                                                        borderRadius: '12px',
-                                                        fontSize: '0.85em',
-                                                        background: '#e3f2fd',
-                                                        color: '#0d47a1'
-                                                    }}>
+                                                <td>
+                                                    <span className="loan-manager-status">
                                                         {loan.status}
                                                     </span>
                                                 </td>
-                                                <td style={{ padding: '12px' }}>
-                                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                                <td>
+                                                    <div className="loan-manager-actions">
                                                         <button
+                                                            className="loan-manager-action-btn paid"
                                                             onClick={() => handlePayment(loan.loanId)}
-                                                            style={{
-                                                                padding: '6px 12px',
-                                                                background: '#28a745',
-                                                                color: 'white',
-                                                                border: 'none',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer',
-                                                                fontSize: '0.9em'
-                                                            }}
                                                             title="Mark as Paid (Redeem)"
                                                         >
-                                                            ✓ Pay
+                                                            ✓ Paid
                                                         </button>
                                                         <button
+                                                            className="loan-manager-action-btn forfeit"
                                                             onClick={() => handleForfeit(loan.loanId)}
-                                                            style={{
-                                                                padding: '6px 12px',
-                                                                background: '#dc3545',
-                                                                color: 'white',
-                                                                border: 'none',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer',
-                                                                fontSize: '0.9em'
-                                                            }}
                                                             title="Mark as Forfeited"
                                                         >
                                                             ⚠ Forfeit

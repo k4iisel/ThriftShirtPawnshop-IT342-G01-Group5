@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useNotify from '../hooks/useNotify';
-import '../styles/AdminDashboard.css';
+import logo from '../assets/images/logo.png';
+import '../styles/DeveloperAdmin.css';
 
 function DeveloperAdminInventory() {
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('ALL');
+    const [statusFilter, setStatusFilter] = useState('ALL');
     const navigate = useNavigate();
     const { notifyError } = useNotify();
 
@@ -37,58 +38,60 @@ function DeveloperAdminInventory() {
     };
 
     const filteredItems = inventory.filter(item => {
-        if (filter === 'ALL') return true;
-        return item.category === filter;
+        const statusMatch = statusFilter === 'ALL' || item.status === statusFilter;
+        return statusMatch;
     });
 
-    const categories = ['ALL', ...new Set(inventory.map(item => item.category))];
+    const statuses = ['ALL', ...new Set(inventory.map(item => item.status))];
 
     return (
-        <div className="admin-dashboard">
-            <header className="admin-header">
-                <div className="admin-header-left">
-                    <div className="admin-logo">
-                        <span className="admin-shield">🛡️</span>
-                        <h1>Store Inventory</h1>
+        <div className="dev-admin-page">
+            <header className="dev-admin-header">
+                <div className="dev-admin-header-left">
+                    <div className="dev-admin-logo">
+                        <img src={logo} alt="Logo" className="dev-admin-logo-img" />
+                        <h1 className="dev-admin-title">Inventory</h1>
                     </div>
                 </div>
-                <button className="admin-logout-btn" onClick={handleBack}>
-                    Back to Dashboard
+                <button className="dev-admin-back-btn" onClick={handleBack}>
+                    ← Back
                 </button>
             </header>
 
-            <main className="admin-main">
-                <div className="admin-content" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                    <div className="admin-actions-bar" style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                            <span style={{ marginRight: '10px', fontWeight: 'bold' }}>Filter by Category:</span>
+            <main className="dev-admin-main">
+                <div className="dev-admin-content">
+                    <div className="dev-admin-toolbar">
+                        <div className="dev-admin-filters">
                             <select
-                                value={filter}
-                                onChange={(e) => setFilter(e.target.value)}
-                                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                                className="dev-admin-select"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
                             >
-                                {categories.map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
+                                <option value="ALL">All Items</option>
+                                {statuses.slice(1).map(status => (
+                                    <option key={status} value={status}>{status}</option>
                                 ))}
                             </select>
                         </div>
-                        <div style={{ fontWeight: 'bold', fontSize: '1.1em' }}>
-                            Total Items: {filteredItems.length}
+                        <div className="dev-admin-count">
+                            {filteredItems.length} items
                         </div>
                     </div>
 
-                    <div className="admin-table-container">
+                    <div className="dev-admin-table-container">
                         {loading ? (
-                            <div className="loading-spinner">Loading inventory...</div>
+                            <div className="dev-admin-loading">
+                                <div className="dev-admin-loading-spinner"></div>
+                                <div className="dev-admin-loading-text">Loading inventory...</div>
+                            </div>
                         ) : filteredItems.length === 0 ? (
-                            <div className="no-data-message">No items in inventory.</div>
+                            <div className="dev-admin-empty">No items in inventory.</div>
                         ) : (
-                            <table className="admin-table">
+                            <table className="dev-admin-table">
                                 <thead>
                                     <tr>
-                                        <th>Item Name</th>
-                                        <th>Photos</th>
-                                        <th>Category</th>
+                                        <th>Item</th>
+                                        <th>Photo</th>
                                         <th>Description</th>
                                         <th>Value</th>
                                         <th>Status</th>
@@ -98,33 +101,35 @@ function DeveloperAdminInventory() {
                                     {filteredItems.map((item) => (
                                         <tr key={item.pawnId}>
                                             <td>
-                                                <div style={{ fontWeight: 'bold' }}>{item.itemName}</div>
-                                                <div style={{ fontSize: '0.85em', color: '#666' }}>ID: {item.pawnId}</div>
+                                                <div className="dev-admin-item-name">{item.itemName}</div>
+                                                <div className="dev-admin-item-id">#{item.pawnId}</div>
                                             </td>
                                             <td>
                                                 {item.photos ? (
-                                                    <div style={{ display: 'flex', gap: '4px' }}>
-                                                        {(() => {
-                                                            try {
-                                                                const parsed = JSON.parse(item.photos);
-                                                                const urls = Array.isArray(parsed) ? parsed : [item.photos];
-                                                                return urls.map((url, i) => (
-                                                                    <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                                                                        <img src={url} alt="Item" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
-                                                                    </a>
-                                                                ));
-                                                            } catch (e) { return null; }
-                                                        })()}
-                                                    </div>
-                                                ) : '-'}
+                                                    (() => {
+                                                        try {
+                                                            const parsed = JSON.parse(item.photos);
+                                                            const urls = Array.isArray(parsed) ? parsed : [item.photos];
+                                                            return (
+                                                                <img 
+                                                                    src={urls[0]} 
+                                                                    alt="Item" 
+                                                                    className="dev-admin-photo"
+                                                                    onClick={() => window.open(urls[0], '_blank')}
+                                                                />
+                                                            );
+                                                        } catch (e) {
+                                                            return <span className="dev-admin-no-photo">-</span>;
+                                                        }
+                                                    })()
+                                                ) : <span className="dev-admin-no-photo">-</span>}
                                             </td>
-                                            <td>{item.category}</td>
-                                            <td>{item.description}</td>
-                                            <td style={{ fontWeight: 'bold', color: '#2e7d32' }}>
+                                            <td className="dev-admin-item-desc">{item.description}</td>
+                                            <td className="dev-admin-item-value">
                                                 ₱{item.estimatedValue?.toFixed(2) || item.requestedAmount?.toFixed(2)}
                                             </td>
                                             <td>
-                                                <span className={`status-badge status-forfeited`}>
+                                                <span className={`dev-admin-status ${item.status.toLowerCase()}`}>
                                                     {item.status}
                                                 </span>
                                             </td>

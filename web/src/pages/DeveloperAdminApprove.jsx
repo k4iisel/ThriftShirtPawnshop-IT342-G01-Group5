@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useNotify from '../hooks/useNotify';
 import apiService from '../services/apiService';
-import '../styles/AdminDashboard.css'; // Reusing admin styles
+import logo from '../assets/images/logo.png';
+import '../styles/DeveloperAdmin.css';
 
 function DeveloperAdminApprove() {
     // Use admin authentication hook
@@ -62,17 +63,17 @@ function DeveloperAdminApprove() {
             <header className="admin-header">
                 <div className="admin-header-left">
                     <div className="admin-logo">
-                        <span className="admin-shield">⚖️</span>
+                        <img src={logo} alt="Thrift Shirt Pawnshop" className="admin-logo-img" />
                         <h1>Review Requests</h1>
                     </div>
                     <span className="admin-breadcrumb">Admin / Review</span>
                 </div>
                 <div className="admin-header-right">
                     <button
-                        className="admin-logout-btn"
+                        className="admin-back-btn"
                         onClick={() => navigate('/admin/dashboard')}
                     >
-                        Back to Dashboard
+                        ← Back to Dashboard
                     </button>
                 </div>
             </header>
@@ -111,7 +112,10 @@ function DeveloperAdminApprove() {
                     </div>
 
                     {loading ? (
-                        <div className="loading-spinner">Loading requests...</div>
+                        <div className="admin-loading">
+                            <div className="loading-spinner"></div>
+                            <div className="loading-text">Loading requests...</div>
+                        </div>
                     ) : (
                         <div className="table-container" style={{ overflowX: 'auto', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>

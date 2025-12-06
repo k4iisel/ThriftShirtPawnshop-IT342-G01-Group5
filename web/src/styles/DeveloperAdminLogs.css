@@ -1,0 +1,367 @@
+/* Developer Admin Logs Specific Styles */
+
+/* Logs Page Layout */
+.logs-page {
+  min-height: 100vh;
+  background: #f9f3d4;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Logs Header */
+.logs-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.logs-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logs-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logs-logo-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+.logs-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.logs-back-btn {
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logs-back-btn:hover {
+  background: #e5e7eb;
+}
+
+/* Main Content */
+.logs-main {
+  flex: 1;
+  padding: 24px;
+}
+
+.logs-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Search and Filter Toolbar */
+.logs-toolbar {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  gap: 20px;
+}
+
+.logs-search {
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 14px;
+  width: 400px;
+  transition: all 0.2s ease;
+}
+
+.logs-search:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.logs-search::placeholder {
+  color: #9ca3af;
+}
+
+.logs-count {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Table Container */
+.logs-table-container {
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Logs Table */
+.logs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.logs-table th {
+  background: #f8f9fa;
+  padding: 16px 20px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.logs-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.logs-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+.logs-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Loading State */
+.logs-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  background: #ffffff;
+  border-radius: 8px;
+}
+
+.logs-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f4f6;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: logsSpinner 1s linear infinite;
+}
+
+.logs-loading-text {
+  margin-top: 16px;
+  color: #6b7280;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+@keyframes logsSpinner {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Empty State */
+.logs-empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: #6b7280;
+  background: #ffffff;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+/* Timestamp Cell */
+.logs-timestamp {
+  font-family: 'SF Mono', Consolas, 'Roboto Mono', monospace;
+  font-size: 13px;
+  color: #4b5563;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Action Badge */
+.logs-action-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.logs-action-badge.success {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.logs-action-badge.danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.logs-action-badge.neutral {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+/* User Cell */
+.logs-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.logs-user-name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.logs-user-id {
+  font-size: 12px;
+  color: #9ca3af;
+  font-family: 'SF Mono', Consolas, 'Roboto Mono', monospace;
+}
+
+/* Remarks Cell */
+.logs-remarks {
+  color: #4b5563;
+  line-height: 1.5;
+  max-width: 300px;
+  word-wrap: break-word;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .logs-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  
+  .logs-search {
+    width: 100%;
+  }
+  
+  .logs-count {
+    text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .logs-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .logs-main {
+    padding: 16px;
+  }
+  
+  .logs-table {
+    font-size: 12px;
+  }
+  
+  .logs-table th,
+  .logs-table td {
+    padding: 12px 8px;
+  }
+  
+  .logs-search {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+@media (max-width: 640px) {
+  .logs-table th:nth-child(3),
+  .logs-table td:nth-child(3) {
+    display: none; /* Hide user column on small screens */
+  }
+  
+  .logs-table th:nth-child(4),
+  .logs-table td:nth-child(4) {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Dark mode support (if needed) */
+@media (prefers-color-scheme: dark) {
+  .logs-page {
+    background: #111827;
+  }
+  
+  .logs-header {
+    background: #1f2937;
+    border-bottom-color: #374151;
+  }
+  
+  .logs-title {
+    color: #f9fafb;
+  }
+  
+  .logs-back-btn {
+    background: #374151;
+    color: #d1d5db;
+  }
+  
+  .logs-back-btn:hover {
+    background: #4b5563;
+  }
+  
+  .logs-toolbar,
+  .logs-table-container,
+  .logs-loading,
+  .logs-empty {
+    background: #1f2937;
+  }
+  
+  .logs-search {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .logs-table th {
+    background: #374151;
+    color: #e5e7eb;
+    border-bottom-color: #4b5563;
+  }
+  
+  .logs-table td {
+    border-bottom-color: #374151;
+  }
+  
+  .logs-table tr:hover {
+    background-color: #374151;
+  }
+}

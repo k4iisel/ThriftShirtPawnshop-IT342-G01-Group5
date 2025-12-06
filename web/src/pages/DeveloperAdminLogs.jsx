@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useNotify from '../hooks/useNotify';
-import '../styles/AdminDashboard.css';
+import logo from '../assets/images/logo.png';
+import '../styles/DeveloperAdminLogs.css';
 
 function DeveloperAdminLogs() {
     const [logs, setLogs] = useState([]);
@@ -47,69 +48,68 @@ function DeveloperAdminLogs() {
     });
 
     return (
-        <div className="admin-dashboard">
-            <header className="admin-header">
-                <div className="admin-header-left">
-                    <div className="admin-logo">
-                        <span className="admin-shield">📜</span>
-                        <h1>Activity Logs</h1>
+        <div className="logs-page">
+            <header className="logs-header">
+                <div className="logs-header-left">
+                    <div className="logs-logo">
+                        <img src={logo} alt="Logo" className="logs-logo-img" />
+                        <h1 className="logs-title">Activity Logs</h1>
                     </div>
                 </div>
-                <button className="admin-logout-btn" onClick={handleBack}>
-                    Back to Dashboard
+                <button className="logs-back-btn" onClick={handleBack}>
+                    ← Back
                 </button>
             </header>
 
-            <main className="admin-main">
-                <div className="admin-content" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-
-                    <div className="admin-actions-bar">
+            <main className="logs-main">
+                <div className="logs-content">
+                    <div className="logs-toolbar">
                         <input
-                            className="admin-search-input"
+                            className="logs-search"
                             type="text"
                             placeholder="Search logs by user, action, or remarks..."
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
                         />
-                        <div className="total-count">
-                            Total Logs: {filteredLogs.length}
+                        <div className="logs-count">
+                            {filteredLogs.length} logs
                         </div>
                     </div>
 
-                    <div className="admin-table-container">
+                    <div className="logs-table-container">
                         {loading ? (
-                            <div className="admin-loading" style={{ minHeight: '200px', background: 'white' }}>
-                                <div className="loading-spinner"></div>
-                                <p>Loading activity logs...</p>
+                            <div className="logs-loading">
+                                <div className="logs-loading-spinner"></div>
+                                <div className="logs-loading-text">Loading activity logs...</div>
                             </div>
                         ) : filteredLogs.length === 0 ? (
-                            <div className="no-data-message" style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+                            <div className="logs-empty">
                                 No activity logs found.
                             </div>
                         ) : (
-                            <table className="admin-table">
+                            <table className="logs-table">
                                 <thead>
                                     <tr>
-                                        <th style={{ width: '20%' }}>Timestamp</th>
-                                        <th style={{ width: '15%' }}>Action</th>
-                                        <th style={{ width: '25%' }}>User</th>
-                                        <th style={{ width: '40%' }}>Remarks</th>
+                                        <th>Timestamp</th>
+                                        <th>Action</th>
+                                        <th>User</th>
+                                        <th>Remarks</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredLogs.map((log) => {
                                         // Determine badge color
                                         const action = (log.action || 'UNKNOWN').toUpperCase();
-                                        let badgeClass = 'status-badge neutral';
+                                        let badgeClass = 'logs-action-badge neutral';
                                         if (action.includes('PAY') || action.includes('CREATE') || action.includes('APPROVE') || action.includes('REDEEM')) {
-                                            badgeClass = 'status-badge success';
+                                            badgeClass = 'logs-action-badge success';
                                         } else if (action.includes('REJECT') || action.includes('FORFEIT') || action.includes('DEFAULT')) {
-                                            badgeClass = 'status-badge danger';
+                                            badgeClass = 'logs-action-badge danger';
                                         }
 
                                         return (
                                             <tr key={log.logId}>
-                                                <td className="timestamp-cell">
+                                                <td className="logs-timestamp">
                                                     {new Date(log.timestamp).toLocaleString(undefined, {
                                                         year: 'numeric', month: 'short', day: 'numeric',
                                                         hour: '2-digit', minute: '2-digit'
@@ -121,12 +121,12 @@ function DeveloperAdminLogs() {
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <div className="user-cell">
-                                                        <span className="user-name">{log.user ? log.user.username : 'System'}</span>
-                                                        <span className="user-id">{log.user ? `ID: ${log.user.id}` : ''}</span>
+                                                    <div className="logs-user-info">
+                                                        <span className="logs-user-name">{log.user ? log.user.username : 'System'}</span>
+                                                        <span className="logs-user-id">{log.user ? `ID: ${log.user.id}` : ''}</span>
                                                     </div>
                                                 </td>
-                                                <td style={{ color: '#475569' }}>
+                                                <td className="logs-remarks">
                                                     {log.remarks}
                                                 </td>
                                             </tr>

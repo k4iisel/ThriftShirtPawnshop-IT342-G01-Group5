@@ -1,9 +1,9 @@
 package com.thriftshirt.pawnshop.service;
 
-import java.util.List;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -139,18 +139,52 @@ public class PawnRequestService {
     }
 
     /**
+     * Get all pawn requests for inventory (APPROVED and FORFEITED items)
+     */
+    public List<PawnRequestResponse> getInventoryItems() {
+        logger.info("Fetching inventory items (APPROVED and FORFEITED status)");
+
+        List<PawnRequest> approvedItems = pawnRequestRepository.findByStatus("APPROVED");
+        List<PawnRequest> forfeitedItems = pawnRequestRepository.findByStatus("FORFEITED");
+        
+        List<PawnRequest> allInventoryItems = new java.util.ArrayList<>();
+        allInventoryItems.addAll(approvedItems);
+        allInventoryItems.addAll(forfeitedItems);
+        
+        return allInventoryItems.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Update pawn request status (for admin)
      */
-    public PawnRequestResponse updatePawnRequestStatus(Long pawnId, String status) {
+    public PawnRequestResponse updatePawnRequestStatus(Long pawnId, String status, User adminUser) {
         logger.info("Updating pawn request {} status to: {}", pawnId, status);
 
         PawnRequest pawnRequest = pawnRequestRepository.findById(pawnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pawn request not found"));
 
         pawnRequest.setStatus(status);
+        
+        // Set appraisal date and appraised by when status is changed to APPROVED
+        if ("APPROVED".equals(status)) {
+            pawnRequest.setAppraisalDate(LocalDate.now());
+            pawnRequest.setAppraisedBy(adminUser.getUsername());
+            logger.info("Setting appraisal date for pawn request {}: {} by admin: {}", 
+                       pawnId, LocalDate.now(), adminUser.getUsername());
+        }
+        
         PawnRequest updated = pawnRequestRepository.save(pawnRequest);
 
         return mapToResponse(updated);
+    }
+    
+    /**
+     * Update pawn request status (for admin) - backward compatibility
+     */
+    public PawnRequestResponse updatePawnRequestStatus(Long pawnId, String status) {
+        return updatePawnRequestStatus(pawnId, status, null);
     }
 
     /**
