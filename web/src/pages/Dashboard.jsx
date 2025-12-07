@@ -92,18 +92,62 @@ function Dashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await apiService.auth.getUserStats();
-        if (response && response.data) {
-          setUserStats(response.data);
+        console.log('📊 Dashboard: Fetching pawn requests...');
+        // Fetch all pawn requests for the user
+        const response = await apiService.pawnRequest.getAll();
+        
+        console.log('📊 Dashboard: Response received:', response);
+        console.log('📊 Dashboard: Response.success:', response.success);
+        console.log('📊 Dashboard: Response.data:', response.data);
+        
+        if (response.success && response.data) {
+          console.log('📊 Dashboard: Total pawns fetched:', response.data.length);
+          console.log('📊 Dashboard: All pawns:', response.data);
+          
+          // Filter only APPROVED pawns as active
+          const approvedPawns = response.data.filter(pawn => {
+            console.log(`📊 Dashboard: Checking pawn - Status: "${pawn.status}" (type: ${typeof pawn.status}), Item: ${pawn.itemName}`);
+            return pawn.status === 'APPROVED';
+          });
+          
+          console.log('📊 Dashboard: Approved pawns count:', approvedPawns.length);
+          console.log('📊 Dashboard: Approved pawns:', approvedPawns);
+          
+          // Count approved pawns
+          const activePawnCount = approvedPawns.length;
+          
+          // Calculate total loan amount from approved pawns
+          const totalLoanAmount = approvedPawns.reduce((sum, pawn) => {
+            return sum + (pawn.requestedAmount || 0);
+          }, 0);
+          
+          // Count pawns due soon (assuming 30 day loan period)
+          const dueSoonCount = approvedPawns.filter(pawn => {
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 30);
+            const today = new Date();
+            const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+            return daysUntilDue <= 7 && daysUntilDue > 0;
+          }).length;
+          
+          console.log('📊 Dashboard: Final stats - Active:', activePawnCount, 'Amount:', totalLoanAmount, 'Due Soon:', dueSoonCount);
+          
+          setUserStats({
+            activePawns: activePawnCount,
+            loanAmount: totalLoanAmount,
+            dueSoon: dueSoonCount
+          });
+        } else {
+          console.warn('📊 Dashboard: Response not successful or no data');
         }
       } catch (error) {
-        console.error('Error fetching user stats:', error);
+        console.error('❌ Dashboard: Error fetching user stats:', error);
       }
     };
 
-    if (userData) {
-      fetchStats();
-    }
+    // Fetch stats on component mount and whenever userData changes
+    console.log('📊 Dashboard: Attempting to fetch stats, userData:', userData);
+    fetchStats();
   }, [userData]);
 
   const [notifications] = useState([

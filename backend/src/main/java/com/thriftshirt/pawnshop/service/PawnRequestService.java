@@ -49,6 +49,14 @@ public class PawnRequestService {
             throw new BadRequestException("Requested amount cannot exceed 10,000");
         }
 
+        // Validate photos - maximum 2 images
+        if (requestDTO.getPhotos() != null && !requestDTO.getPhotos().isEmpty()) {
+            int imageCount = countImagesInJson(requestDTO.getPhotos());
+            if (imageCount > 2) {
+                throw new BadRequestException("Maximum 2 images allowed. You provided " + imageCount);
+            }
+        }
+
         // Find user
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -271,5 +279,40 @@ public class PawnRequestService {
                 pawnRequest.getStatus(),
                 pawnRequest.getAppraisalDate(),
                 pawnRequest.getAppraisedBy());
+    }
+
+    /**
+     * Count the number of images in a JSON array string (e.g., ["image1", "image2"])
+     */
+    private int countImagesInJson(String jsonPhotos) {
+        if (jsonPhotos == null || jsonPhotos.trim().isEmpty()) {
+            return 0;
+        }
+        try {
+            // Count occurrences of image data - simple heuristic
+            // JSON array format: ["data:image/...", "data:image/..."]
+            if (jsonPhotos.startsWith("[") && jsonPhotos.endsWith("]")) {
+                // Remove brackets and count commas + 1 (or 0 if empty array)
+                String content = jsonPhotos.substring(1, jsonPhotos.length() - 1).trim();
+                if (content.isEmpty()) {
+                    return 0;
+                }
+                // Count by splitting on commas that appear outside of quotes
+                int count = 1;
+                boolean inQuotes = false;
+                for (char c : content.toCharArray()) {
+                    if (c == '"' && (content.indexOf(c) == 0 || content.charAt(content.indexOf(c) - 1) != '\\')) {
+                        inQuotes = !inQuotes;
+                    }
+                    if (c == ',' && !inQuotes) {
+                        count++;
+                    }
+                }
+                return count;
+            }
+        } catch (Exception e) {
+            logger.warn("Error counting images in JSON photos: {}", e.getMessage());
+        }
+        return 0;
     }
 }
