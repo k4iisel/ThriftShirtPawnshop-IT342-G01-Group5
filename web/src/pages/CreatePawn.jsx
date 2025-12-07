@@ -40,17 +40,62 @@ function CreatePawn() {
 
     // Limit to 2 images (Front and Back)
     if (files.length > 2) {
-      alert('Maximum 2 images allowed (Front and Back)');
+      notify.notifyError('Maximum 2 images allowed (Front and Back)');
+      return;
+    }
+
+    // Check for duplicate images by comparing file sizes and names
+    const currentImages = formData.images;
+    const newImages = [];
+    const duplicates = [];
+
+    for (const newFile of files) {
+      let isDuplicate = false;
+
+      // Check against already selected images
+      for (const existingFile of currentImages) {
+        if (newFile.name === existingFile.name && newFile.size === existingFile.size) {
+          isDuplicate = true;
+          duplicates.push(newFile.name);
+          break;
+        }
+      }
+
+      // Check against other new files being added
+      if (!isDuplicate) {
+        for (const checkFile of newImages) {
+          if (newFile.name === checkFile.name && newFile.size === checkFile.size) {
+            isDuplicate = true;
+            duplicates.push(newFile.name);
+            break;
+          }
+        }
+      }
+
+      if (!isDuplicate) {
+        newImages.push(newFile);
+      }
+    }
+
+    if (duplicates.length > 0) {
+      notify.notifyError(`Duplicate image(s) not allowed: ${duplicates.join(', ')}`);
+    }
+
+    // Only add non-duplicate files, respecting the 2-image limit
+    const totalImages = [...currentImages, ...newImages];
+    if (totalImages.length > 2) {
+      notify.notifyError(`Cannot add ${newImages.length} images. You can only have 2 images total. Currently have ${currentImages.length}.`);
       return;
     }
 
     setFormData(prev => ({
       ...prev,
-      images: files
+      images: totalImages
     }));
 
-    // Create preview URLs
-    const previewUrls = files.map(file => URL.createObjectURL(file));
+    // Create preview URLs for all images (existing + new)
+    const allFiles = [...currentImages, ...newImages];
+    const previewUrls = allFiles.map(file => URL.createObjectURL(file));
     setImagePreview(previewUrls);
   };
 
