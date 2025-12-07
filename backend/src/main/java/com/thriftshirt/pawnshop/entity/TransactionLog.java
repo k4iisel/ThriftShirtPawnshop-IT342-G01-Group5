@@ -1,9 +1,18 @@
 package com.thriftshirt.pawnshop.entity;
 
-import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "transaction_log")
@@ -30,6 +39,9 @@ public class TransactionLog {
 
     @Column(name = "item_condition")
     private String condition;
+
+    @Column(columnDefinition = "TEXT")
+    private String photos;
 
     // Getters & Setters
     public Long getLogId() {
@@ -78,5 +90,13 @@ public class TransactionLog {
 
     public void setCondition(String condition) {
         this.condition = condition;
+    }
+
+    public String getPhotos() {
+        return photos;
+    }
+
+    public void setPhotos(String photos) {
+        this.photos = photos;
     }
 }

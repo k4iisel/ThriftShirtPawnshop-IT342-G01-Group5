@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Header from '../components/Header';
+import ImageModal from '../components/ImageModal';
 import useAuth from '../hooks/useAuth';
 import useNotify from '../hooks/useNotify';
 import apiService from '../services/apiService';
@@ -89,45 +90,147 @@ function Dashboard() {
     dueSoon: 0
   });
 
+  const [recentPawnedItems, setRecentPawnedItems] = useState([]);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [selectedItemName, setSelectedItemName] = useState('');
+
+  // Function to fetch recent pawned items with due date prioritization
+  const fetchRecentPawnedItems = async () => {
+    try {
+      const response = await apiService.loan.getUserLoans();
+      
+      if (response.success && response.data) {
+        // Filter for PAWNED status items
+        const pawnedItems = response.data.filter(pawn => pawn.status === 'PAWNED');
+        
+        // Sort by due date priority: due items first, then by most recent
+        const sortedItems = pawnedItems.sort((a, b) => {
+          const today = new Date();
+          const aHasDue = a.loan && a.loan.dueDate;
+          const bHasDue = b.loan && b.loan.dueDate;
+          
+          if (aHasDue && bHasDue) {
+            const aDueDate = new Date(a.loan.dueDate);
+            const bDueDate = new Date(b.loan.dueDate);
+            const aDaysUntilDue = Math.ceil((aDueDate - today) / (1000 * 60 * 60 * 24));
+            const bDaysUntilDue = Math.ceil((bDueDate - today) / (1000 * 60 * 60 * 24));
+            
+            // If both are due or overdue (≤ 0), show most overdue first
+            if (aDaysUntilDue <= 0 && bDaysUntilDue <= 0) {
+              return aDaysUntilDue - bDaysUntilDue;
+            }
+            // If both are due soon (≤ 7), show soonest first
+            if (aDaysUntilDue <= 7 && bDaysUntilDue <= 7) {
+              return aDaysUntilDue - bDaysUntilDue;
+            }
+            // Prioritize due items over non-due items
+            if (aDaysUntilDue <= 7 && bDaysUntilDue > 7) return -1;
+            if (bDaysUntilDue <= 7 && aDaysUntilDue > 7) return 1;
+          }
+          
+          // If only one has due date, prioritize it
+          if (aHasDue && !bHasDue) {
+            const aDueDate = new Date(a.loan.dueDate);
+            const aDaysUntilDue = Math.ceil((aDueDate - today) / (1000 * 60 * 60 * 24));
+            return aDaysUntilDue <= 7 ? -1 : 1;
+          }
+          if (bHasDue && !aHasDue) {
+            const bDueDate = new Date(b.loan.dueDate);
+            const bDaysUntilDue = Math.ceil((bDueDate - today) / (1000 * 60 * 60 * 24));
+            return bDaysUntilDue <= 7 ? 1 : -1;
+          }
+          
+          // If neither has due date, sort by most recent
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        }).slice(0, 10); // Show top 10 items
+        
+        setRecentPawnedItems(sortedItems);
+      }
+    } catch (error) {
+      console.error('Error fetching recent pawned items:', error);
+    }
+  };
+
+  // Handle viewing images
+  const handleViewImages = (pawn) => {
+    let images = [];
+    
+    if (pawn.photos) {
+      try {
+        const photosData = JSON.parse(pawn.photos);
+        if (Array.isArray(photosData)) {
+          images = photosData;
+        } else if (typeof photosData === 'string') {
+          images = [photosData];
+        }
+      } catch (e) {
+        images = [pawn.photos];
+      }
+    }
+    
+    if (images.length === 0) {
+      images = [`https://via.placeholder.com/400x400?text=${encodeURIComponent(pawn.itemName)}`];
+    }
+    
+    setSelectedImages(images);
+    setSelectedItemName(pawn.itemName);
+    setShowImageModal(true);
+  };
+
+  // Load recent pawned items on component mount
+  useEffect(() => {
+    fetchRecentPawnedItems();
+  }, []);
+
+
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        console.log('📊 Dashboard: Fetching pawn requests...');
-        // Fetch all pawn requests for the user
-        const response = await apiService.pawnRequest.getAll();
+        console.log('📊 Dashboard: Fetching user loans...');
+        // Fetch active loans for the user
+        const response = await apiService.loan.getUserLoans();
         
-        console.log('📊 Dashboard: Response received:', response);
-        console.log('📊 Dashboard: Response.success:', response.success);
-        console.log('📊 Dashboard: Response.data:', response.data);
+        console.log('📊 Dashboard: Loans response received:', response);
         
         if (response.success && response.data) {
-          console.log('📊 Dashboard: Total pawns fetched:', response.data.length);
-          console.log('📊 Dashboard: All pawns:', response.data);
+          console.log('📊 Dashboard: Total loans fetched:', response.data.length);
+          console.log('📊 Dashboard: All loans:', response.data);
           
-          // Filter only APPROVED pawns as active
-          const approvedPawns = response.data.filter(pawn => {
+          // Filter for PAWNED status items (the API returns pawn requests, not loans)
+          const pawnedItems = response.data.filter(pawn => {
             console.log(`📊 Dashboard: Checking pawn - Status: "${pawn.status}" (type: ${typeof pawn.status}), Item: ${pawn.itemName}`);
-            return pawn.status === 'APPROVED';
+            return pawn.status === 'PAWNED';
           });
           
-          console.log('📊 Dashboard: Approved pawns count:', approvedPawns.length);
-          console.log('📊 Dashboard: Approved pawns:', approvedPawns);
+          console.log('📊 Dashboard: Pawned items count:', pawnedItems.length);
+          console.log('📊 Dashboard: Pawned items:', pawnedItems);
           
-          // Count approved pawns
-          const activePawnCount = approvedPawns.length;
+          // Count active pawned items
+          const activePawnCount = pawnedItems.length;
           
-          // Calculate total loan amount from approved pawns
-          const totalLoanAmount = approvedPawns.reduce((sum, pawn) => {
-            return sum + (pawn.requestedAmount || 0);
+          // Calculate total loan amount from pawned items (use requestedAmount since these are pawn requests)
+          const totalLoanAmount = pawnedItems.reduce((sum, pawn) => {
+            return sum + (parseFloat(pawn.requestedAmount) || 0);
           }, 0);
           
-          // Count pawns due soon (assuming 30 day loan period)
-          const dueSoonCount = approvedPawns.filter(pawn => {
-            const dueDate = new Date();
-            dueDate.setDate(dueDate.getDate() + 30);
-            const today = new Date();
-            const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-            return daysUntilDue <= 7 && daysUntilDue > 0;
+          // Count items due soon (within 7 days of due date)
+          const dueSoonCount = pawnedItems.filter(pawn => {
+            if (pawn.loan && pawn.loan.dueDate) {
+              const dueDate = new Date(pawn.loan.dueDate);
+              const today = new Date();
+              const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+              return daysUntilDue <= 7 && daysUntilDue >= 0;
+            }
+            // If no due date available, check if item was created more than 23 days ago (assuming 30-day loan period)
+            if (pawn.createdAt) {
+              const createdDate = new Date(pawn.createdAt);
+              const today = new Date();
+              const daysSinceCreated = Math.ceil((today - createdDate) / (1000 * 60 * 60 * 24));
+              return daysSinceCreated >= 23; // Due soon if created 23+ days ago (7 days before 30-day limit)
+            }
+            return false;
           }).length;
           
           console.log('📊 Dashboard: Final stats - Active:', activePawnCount, 'Amount:', totalLoanAmount, 'Due Soon:', dueSoonCount);
@@ -137,6 +240,9 @@ function Dashboard() {
             loanAmount: totalLoanAmount,
             dueSoon: dueSoonCount
           });
+          
+          // Refresh recent pawned items
+          fetchRecentPawnedItems();
         } else {
           console.warn('📊 Dashboard: Response not successful or no data');
         }
@@ -150,26 +256,26 @@ function Dashboard() {
     fetchStats();
   }, [userData]);
 
-  const [notifications] = useState([
-    {
-      id: 1,
-      message: 'Your pawn request PWN-002 has been appraised at ₱100. Loan Approved!',
-      time: '2 hours ago',
-      unread: true
-    },
-    {
-      id: 2,
-      message: 'Loan PWN-001 due in 3 days. Please redeem or renew to avoid penalties.',
-      time: '2 hours ago',
-      unread: true
-    },
-    {
-      id: 3,
-      message: 'New vintage item added in thrift catalogue. Check them out!',
-      time: '2 hours ago',
-      unread: true
+
+
+  // Refresh recent pawned items
+  const [refreshing, setRefreshing] = useState(false);
+  
+  const refreshRecentPawns = async () => {
+    if (refreshing) return;
+    
+    setRefreshing(true);
+    
+    try {
+      await fetchRecentPawnedItems();
+    } catch (error) {
+      console.error('Error refreshing recent pawns:', error);
+    } finally {
+      setTimeout(() => {
+        setRefreshing(false);
+      }, 500);
     }
-  ]);
+  };
 
   return (
     <div className="dashboard-page">
@@ -223,34 +329,83 @@ function Dashboard() {
         {userStats.dueSoon > 0 && (
           <div className="alert-message">
             <p>You have {userStats.dueSoon} loan(s) due soon.</p>
-            <a href="#" onClick={() => navigate('/history')} className="alert-link">View Details</a>
+            <a href="#" onClick={() => {
+              navigate('/history');
+            }} className="alert-link">View Details</a>
           </div>
         )}
 
-        {/* Notifications Section */}
-        <div className="notifications-section">
+        {/* Recent Pawned Items Section */}
+        <div className="activity-logs-section">
           <div className="section-header">
             <div className="section-title">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
               </svg>
-              <h2>Notifications</h2>
+              <h2>Recent Pawned</h2>
+            </div>
+            <div className="activity-logs-actions">
+              <button 
+                className="clear-activity-btn"
+                onClick={refreshRecentPawns}
+                disabled={refreshing}
+              >
+                {refreshing ? 'Refreshing...' : 'Refresh'}
+              </button>
             </div>
           </div>
 
-          <div className="notifications-list">
-            {notifications.map(notification => (
-              <div key={notification.id} className="notification-item">
-                <div className="notification-content">
-                  <p className="notification-message">{notification.message}</p>
-                  <span className="notification-time">{notification.time}</span>
-                </div>
-                {notification.unread && <span className="notification-dot"></span>}
+          <div className="activity-logs-list">
+            {recentPawnedItems.length > 0 ? (
+              recentPawnedItems.map(pawn => {
+                const today = new Date();
+                const hasDueDate = pawn.loan && pawn.loan.dueDate;
+                const isDue = hasDueDate && new Date(pawn.loan.dueDate) <= today;
+                const isDueSoon = hasDueDate && !isDue && Math.ceil((new Date(pawn.loan.dueDate) - today) / (1000 * 60 * 60 * 24)) <= 7;
+                
+                return (
+                  <div 
+                    key={pawn.id} 
+                    className={`activity-log-item ${isDue ? 'log-error' : isDueSoon ? 'log-warning' : 'log-success'} clickable-pawn`}
+                    onClick={() => navigate('/status')}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className={`log-icon ${isDue ? 'log-icon-error' : isDueSoon ? 'log-icon-warning' : 'log-icon-success'}`}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                      </svg>
+                    </div>
+                    <div className="log-content">
+                      <p className="log-action">{pawn.itemName}</p>
+                      <p className="log-details">
+                        Amount: ₱{parseFloat(pawn.requestedAmount).toFixed(2)}
+                        {hasDueDate && (
+                          <> • Due: {new Date(pawn.loan.dueDate).toLocaleDateString()}
+                          {isDue && <span className="due-status overdue"> (OVERDUE)</span>}
+                          {isDueSoon && <span className="due-status due-soon"> (DUE SOON)</span>}
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="no-logs">
+                <p>No recent pawned items</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
+
+        {/* Image Modal */}
+        {showImageModal && (
+          <ImageModal
+            images={selectedImages}
+            itemName={selectedItemName}
+            onClose={() => setShowImageModal(false)}
+          />
+        )}
       </div>
     </div>
   );

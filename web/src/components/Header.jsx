@@ -63,10 +63,11 @@ const Header = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Mock notifications - replace with real data from your API
+  // Recent transaction notifications
   const [notifications, setNotifications] = useState([
-    { id: 1, message: 'Your pawn request has been approved', read: false, time: '2h ago' },
-    { id: 2, message: 'New shirts available in the shop', read: false, time: '5h ago' },
+    { id: 1, message: 'Pawn request approved - Item: Nike Shirt, Amount: ₱250', read: false, time: '1h ago' },
+    { id: 2, message: 'Loan payment due soon - Item: Vintage Jacket, Due: Tomorrow', read: false, time: '3h ago' },
+    { id: 3, message: 'Item renewed successfully - Item: Denim Jeans, New due: Dec 15', read: true, time: '1d ago' },
   ]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -219,7 +220,6 @@ const Header = () => {
                         className={`notification-item ${!notification.read ? 'unread' : ''}`}
                         onClick={() => {
                           markAsRead(notification.id);
-                          navigate('/notifications');
                         }}
                       >
                         <div className="notification-message">{notification.message}</div>
@@ -231,11 +231,7 @@ const Header = () => {
                   )}
                 </div>
 
-                <div className="notification-footer">
-                  <Link to="/notifications" onClick={() => setShowNotifications(false)}>
-                    View all notifications
-                  </Link>
-                </div>
+
               </div>
             )}
           </div>

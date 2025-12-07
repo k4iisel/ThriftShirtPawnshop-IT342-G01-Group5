@@ -1,85 +1,233 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Header from '../components/Header';
+import ImageModal from '../components/ImageModal';
 import useNotify from '../hooks/useNotify';
+import apiService from '../services/apiService';
 import '../styles/History.css';
 
 function History() {
   const [historyData, setHistoryData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [deletingItems, setDeletingItems] = useState(new Set());
+  const [clearingHistory, setClearingHistory] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [selectedItemName, setSelectedItemName] = useState('');
   const notify = useNotify();
 
   useEffect(() => {
-    // Simulate loading history data
-    setTimeout(() => {
-      // Static history data for demonstration
-      const staticHistory = [
-        {
-          id: 1,
-          transactionId: 'TXN-2024-001',
-          itemName: 'Nike Air Jordan 1',
-          type: 'PAWN',
-          amount: 5000,
-          status: 'COMPLETED',
-          date: '2024-01-15',
-          description: 'Item pawned successfully'
-        },
-        {
-          id: 2,
-          transactionId: 'TXN-2024-002',
-          itemName: 'Adidas Ultraboost',
-          type: 'REDEEM',
-          amount: 5250,
-          status: 'COMPLETED',
-          date: '2024-02-20',
-          description: 'Item redeemed with interest'
-        },
-        {
-          id: 3,
-          transactionId: 'TXN-2024-003',
-          itemName: 'Supreme Box Logo Tee',
-          type: 'PAWN',
-          amount: 3000,
-          status: 'PENDING',
-          date: '2024-03-10',
-          description: 'Awaiting appraisal'
-        },
-        {
-          id: 4,
-          transactionId: 'TXN-2024-004',
-          itemName: 'Yeezy Boost 350',
-          type: 'RENEW',
-          amount: 150,
-          status: 'COMPLETED',
-          date: '2024-03-25',
-          description: 'Loan period extended'
-        },
-        {
-          id: 5,
-          transactionId: 'TXN-2024-005',
-          itemName: 'Off-White Hoodie',
-          type: 'PAWN',
-          amount: 4500,
-          status: 'REJECTED',
-          date: '2024-04-05',
-          description: 'Item condition not acceptable'
-        }
-      ];
-      setHistoryData(staticHistory);
-      setLoading(false);
-    }, 500);
+    fetchTransactionHistory();
   }, []);
 
-  const filteredHistory = filterStatus === 'ALL' 
-    ? historyData 
-    : historyData.filter(item => item.status === filterStatus);
+  const deleteTransaction = async (logId) => {
+    if (deletingItems.has(logId)) return;
+    
+    try {
+      setDeletingItems(prev => new Set(prev).add(logId));
+      const response = await apiService.loan.deleteTransaction(logId);
+      
+      if (response.success) {
+        setHistoryData(prev => prev.filter(item => item.id !== logId));
+        notify.notifySuccess('Transaction deleted successfully');
+      } else {
+        notify.notifyError('Failed to delete transaction');
+      }
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      notify.notifyError('Error deleting transaction: ' + error.message);
+    } finally {
+      setDeletingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(logId);
+        return newSet;
+      });
+    }
+  };
+
+  const clearAllHistory = async () => {
+    if (clearingHistory) return;
+    
+    const confirmed = window.confirm('Are you sure you want to clear all transaction history? This action cannot be undone.');
+    if (!confirmed) return;
+    
+    try {
+      setClearingHistory(true);
+      const response = await apiService.loan.clearTransactionHistory();
+      
+      if (response.success) {
+        setHistoryData([]);
+        notify.notifySuccess('Transaction history cleared successfully');
+      } else {
+        notify.notifyError('Failed to clear transaction history');
+      }
+    } catch (error) {
+      console.error('Error clearing transaction history:', error);
+      notify.notifyError('Error clearing transaction history: ' + error.message);
+    } finally {
+      setClearingHistory(false);
+    }
+  };
+
+  const handleViewImages = (transaction) => {
+    let images = [];
+    
+    // Try to parse photos from transaction.photos if available
+    if (transaction.photos) {
+      try {
+        const photosData = JSON.parse(transaction.photos);
+        if (Array.isArray(photosData)) {
+          images = photosData;
+        } else if (typeof photosData === 'string') {
+          images = [photosData];
+        }
+      } catch (e) {
+        // If parsing fails, treat as single image URL
+        images = [transaction.photos];
+      }
+    }
+    
+    // If no images, use placeholder
+    if (images.length === 0) {
+      images = [`https://via.placeholder.com/400x400?text=${encodeURIComponent(transaction.itemName)}`];
+    }
+    
+    setSelectedImages(images);
+    setSelectedItemName(transaction.itemName);
+    setShowImageModal(true);
+  };
+
+  const fetchTransactionHistory = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.loan.getTransactionHistory();
+      
+      if (response.success && response.data) {
+        // Transform the API response to match the UI structure
+        const transformedHistory = response.data.map((log, index) => {
+          // Extract transaction type and status from action
+          let type = 'OTHER';
+          let status = 'COMPLETED';
+          let amount = extractAmount(log.remarks) || 0;
+          
+          if (log.action.includes('CREATED') || log.action.includes('PAWN')) {
+            type = 'PAWN';
+            status = 'COMPLETED';
+          } else if (log.action.includes('PAID') || log.action.includes('REDEEM')) {
+            type = 'REDEEM';
+            status = 'COMPLETED';
+          } else if (log.action.includes('RENEW')) {
+            type = 'RENEW';
+            status = 'COMPLETED';
+            // For renewals, extract renewal fee
+            amount = extractRenewalFee(log.remarks) || 0;
+          } else if (log.action.includes('FORFEIT')) {
+            type = 'FORFEIT';
+            status = 'COMPLETED';
+            amount = 0; // No amount for forfeitures
+          }
+          
+          // Override status for pending transactions
+          if (log.action.includes('PENDING')) {
+            status = 'PENDING';
+          } else if (log.action.includes('REJECT')) {
+            status = 'REJECTED';
+          }
+          
+          return {
+            id: log.logId,
+            transactionId: `TXN-${new Date(log.timestamp).getFullYear()}-${String(log.logId).padStart(3, '0')}`,
+            itemName: extractItemName(log.remarks) || 'Unknown Item',
+            type: type,
+            amount: amount,
+            status: status,
+            date: new Date(log.timestamp).toLocaleDateString('en-GB'),
+            description: log.remarks,
+            photos: log.photos
+          };
+        });
+        
+        setHistoryData(transformedHistory);
+        
+        if (transformedHistory.length === 0) {
+          notify.notifyInfo('No transaction history found.');
+        } else {
+          notify.notifySuccess(`✅ Loaded ${transformedHistory.length} transaction(s)`);
+        }
+      } else {
+        console.error('❌ API response error:', response);
+        notify.notifyError('Failed to load transaction history: ' + (response.message || 'Unknown error'));
+        setHistoryData([]);
+      }
+    } catch (error) {
+      console.error('❌ Network error fetching transaction history:', error);
+      notify.notifyError('Network error loading transaction history: ' + error.message);
+      setHistoryData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper function to extract item name from remarks
+  const extractItemName = (remarks) => {
+    if (!remarks) return null;
+    const itemMatch = remarks.match(/item:\s*([^(]+)/);
+    return itemMatch ? itemMatch[1].trim() : null;
+  };
+
+  // Helper function to extract amount from remarks
+  const extractAmount = (remarks) => {
+    if (!remarks) return 0;
+    
+    // Look for requested amount first (highest priority)
+    const requestedAmountMatch = remarks.match(/Requested\s*amount:\s*₱([0-9,.]+)/i);
+    if (requestedAmountMatch) {
+      return parseFloat(requestedAmountMatch[1].replace(/,/g, ''));
+    }
+    
+    // Look for other amount patterns
+    const amountPatterns = [
+      /₱([0-9,]+(?:\.[0-9]{2})?)/,
+      /amount:\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+      /loan\s*amount:\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+    ];
+    
+    for (const pattern of amountPatterns) {
+      const match = remarks.match(pattern);
+      if (match) {
+        return parseFloat(match[1].replace(/,/g, ''));
+      }
+    }
+    
+    return 0;
+  };
+
+  // Helper function to extract renewal fee from remarks
+  const extractRenewalFee = (remarks) => {
+    if (!remarks) return 0;
+    
+    const feeMatch = remarks.match(/fee:\s*₱([0-9,]+(?:\.[0-9]{2})?)/i);
+    if (feeMatch) {
+      return parseFloat(feeMatch[1].replace(/,/g, ''));
+    }
+    
+    return 50; // Default renewal fee
+  };
+
+  const filteredHistory = historyData.filter(item => {
+    if (searchTerm.trim() === '') {
+      return true; // Show all items when search is empty
+    }
+    return item.itemName.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const getTypeColor = (type) => {
     switch(type) {
       case 'PAWN': return 'type-pawn';
       case 'REDEEM': return 'type-redeem';
       case 'RENEW': return 'type-renew';
+      case 'FORFEIT': return 'type-forfeit';
       default: return '';
     }
   };
@@ -108,47 +256,28 @@ function History() {
             </div>
             {!loading && filteredHistory.length > 0 && (
               <div className="history-inline-stats">
-                <div className="inline-stat">
-                  <span className="inline-stat-value">{filteredHistory.length}</span>
-                  <span className="inline-stat-label">Transactions</span>
-                </div>
-                <div className="inline-stat">
-                  <span className="inline-stat-value">
-                    ₱{filteredHistory.reduce((sum, t) => sum + t.amount, 0).toFixed(2)}
-                  </span>
-                  <span className="inline-stat-label">Total Amount</span>
-                </div>
+                <span className="transaction-count">Transactions: ({filteredHistory.length})</span>
+                <button 
+                  className="clear-history-btn"
+                  onClick={clearAllHistory}
+                  disabled={clearingHistory}
+                >
+                  {clearingHistory ? 'Clearing...' : 'Clear'}
+                </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Filter Buttons */}
-        <div className="history-filters">
-          <button 
-            className={`filter-btn ${filterStatus === 'ALL' ? 'active' : ''}`}
-            onClick={() => setFilterStatus('ALL')}
-          >
-            All
-          </button>
-          <button 
-            className={`filter-btn ${filterStatus === 'COMPLETED' ? 'active' : ''}`}
-            onClick={() => setFilterStatus('COMPLETED')}
-          >
-            Completed
-          </button>
-          <button 
-            className={`filter-btn ${filterStatus === 'PENDING' ? 'active' : ''}`}
-            onClick={() => setFilterStatus('PENDING')}
-          >
-            Pending
-          </button>
-          <button 
-            className={`filter-btn ${filterStatus === 'REJECTED' ? 'active' : ''}`}
-            onClick={() => setFilterStatus('REJECTED')}
-          >
-            Rejected
-          </button>
+        {/* Search Bar */}
+        <div className="history-search">
+          <input
+            type="text"
+            placeholder="Search by item name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
         </div>
 
         {/* History List */}
@@ -177,9 +306,9 @@ function History() {
                     <th>Date</th>
                     <th>Item</th>
                     <th>Type</th>
-                    <th>Amount</th>
-                    <th>Status</th>
+                    <th>Images</th>
                     <th>Description</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -193,13 +322,26 @@ function History() {
                           {transaction.type}
                         </span>
                       </td>
-                      <td className="transaction-amount">₱{transaction.amount.toFixed(2)}</td>
-                      <td>
-                        <span className={`status-badge ${getStatusColor(transaction.status)}`}>
-                          {transaction.status}
-                        </span>
+                      <td className="transaction-images">
+                        <button 
+                          className="view-image-btn"
+                          onClick={() => handleViewImages(transaction)}
+                          title="View item images"
+                        >
+                          View
+                        </button>
                       </td>
                       <td className="transaction-description">{transaction.description}</td>
+                      <td className="transaction-actions">
+                        <button 
+                          className="delete-btn"
+                          onClick={() => deleteTransaction(transaction.id)}
+                          disabled={deletingItems.has(transaction.id)}
+                          title="Delete transaction"
+                        >
+                          {deletingItems.has(transaction.id) ? '...' : '×'}
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -208,8 +350,15 @@ function History() {
           )}
         </div>
 
-
       </div>
+      
+      {showImageModal && (
+        <ImageModal 
+          images={selectedImages}
+          itemName={selectedItemName}
+          onClose={() => setShowImageModal(false)}
+        />
+      )}
     </div>
   );
 }

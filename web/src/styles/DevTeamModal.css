@@ -113,6 +113,27 @@
   margin: 0 auto 16px;
   color: white;
   box-shadow: 0 3px 8px rgba(230, 126, 34, 0.3);
+  overflow: hidden;
+}
+
+.dev-avatar-photo {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: none;
+  border: 3px solid #e67e22;
+}
+
+.dev-avatar-photo:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(230, 126, 34, 0.4);
+  border-color: #d35400;
+}
+
+.dev-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .dev-avatar svg {

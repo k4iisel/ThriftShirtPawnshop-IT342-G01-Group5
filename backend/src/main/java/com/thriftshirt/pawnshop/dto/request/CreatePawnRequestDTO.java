@@ -1,9 +1,9 @@
 package com.thriftshirt.pawnshop.dto.request;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Max;
 
 public class CreatePawnRequestDTO {
     
@@ -21,7 +21,7 @@ public class CreatePawnRequestDTO {
     private String description;
     
     @NotNull(message = "Requested amount is required")
-    @Min(value = 50, message = "Requested amount must be at least 50")
+    @Min(value = 150, message = "Requested amount must be at least 150")
     @Max(value = 10000, message = "Requested amount cannot exceed 10,000")
     private Double requestedAmount;
     

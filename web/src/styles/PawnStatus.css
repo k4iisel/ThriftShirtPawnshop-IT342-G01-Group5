@@ -114,6 +114,22 @@
   box-shadow: 0 6px 20px rgba(230, 126, 34, 0.15);
 }
 
+.pawn-card.highlighted {
+  border: 2px solid #007bff;
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.25);
+  transform: translateY(-2px);
+  animation: highlight-pulse 2s ease-in-out;
+}
+
+@keyframes highlight-pulse {
+  0%, 100% { 
+    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.25); 
+  }
+  50% { 
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4); 
+  }
+}
+
 .pawn-header {
   padding: 1.5rem 1.5rem 1rem;
 }
@@ -357,14 +373,12 @@
   gap: 0.75rem;
   padding: 1rem 1.5rem;
   background: #f9f3d4;
-  border-top: 1px solid #e0e0e0;
   justify-content: center;
 }
 
 .redeem-btn,
 .renew-btn {
   padding: 0.75rem 1.5rem;
-  border: 2px solid #e67e22;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
@@ -373,34 +387,44 @@
   letter-spacing: 0.3px;
   min-width: 140px;
   text-align: center;
-  box-shadow: 0 2px 4px rgba(230, 126, 34, 0.15);
+  border: 2px solid;
 }
 
 .redeem-btn {
-  background: #e67e22;
+  background: #27ae60;
   color: white;
+  border-color: #27ae60;
+  box-shadow: 0 2px 4px rgba(39, 174, 96, 0.15);
+  width: 100%;
+  max-width: 300px;
 }
 
 .redeem-btn:hover {
-  background: #d35400;
-  box-shadow: 0 3px 8px rgba(230, 126, 34, 0.25);
+  background: #229954;
+  border-color: #229954;
+  box-shadow: 0 3px 8px rgba(39, 174, 96, 0.25);
 }
 
+
+
 .renew-btn {
-  background: white;
-  color: #e67e22;
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.15);
+  width: 100%;
+  max-width: 300px;
 }
 
 .renew-btn:hover {
-  background: #e67e22;
-  color: white;
-  box-shadow: 0 3px 8px rgba(230, 126, 34, 0.25);
+  background: #2980b9;
+  border-color: #2980b9;
+  box-shadow: 0 3px 8px rgba(52, 152, 219, 0.25);
 }
 
 .status-message-container {
   padding: 1rem 1.5rem;
   background: #f9f3d4;
-  border-top: 1px solid #e0e0e0;
 }
 
 .status-message {
@@ -409,6 +433,24 @@
   text-align: center;
   font-weight: 500;
   margin: 0;
+}
+
+.status-message.success {
+  color: #27ae60;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.status-message.warning {
+  color: #f39c12;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.status-message.error {
+  color: #e74c3c;
+  font-weight: 600;
+  font-style: normal;
 }
 
 .loading {

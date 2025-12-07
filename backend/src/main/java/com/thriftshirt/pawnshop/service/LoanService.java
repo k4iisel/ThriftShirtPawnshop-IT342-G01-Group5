@@ -13,11 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.thriftshirt.pawnshop.entity.Loan;
 import com.thriftshirt.pawnshop.entity.PawnRequest;
+import com.thriftshirt.pawnshop.entity.TransactionLog;
 import com.thriftshirt.pawnshop.exception.BadRequestException;
 import com.thriftshirt.pawnshop.exception.ResourceNotFoundException;
 import com.thriftshirt.pawnshop.repository.LoanRepository;
 import com.thriftshirt.pawnshop.repository.PawnRequestRepository;
-import com.thriftshirt.pawnshop.entity.TransactionLog;
 
 @Service
 @Transactional
@@ -87,8 +87,9 @@ public class LoanService {
         TransactionLog log = new TransactionLog();
         log.setUser(pawnRequest.getUser());
         log.setAction("LOAN_CREATED");
-        log.setRemarks("Loan created for item: " + pawnRequest.getItemName() + " (ID: " + pawnId + ")");
+        log.setRemarks("Loan created for item: " + pawnRequest.getItemName() + " (ID: " + pawnId + ") - Requested amount: ₱" + pawnRequest.getRequestedAmount());
         log.setCondition(pawnRequest.getCondition());
+        log.setPhotos(pawnRequest.getPhotos());
         transactionLogService.logTransaction(log);
 
         return savedLoan;
@@ -174,5 +175,84 @@ public class LoanService {
         transactionLogService.logTransaction(log);
 
         return loan;
+    }
+
+    /**
+     * Get loans by user
+     */
+    public List<Loan> getUserLoans(Long userId) {
+        logger.info("Getting loans for user ID: {}", userId);
+        return loanRepository.findAll().stream()
+                .filter(loan -> loan.getPawnItem().getUser().getId().equals(userId))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Renew loan for redeemed items (reactivate existing loan)
+     */
+    public Loan renewLoan(Long pawnId) {
+        logger.info("Renewing loan for pawn ID: {}", pawnId);
+
+        PawnRequest pawnRequest = pawnRequestRepository.findById(pawnId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pawn request not found"));
+
+        // Check if item is redeemed and can have a new loan
+        if (!"REDEEMED".equals(pawnRequest.getStatus())) {
+            throw new BadRequestException("Loans can only be renewed for redeemed items. Current status: " + pawnRequest.getStatus());
+        }
+
+        // Get the existing loan for this pawn item
+        Loan existingLoan = pawnRequest.getLoan();
+        if (existingLoan == null) {
+            throw new BadRequestException("No existing loan found for this pawn item");
+        }
+
+        // Reset the loan to active status with new terms
+        Double loanAmountDouble = pawnRequest.getEstimatedValue() != null ? pawnRequest.getEstimatedValue()
+                : pawnRequest.getRequestedAmount();
+
+        if (loanAmountDouble == null) {
+            throw new BadRequestException("Cannot renew loan: No amount value found");
+        }
+
+        existingLoan.setLoanAmount(BigDecimal.valueOf(loanAmountDouble));
+        existingLoan.setInterestRate(5); // 5%
+        existingLoan.setDueDate(LocalDate.now().plusDays(30)); // 30 Days
+        existingLoan.setStatus("ACTIVE");
+        existingLoan.setPenalty(BigDecimal.ZERO);
+        existingLoan.setDateRedeemed(null); // Clear redemption date
+
+        // Update pawn request status to PAWNED
+        pawnRequest.setStatus("PAWNED");
+
+        // Save both entities
+        pawnRequest = pawnRequestRepository.save(pawnRequest);
+        Loan renewedLoan = loanRepository.save(existingLoan);
+
+        logger.info("✅ Loan renewed successfully. Loan ID: {}, Pawn ID: {}", renewedLoan.getLoanId(), pawnId);
+
+        // Log transaction
+        TransactionLog log = new TransactionLog();
+        log.setUser(pawnRequest.getUser());
+        log.setAction("LOAN_RENEWED");
+        log.setRemarks("Loan renewed for previously redeemed item: " + pawnRequest.getItemName() + " (Pawn ID: " + pawnId + ")");
+        log.setCondition(pawnRequest.getCondition());
+        transactionLogService.logTransaction(log);
+
+        return renewedLoan;
+
+    }
+
+    /**
+     * Verify loan ownership by user
+     */
+    public boolean isLoanOwnedByUser(Long loanId, Long userId) {
+        try {
+            Loan loan = loanRepository.findById(loanId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
+            return loan.getPawnItem().getUser().getId().equals(userId);
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

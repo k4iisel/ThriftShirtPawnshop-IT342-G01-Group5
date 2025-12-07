@@ -19,6 +19,7 @@ import com.thriftshirt.pawnshop.entity.PawnRequest;
 import com.thriftshirt.pawnshop.entity.User;
 import com.thriftshirt.pawnshop.exception.BadRequestException;
 import com.thriftshirt.pawnshop.exception.ResourceNotFoundException;
+import com.thriftshirt.pawnshop.repository.LoanRepository;
 import com.thriftshirt.pawnshop.repository.PawnRequestRepository;
 import com.thriftshirt.pawnshop.repository.UserRepository;
 
@@ -34,6 +35,9 @@ public class PawnRequestService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private LoanRepository loanRepository;
+
     /**
      * Create a new pawn request
      */
@@ -41,8 +45,8 @@ public class PawnRequestService {
         logger.info("Creating pawn request for user: {}", userId);
 
         // Validate input
-        if (requestDTO.getRequestedAmount() == null || requestDTO.getRequestedAmount() < 50) {
-            throw new BadRequestException("Requested amount must be at least 50");
+        if (requestDTO.getRequestedAmount() == null || requestDTO.getRequestedAmount() < 150) {
+            throw new BadRequestException("Requested amount must be at least 150");
         }
 
         if (requestDTO.getRequestedAmount() > 10000) {
@@ -60,6 +64,15 @@ public class PawnRequestService {
         // Find user
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // Allow users to create new pawn requests even with existing active loans
+        // This enables multiple concurrent pawn transactions
+
+        // Check if user has any pending pawn requests that are not yet processed
+        List<PawnRequest> pendingRequests = pawnRequestRepository.findPendingOrApprovedByUser(user);
+        if (!pendingRequests.isEmpty()) {
+            throw new BadRequestException("You cannot create a new pawn request while you have pending requests awaiting approval. Please wait for your current request to be processed.");
+        }
 
         // Create new pawn request
         PawnRequest pawnRequest = new PawnRequest();

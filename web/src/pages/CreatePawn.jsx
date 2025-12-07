@@ -355,12 +355,12 @@ function CreatePawn() {
                     value={formData.requestedAmount}
                     onChange={handleInputChange}
                     placeholder="500"
-                    min="50"
+                    min="150"
                     max="10000"
-                    step="50"
+                    step="0.01"
                     required
                   />
-                  <small>Minimum: ₱50, Maximum: ₱10,000</small>
+                  <small>Minimum: ₱150, Maximum: ₱10,000</small>
                 </div>
 
                 <div className="form-group">
@@ -373,7 +373,7 @@ function CreatePawn() {
                     onChange={handleInputChange}
                     placeholder="1000"
                     min="0"
-                    step="50"
+                    step="0.01"
                   />
                   <small>Your estimated value of the item</small>
                 </div>

@@ -1,5 +1,7 @@
 package com.thriftshirt.pawnshop.controller;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.thriftshirt.pawnshop.dto.request.CreatePawnRequestDTO;
 import com.thriftshirt.pawnshop.dto.response.ApiResponse;
 import com.thriftshirt.pawnshop.dto.response.UserProfileResponse;
+import com.thriftshirt.pawnshop.entity.TransactionLog;
 import com.thriftshirt.pawnshop.entity.User;
 import com.thriftshirt.pawnshop.service.AuthService;
+import com.thriftshirt.pawnshop.service.LoanService;
 import com.thriftshirt.pawnshop.service.PawnRequestService;
+import com.thriftshirt.pawnshop.service.TransactionLogService;
 
 import jakarta.validation.Valid;
 
@@ -38,6 +43,12 @@ public class UserController {
 
     @Autowired
     private PawnRequestService pawnRequestService;
+
+    @Autowired
+    private LoanService loanService;
+
+    @Autowired
+    private TransactionLogService transactionLogService;
 
     @GetMapping("/dashboard")
     public ResponseEntity<ApiResponse> getUserDashboard(Authentication authentication) {
@@ -164,4 +175,169 @@ public class UserController {
                     .body(ApiResponse.error("Failed to delete pawn request: " + e.getMessage()));
         }
     }
+
+    @PostMapping("/loans/{pawnId}/redeem")
+    public ResponseEntity<ApiResponse> redeemLoan(
+            @PathVariable Long pawnId,
+            Authentication authentication) {
+        logger.info("User redeem loan initiated for pawn ID: {} by user: {}", pawnId, authentication.getName());
+
+        User user = (User) authentication.getPrincipal();
+
+        if (!user.getRole().name().equals("USER")) {
+            logger.warn("Non-user attempted to redeem loan: {}", authentication.getName());
+            return ResponseEntity.status(403)
+                    .body(ApiResponse.error("User privileges required"));
+        }
+
+        try {
+            // Get pawn request first
+            var pawnResponse = pawnRequestService.getPawnRequestById(pawnId);
+            
+            // Find the associated loan
+            List<com.thriftshirt.pawnshop.entity.Loan> userLoans = loanService.getUserLoans(user.getId());
+            com.thriftshirt.pawnshop.entity.Loan targetLoan = userLoans.stream()
+                    .filter(loan -> loan.getPawnItem().getPawnId().equals(pawnId))
+                    .findFirst()
+                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("No active loan found for this pawn item"));
+            
+            com.thriftshirt.pawnshop.entity.Loan loan = loanService.processPayment(targetLoan.getLoanId());
+            
+            logger.info("Loan {} redeemed successfully by user: {}", targetLoan.getLoanId(), user.getId());
+            return ResponseEntity.ok(ApiResponse.success("Loan redeemed successfully", loan));
+        } catch (Exception e) {
+            logger.error("Error redeeming loan: ", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error("Failed to redeem loan: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/loans/{pawnId}/renew")
+    public ResponseEntity<ApiResponse> renewLoan(
+            @PathVariable Long pawnId,
+            Authentication authentication) {
+        logger.info("User renew loan initiated for pawn ID: {} by user: {}", pawnId, authentication.getName());
+
+        User user = (User) authentication.getPrincipal();
+
+        if (!user.getRole().name().equals("USER")) {
+            logger.warn("Non-user attempted to renew loan: {}", authentication.getName());
+            return ResponseEntity.status(403)
+                    .body(ApiResponse.error("User privileges required"));
+        }
+
+        try {
+            // Create new loan for redeemed pawn item
+            com.thriftshirt.pawnshop.entity.Loan newLoan = loanService.renewLoan(pawnId);
+            logger.info("New loan {} created successfully by user: {}", newLoan.getLoanId(), user.getId());
+            return ResponseEntity.ok(ApiResponse.success("New loan created successfully", newLoan));
+        } catch (Exception e) {
+            logger.error("Error renewing loan: ", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error("Failed to renew loan: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/loans")
+    public ResponseEntity<ApiResponse> getUserLoans(Authentication authentication) {
+        logger.info("User loans requested by: {}", authentication.getName());
+
+        User user = (User) authentication.getPrincipal();
+
+        if (!user.getRole().name().equals("USER")) {
+            logger.warn("Non-user attempted to retrieve loans: {}", authentication.getName());
+            return ResponseEntity.status(403)
+                    .body(ApiResponse.error("User privileges required"));
+        }
+
+        try {
+            // Get user's pawned items with loans
+            var pawnedItems = pawnRequestService.getUserPawnRequests(user.getId())
+                    .stream()
+                    .filter(pawn -> "PAWNED".equals(pawn.getStatus()))
+                    .collect(java.util.stream.Collectors.toList());
+            
+            return ResponseEntity.ok(ApiResponse.success("User loans retrieved successfully", pawnedItems));
+        } catch (Exception e) {
+            logger.error("Error retrieving user loans: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to retrieve loans"));
+        }
+    }
+
+    @GetMapping("/transaction-history")
+    public ResponseEntity<ApiResponse> getUserTransactionHistory(Authentication authentication) {
+        logger.info("User transaction history requested by: {}", authentication.getName());
+
+        User user = (User) authentication.getPrincipal();
+
+        if (!user.getRole().name().equals("USER")) {
+            logger.warn("Non-user attempted to retrieve transaction history: {}", authentication.getName());
+            return ResponseEntity.status(403)
+                    .body(ApiResponse.error("User privileges required"));
+        }
+
+        try {
+            List<TransactionLog> userLogs = transactionLogService.getUserLogs(user.getId());
+            return ResponseEntity.ok(ApiResponse.success("Transaction history retrieved successfully", userLogs));
+        } catch (Exception e) {
+            logger.error("Error retrieving transaction history: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to retrieve transaction history"));
+        }
+    }
+
+    @DeleteMapping("/transaction-history/{logId}")
+    public ResponseEntity<ApiResponse> deleteTransactionLog(
+            @PathVariable Long logId,
+            Authentication authentication) {
+        logger.info("Delete transaction log requested by: {} for logId: {}", authentication.getName(), logId);
+
+        User user = (User) authentication.getPrincipal();
+
+        if (!user.getRole().name().equals("USER")) {
+            logger.warn("Non-user attempted to delete transaction log: {}", authentication.getName());
+            return ResponseEntity.status(403)
+                    .body(ApiResponse.error("User privileges required"));
+        }
+
+        try {
+            boolean deleted = transactionLogService.deleteUserTransactionLog(user.getId(), logId);
+            
+            if (deleted) {
+                return ResponseEntity.ok(ApiResponse.success("Transaction log deleted successfully", null));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("Transaction log not found"));
+            }
+        } catch (Exception e) {
+            logger.error("Error deleting transaction log: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to delete transaction log"));
+        }
+    }
+
+    @DeleteMapping("/transaction-history")
+    public ResponseEntity<ApiResponse> clearTransactionHistory(Authentication authentication) {
+        logger.info("Clear transaction history requested by: {}", authentication.getName());
+
+        User user = (User) authentication.getPrincipal();
+
+        if (!user.getRole().name().equals("USER")) {
+            logger.warn("Non-user attempted to clear transaction history: {}", authentication.getName());
+            return ResponseEntity.status(403)
+                    .body(ApiResponse.error("User privileges required"));
+        }
+
+        try {
+            transactionLogService.clearUserTransactionHistory(user.getId());
+            return ResponseEntity.ok(ApiResponse.success("Transaction history cleared successfully", null));
+        } catch (Exception e) {
+            logger.error("Error clearing transaction history: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to clear transaction history"));
+        }
+    }
+
+
 }

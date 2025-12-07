@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Header from '../components/Header';
 import ImageModal from '../components/ImageModal';
@@ -7,16 +8,45 @@ import useNotify from '../hooks/useNotify';
 import '../styles/PawnStatus.css';
 
 function PawnStatus() {
+  const location = useLocation();
   const [pawns, setPawns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
   const [selectedItemName, setSelectedItemName] = useState('');
+  const [highlightedPawnId, setHighlightedPawnId] = useState(null);
   const notify = useNotify();
+
+  // Get selected pawn from navigation state
+  const selectedPawn = location.state?.selectedPawn;
 
   useEffect(() => {
     fetchPawnRequests();
   }, []);
+
+  // Handle selected pawn highlighting and scrolling
+  useEffect(() => {
+    if (selectedPawn && pawns.length > 0) {
+      // Find matching pawn by ID or other identifying fields
+      const matchingPawn = pawns.find(p => 
+        p.pawnId === selectedPawn.id || 
+        p.id === selectedPawn.id ||
+        (p.itemName === selectedPawn.itemName && p.requestedAmount === selectedPawn.requestedAmount)
+      );
+      
+      if (matchingPawn) {
+        setHighlightedPawnId(matchingPawn.pawnId || matchingPawn.id);
+        
+        // Auto-scroll to highlighted item after a brief delay
+        setTimeout(() => {
+          const element = document.getElementById(`pawn-${matchingPawn.pawnId || matchingPawn.id}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 500);
+      }
+    }
+  }, [selectedPawn, pawns]);
 
   const fetchPawnRequests = async () => {
     try {
@@ -72,15 +102,48 @@ function PawnStatus() {
     }
   };
 
-  const handleRedeemItem = (pawnId) => {
-    alert(`Redirecting to payment for ${pawnId}...`);
-    // TODO: Implement payment functionality
+  const handleRedeemItem = async (pawn) => {
+    if (window.confirm(`Are you sure you want to redeem "${pawn.itemName}"? This will complete the loan payment and return your item.`)) {
+      try {
+        // For now, we'll use the pawnId as a proxy to find the loan
+        // In a real scenario, we'd get the loan ID from the pawn data
+        const response = await apiService.loan.redeem(pawn.pawnId);
+        
+        if (response.success) {
+          notify.notifySuccess('✅ Item redeemed successfully! Your loan has been paid.');
+          // Refresh the pawn requests list
+          fetchPawnRequests();
+        } else {
+          notify.notifyError('❌ Failed to redeem item: ' + (response.message || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('❌ Error redeeming item:', error);
+        notify.notifyError('❌ Error redeeming item: ' + error.message);
+      }
+    }
   };
 
-  const handleRenewLoan = (pawnId) => {
-    alert(`Renewing loan for ${pawnId}...`);
-    // TODO: Implement loan renewal functionality
+  const handleRenewLoan = async (pawn) => {
+    if (window.confirm(`Are you sure you want to renew the loan for "${pawn.itemName}"? This will create a new loan with the same terms.`)) {
+      try {
+        // For redeemed items, create a new loan
+        const response = await apiService.loan.renew(pawn.pawnId);
+        
+        if (response.success) {
+          notify.notifySuccess('✅ New loan created successfully!');
+          // Refresh the pawn requests list
+          fetchPawnRequests();
+        } else {
+          notify.notifyError('❌ Failed to create new loan: ' + (response.message || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('❌ Error creating new loan:', error);
+        notify.notifyError('❌ Error creating new loan: ' + error.message);
+      }
+    }
   };
+
+
 
   const handleDeletePawn = async (pawnId) => {
     // Show confirmation dialog
@@ -150,7 +213,11 @@ function PawnStatus() {
             </div>
           ) : (
             pawns.map((pawn, index) => (
-              <div key={`${pawn.pawnId}-${index}`} className="pawn-card">
+              <div 
+                key={`${pawn.pawnId}-${index}`} 
+                id={`pawn-${pawn.pawnId || pawn.id}`}
+                className={`pawn-card ${highlightedPawnId === (pawn.pawnId || pawn.id) ? 'highlighted' : ''}`}
+              >
                 <div className="pawn-header">
                   <div className="item-info">
                     <div className="item-title-row">
@@ -211,22 +278,29 @@ function PawnStatus() {
                     <span className={`status-badge-inline ${pawn.status.toLowerCase()}`}>
                       {pawn.status === 'PENDING' ? 'PENDING' : 
                        pawn.status === 'APPROVED' ? 'APPROVED' : 
-                       pawn.status === 'REJECTED' ? 'REJECTED' : pawn.status}
+                       pawn.status === 'REJECTED' ? 'REJECTED' : 
+                       pawn.status === 'PAWNED' ? 'PAWNED' :
+                       pawn.status === 'REDEEMED' ? 'REDEEMED' : 
+                       pawn.status === 'FORFEITED' ? 'FORFEITED' : pawn.status}
                     </span>
                   </div>
                 </div>
 
-                {pawn.status === 'APPROVED' && (
+                {pawn.status === 'PAWNED' && (
                   <div className="pawn-actions">
                     <button 
                       className="redeem-btn"
-                      onClick={() => handleRedeemItem(pawn.pawnId)}
+                      onClick={() => handleRedeemItem(pawn)}
                     >
                       Redeem Item
                     </button>
+                  </div>
+                )}
+                {pawn.status === 'REDEEMED' && (
+                  <div className="pawn-actions">
                     <button 
                       className="renew-btn"
-                      onClick={() => handleRenewLoan(pawn.pawnId)}
+                      onClick={() => handleRenewLoan(pawn)}
                     >
                       Renew Loan
                     </button>
@@ -239,6 +313,8 @@ function PawnStatus() {
                     </div>
                   </div>
                 )}
+
+
               </div>
             ))
           )}

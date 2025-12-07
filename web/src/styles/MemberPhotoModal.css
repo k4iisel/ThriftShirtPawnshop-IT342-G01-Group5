@@ -1,0 +1,155 @@
+/* Member Photo Modal */
+.member-photo-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.member-photo-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 450px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.member-photo-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+  border-radius: 12px 12px 0 0;
+}
+
+.member-photo-modal-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.member-photo-modal-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.member-photo-modal-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #333;
+}
+
+.member-photo-modal-content {
+  padding: 20px;
+}
+
+.member-photo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.member-photo-large {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  border: 3px solid #f0f0f0;
+}
+
+.member-info {
+  text-align: center;
+}
+
+.member-info h3 {
+  margin: 0 0 6px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.member-role-large {
+  font-size: 16px;
+  font-weight: 500;
+  color: #e67e22;
+  margin: 0 0 6px 0;
+}
+
+.member-email-large {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .member-photo-modal {
+    max-width: 400px;
+  }
+  
+  .member-photo-large {
+    width: 180px;
+    height: 180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .member-photo-modal {
+    margin: 10px;
+    max-width: none;
+    max-height: 90vh;
+  }
+  
+  .member-photo-modal-content {
+    padding: 16px;
+  }
+  
+  .member-photo-large {
+    width: 160px;
+    height: 160px;
+  }
+  
+  .member-photo-modal-header {
+    padding: 12px 16px;
+  }
+  
+  .member-photo-modal-header h2 {
+    font-size: 18px;
+  }
+  
+  .member-info h3 {
+    font-size: 18px;
+  }
+  
+  .member-role-large {
+    font-size: 14px;
+  }
+  
+  .member-email-large {
+    font-size: 13px;
+  }
+}

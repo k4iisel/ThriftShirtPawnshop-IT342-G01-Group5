@@ -394,6 +394,64 @@ export const apiService = {
     },
   },
 
+  // User Loan endpoints
+  loan: {
+    getUserLoans: async () => {
+      const response = await fetch(`${API_BASE_URL}/user/loans`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      return await handleResponse(response);
+    },
+
+    getTransactionHistory: async () => {
+      const response = await fetch(`${API_BASE_URL}/user/transaction-history`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      return await handleResponse(response);
+    },
+
+    redeem: async (loanId) => {
+      const response = await fetch(`${API_BASE_URL}/user/loans/${loanId}/redeem`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+
+      return await handleResponse(response);
+    },
+
+    renew: async (loanId) => {
+      const response = await fetch(`${API_BASE_URL}/user/loans/${loanId}/renew`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+
+      return await handleResponse(response);
+    },
+
+    deleteTransaction: async (logId) => {
+      const response = await fetch(`${API_BASE_URL}/user/transaction-history/${logId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+
+      return await handleResponse(response);
+    },
+
+    clearTransactionHistory: async () => {
+      const response = await fetch(`${API_BASE_URL}/user/transaction-history`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+
+      return await handleResponse(response);
+    },
+
+  },
+
   // File Upload
   upload: async (file) => {
     const formData = new FormData();

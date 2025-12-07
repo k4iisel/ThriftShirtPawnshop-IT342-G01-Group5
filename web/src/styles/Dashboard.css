@@ -495,6 +495,262 @@
   }
 }
 
+/* Activity Logs Section */
+.activity-logs-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 0 30px 30px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.activity-logs-section .section-header {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-title svg {
+  width: 24px;
+  height: 24px;
+  color: #e67e22;
+}
+
+.section-title h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.activity-logs-list {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.activity-logs-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.activity-logs-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.activity-logs-list::-webkit-scrollbar-thumb {
+  background: #e67e22;
+  border-radius: 10px;
+}
+
+.activity-logs-list::-webkit-scrollbar-thumb:hover {
+  background: #d35400;
+}
+
+.activity-log-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.activity-log-item:last-child {
+  border-bottom: none;
+}
+
+.log-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #e67e22, #f39c12);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.log-icon svg {
+  width: 16px;
+  height: 16px;
+  color: white;
+}
+
+.log-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.log-action {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px 0;
+}
+
+.log-details {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 6px 0;
+  line-height: 1.4;
+}
+
+.log-time {
+  font-size: 12px;
+  color: #999;
+  font-weight: 500;
+}
+
+.no-logs {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.no-logs p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Log Type Styling */
+.log-icon-success {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+}
+
+.log-icon-warning {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+}
+
+.log-icon-error {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+}
+
+.log-icon-info {
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+}
+
+/* Interactive Stats Cards */
+.user-stat-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Activity Logs Actions */
+.activity-logs-actions {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.activity-count {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.clear-activity-btn {
+  background: none;
+  color: #6c757d;
+  border: none;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+  border-radius: 4px;
+}
+
+.clear-activity-btn:hover:not(:disabled) {
+  color: #5a6268;
+  background: rgba(108, 117, 125, 0.1);
+}
+
+.clear-activity-btn:disabled {
+  color: #adb5bd;
+  cursor: not-allowed;
+}
+
+/* Recent Pawned Items Styling */
+.pawn-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.view-images-btn {
+  background: transparent;
+  color: #007bff;
+  border: none;
+  padding: 0;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  text-decoration: underline;
+  outline: none;
+}
+
+.view-images-btn:hover {
+  color: #0056b3;
+  text-decoration: none;
+}
+
+.due-status {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.due-status.overdue {
+  color: #dc3545;
+}
+
+.due-status.due-soon {
+  color: #fd7e14;
+}
+
+/* Clickable pawn items */
+.clickable-pawn {
+  transition: all 0.2s ease;
+}
+
+.clickable-pawn:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 1024px) {
+  .activity-logs-section {
+    max-width: 600px;
+    margin: 0 20px 30px;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .activity-logs-actions {
+    align-self: flex-end;
+  }
+}
+
 @media (max-width: 480px) {
   .dashboard-content {
     padding-bottom: 100px;
@@ -520,13 +776,53 @@
     padding: 0 16px 16px;
   }
 
-  .alert-message,
-  .notifications-section {
+  .alert-message {
     margin: 0 16px 30px;
     padding: 16px;
+  }
+  
+  .activity-logs-section {
+    margin: 0 16px 30px;
+    padding: 16px;
+    max-width: none;
+  }
+  
+  .activity-logs-actions {
+    gap: 8px;
+  }
+  
+  .activity-count {
+    font-size: 12px;
+  }
+  
+  .clear-activity-btn {
+    padding: 4px 8px;
+    font-size: 12px;
   }
 
   .quick-actions {
     grid-template-columns: 1fr;
+  }
+
+  .activity-logs-list {
+    max-height: 250px;
+  }
+
+  .log-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .log-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .log-action {
+    font-size: 13px;
+  }
+
+  .log-details {
+    font-size: 12px;
   }
 }
