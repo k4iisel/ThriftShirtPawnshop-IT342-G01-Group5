@@ -1,7 +1,7 @@
 # ThriftShirt Pawnshop System Flow
 
 ## System Overview
-ThriftShirt Pawnshop is a digital pawnshop management system that handles item pawning, loan management, and wallet transactions for both users and administrators.
+ThriftShirt Pawnshop is a digital pawnshop management system specializing in shirts and clothing items. The system handles shirt pawning, loan management, wallet transactions, and thrift resale for both users and administrators. Items not redeemed are automatically moved to the thrift store inventory for resale.
 
 ---
 
@@ -25,11 +25,11 @@ Session token stored → Dashboard
 Dashboard → Create Pawn
   ↓
 Fill Pawn Request Form:
-  - Item Name
-  - Description
-  - Category
+  - Item Name (e.g., "Supreme Box Logo Tee", "Nike Vintage Shirt")
+  - Description (brand, size, color, condition, material)
+  - Category (T-Shirt, Polo, Button-Up, Hoodie, etc.)
   - Requested Amount (₱)
-  - Upload Photos (up to 3)
+  - Upload Photos (up to 3 - front, back, tags/labels)
   ↓
 Submit Request
   ↓
@@ -49,11 +49,11 @@ REJECTED  (Admin)   (Admin validates & releases loan)
 
 **Status Descriptions:**
 - **PENDING**: Initial submission, awaiting admin review
-- **APPROVED**: Admin approved item value and terms
-- **REJECTED**: Admin rejected the request
-- **PAWNED**: Loan released, money in wallet, loan active
-- **REDEEMED**: User paid back loan + interest, item returned
-- **FORFEITED**: User didn't pay within due date, item kept by pawnshop
+- **APPROVED**: Admin approved shirt value and terms
+- **REJECTED**: Admin rejected the request (poor condition, fake brand, etc.)
+- **PAWNED**: Loan released, money in wallet, loan active, shirt stored in pawnshop
+- **REDEEMED**: User paid back loan + interest, shirt returned to user
+- **FORFEITED**: User didn't pay within due date, shirt moved to thrift store for resale
 
 ### 4. Wallet Management
 
@@ -85,47 +85,48 @@ Money removed from wallet, given to user
 
 ### 5. Loan Management
 
-#### Redeeming an Item
+#### Redeeming a Shirt
 ```
-Pawn Status → View PAWNED item
+Pawn Status → View PAWNED shirt
   ↓
 Check loan details (amount, interest, due date)
   ↓
-Click "Redeem Item"
+User brings payment to pawnshop counter
   ↓
-System validates:
-  - Wallet balance sufficient?
-  - If YES: Process redemption
-    ↓
-    Deduct from wallet
+Admin processes payment:
+  - Verify user identity
+  - Collect cash payment
+  - Mark as paid in system
     ↓
     Status → REDEEMED
     ↓
-    Item returned to user
-  - If NO: Show error message
+    Shirt retrieved from inventory
+    ↓
+    Shirt returned to user
 ```
 
 #### Renewing a Loan
 ```
-Pawn Status → View REDEEMED item
+Before due date arrives
   ↓
-Click "Renew Loan"
+User goes to pawnshop counter
   ↓
-Status changes to APPROVED
+Pays interest only to extend loan
   ↓
-Item goes back to admin validation queue
+Admin creates new loan with same shirt:
+  - New 30-day period
+  - Same principal amount
+  - Shirt stays in inventory
   ↓
-Admin validates and releases loan again
-  ↓
-Status → PAWNED (new loan cycle begins)
+Status remains → PAWNED (extended)
 ```
 
 ### 6. Dashboard Features
-- **Wallet Balance**: Real-time balance display
-- **Active Pawns**: Count of currently pawned items
-- **Due Soon**: Items with due date within 7 days
-- **Recent Activity**: Last 10 transactions with status badges
-- **Quick Actions**: Cash in/out, create pawn, view status
+- **Wallet Balance**: Real-time balance display (for tracking, payments done at counter)
+- **Active Pawns**: Count of currently pawned shirts
+- **Due Soon**: Shirts with due date within 7 days
+- **Recent Activity**: Last 10 transactions with status badges (all statuses: pending, approved, rejected, pawned, redeemed, forfeited)
+- **Quick Actions**: Cash in/out (over counter), create pawn, view status
 
 ---
 
@@ -148,21 +149,23 @@ Admin Dashboard → Review Requests
   ↓
 View all PENDING pawn requests
   ↓
-For each request:
-  - View item details
-  - View photos
+For each shirt request:
+  - View shirt details (brand, size, condition)
+  - View photos (front, back, tags)
   - Check requested amount
+  - Assess brand authenticity from photos
+  - Estimate resale value
   ↓
 Decision:
-  ├─ APPROVE → Set estimated value
+  ├─ APPROVE → Set estimated loan value
   │            ↓
   │            Calculate loan terms:
-  │            - Interest rate
+  │            - Interest rate (default 5%)
   │            - Due date (30 days default)
   │            ↓
   │            Status → APPROVED
   │
-  └─ REJECT → Provide reason
+  └─ REJECT → Provide reason (poor condition, fake brand, etc.)
                ↓
                Status → REJECTED
                ↓
@@ -173,30 +176,41 @@ Decision:
 ```
 Admin Dashboard → Item Validation
   ↓
-View all APPROVED items (including renewals)
+View all APPROVED shirts awaiting validation
+  ↓
+User brings physical shirt to counter
+  ↓
+Admin inspects shirt:
+  - Brand tags and labels (authenticity check)
+  - Stitching and material quality
+  - Condition (stains, tears, fading)
+  - Size and measurements
+  - Match with submitted photos
   ↓
 Click "Validate & Release"
   ↓
-System creates/updates loan:
-  - Loan Amount (based on estimated value)
+System creates loan:
+  - Loan Amount (based on final appraisal)
   - Interest Amount
   - Due Date
   - Status → PAWNED
   ↓
-Money added to user wallet
+Admin hands cash to user over counter
   ↓
-User can now use funds
+Shirt tagged and stored in inventory
 ```
 
 **Or Reject:**
 ```
+If shirt doesn't match description
+  ↓
 Click "Reject"
   ↓
-Enter reason
+Enter reason (fake brand, poor condition, doesn't match photos)
   ↓
 Status → REJECTED
   ↓
-User notified
+User notified, shirt returned
 ```
 
 ### 4. Loan Management
@@ -235,9 +249,13 @@ Click "Forfeit"
   ↓
 Status → FORFEITED
   ↓
-Item ownership transfers to pawnshop
+Shirt ownership transfers to pawnshop
   ↓
-User loses item, no refund
+Shirt moved to thrift store inventory
+  ↓
+Shirt listed for resale at market price
+  ↓
+User loses shirt, no refund
 ```
 
 ### 5. User Management
@@ -283,10 +301,16 @@ For each user:
 ```
 Admin Dashboard → Inventory
   ↓
-View all items:
-  - Active pawns
-  - Forfeited items
-  - Items by category
+View all shirts:
+  - Active pawns (currently held for loans)
+  - Forfeited shirts (moved to thrift inventory)
+  - Shirts by category (T-shirt, Polo, Hoodie, etc.)
+  - Shirts by brand (Supreme, Nike, Adidas, etc.)
+  ↓
+Thrift Store Management:
+  - List forfeited shirts for resale
+  - Set resale prices
+  - Track sales
   ↓
 Filter and export capabilities
 ```
@@ -309,21 +333,66 @@ Search and filter by:
   - Status
 ```
 
+### 9. Thrift Store Resale Management
+```
+When loan is forfeited
+  ↓
+Shirt automatically moved to thrift inventory
+  ↓
+Admin Dashboard → Thrift Inventory
+  ↓
+View forfeited shirts:
+  - Original pawn details
+  - Loan amount not paid
+  - Shirt condition and brand
+  - Estimated resale value
+  ↓
+Set resale price:
+  - Based on market value
+  - Brand demand
+  - Shirt condition
+  ↓
+List shirt in thrift catalog
+  ↓
+Options:
+  ├─ Sell Online (if web store implemented)
+  ├─ Sell In-Store (physical shop)
+  └─ Export Inventory (for external platforms)
+  ↓
+Track sales revenue:
+  - Original loan amount
+  - Resale price
+  - Profit margin
+  - Inventory turnover
+```
+
+**Revenue Model:**
+```
+Example: Supreme Shirt Forfeited
+  - Loan given to user: ₱5,000
+  - User forfeits (doesn't pay ₱5,250)
+  - Shirt market value: ₱6,500
+  - Pawnshop sells in thrift store: ₱6,500
+  - Profit: ₱1,500 (₱6,500 - ₱5,000)
+  - Plus uncollected interest: ₱250
+  - Total revenue: ₱1,750 per forfeited item
+```
+
 ---
 
 ## COMPLETE PAWN LIFECYCLE EXAMPLE
 
-### Scenario: User pawns a laptop
+### Scenario: User pawns a Supreme branded shirt
 
 **User Actions:**
 ```
 1. User logs in → Dashboard
 2. Clicks "Create Pawn" → Fills form:
-   - Item: "Gaming Laptop"
-   - Description: "ASUS ROG, i7, 16GB RAM"
-   - Category: Electronics
-   - Requested Amount: ₱15,000
-   - Upload 3 photos
+   - Item: "Supreme Box Logo T-Shirt"
+   - Description: "Black, Size Large, 2023 release, like-new condition, authentic tags"
+   - Category: T-Shirt
+   - Requested Amount: ₱5,000
+   - Upload 3 photos (front, back, tags)
 3. Submits → Status: PENDING
 ```
 
@@ -331,63 +400,72 @@ Search and filter by:
 ```
 4. Admin views in "Review Requests"
 5. Reviews photos and details
-6. Decides to APPROVE
-7. Sets estimated value: ₱12,000
-8. Sets terms:
-   - Interest: 10% (₱1,200)
-   - Total repayment: ₱13,200
-   - Due date: Jan 7, 2026 (30 days)
-9. Status → APPROVED
+6. Checks brand authenticity from photos
+7. Verifies Supreme box logo looks legitimate
+8. Checks market resale value (₱6,000-7,000)
+9. Decides to APPROVE
+10. Sets estimated value: ₱5,000
+11. Sets terms:
+    - Interest: 5% (₱250)
+    - Total repayment: ₱5,250
+    - Due date: Jan 7, 2026 (30 days)
+12. Status → APPROVED
 ```
 
 **Admin Actions (Phase 2 - Validation):**
 ```
-10. Item appears in "Item Validation"
-11. Admin clicks "Validate & Release"
-12. System creates loan:
-    - Loan amount: ₱12,000
-    - Interest: ₱1,200
-    - Total due: ₱13,200
-13. Status → PAWNED
-14. User wallet increases by ₱12,000
+13. User brings Supreme shirt to pawnshop counter
+14. Shirt appears in "Item Validation" queue
+15. Admin physically inspects shirt:
+    - Verifies authentic Supreme tags and labels
+    - Checks stitching quality and print
+    - Confirms no stains, tears, or fading
+    - Validates size and condition
+16. Admin clicks "Validate & Release"
+17. System creates loan:
+    - Loan amount: ₱5,000
+    - Interest: ₱250
+    - Total due: ₱5,250
+18. Status → PAWNED
+19. Admin hands ₱5,000 cash to user (over counter)
+20. Shirt tagged with pawn ID and stored in inventory
 ```
 
 **User Actions (Redemption Option 1):**
 ```
-15. User wants item back before due date
-16. Goes to Pawn Status
-17. Clicks "Redeem Item"
-18. System checks: Wallet = ₱12,000, needs ₱13,200
-19. Shows error: "Insufficient funds"
-20. User does cash-in at counter for ₱2,000
-21. Admin adds ₱2,000 to user wallet
-22. User clicks "Redeem Item" again
-23. ₱13,200 deducted from wallet
-24. Status → REDEEMED
-25. User gets laptop back
+21. User wants shirt back before due date
+22. Goes to pawnshop counter with ₱5,250 cash
+23. Admin verifies identity
+24. Admin processes payment in system
+25. Clicks "Process Payment" in Loan Manager
+26. Status → REDEEMED
+27. Admin retrieves Supreme shirt from inventory
+28. User receives shirt back
 ```
 
 **User Actions (Renewal Option 2):**
 ```
-15. User redeemed item earlier
-16. Wants to pawn again
-17. Clicks "Renew Loan"
-18. Status → APPROVED
-19. Back to admin validation queue
-20. Admin validates again → PAWNED
-21. New loan cycle begins
+21. User cannot pay full amount yet
+22. Goes to pawnshop counter before due date
+23. Pays ₱250 (interest only) to renew
+24. Admin creates new loan with same shirt
+25. New due date: 30 days from renewal
+26. Status remains → PAWNED
+27. Shirt stays in inventory for another month
 ```
 
 **Admin Actions (Forfeiture Option 3):**
 ```
-15. Due date passed (Jan 8, 2026)
-16. User hasn't redeemed
-17. Admin goes to Loan Management
-18. Finds overdue loan
-19. Clicks "Forfeit"
-20. Status → FORFEITED
-21. Pawnshop keeps laptop
-22. User loses item
+21. Due date passed (Jan 8, 2026)
+22. User hasn't redeemed or renewed
+23. Admin goes to Loan Management
+24. Finds overdue loan
+25. Clicks "Forfeit"
+26. Status → FORFEITED
+27. Supreme shirt moved to thrift store inventory
+28. Shirt listed for resale at ₱6,500-7,000
+29. Pawnshop earns profit from resale
+30. User loses shirt permanently
 ```
 
 ---
@@ -407,10 +485,11 @@ Search and filter by:
 4. Penalties may apply for late payments (configurable)
 
 ### Status Rules:
-1. Only one active loan per item
-2. Renewed items must go through approval again
-3. Rejected items cannot be resubmitted (must create new request)
-4. Forfeited items cannot be redeemed
+1. Only one active loan per shirt
+2. Renewed loans extend the same loan (no new approval needed)
+3. Rejected shirts cannot be resubmitted (must create new request)
+4. Forfeited shirts cannot be redeemed and are moved to thrift inventory
+5. Forfeited shirts are listed for resale at market value
 
 ### Admin Access Rules:
 1. Admins cannot access user pages while logged in as admin
@@ -423,16 +502,18 @@ Search and filter by:
 ## NOTIFICATION FLOW
 
 ### User Notifications:
-- Pawn request approved/rejected
-- Loan validated and money released
+- Shirt pawn request approved/rejected
+- Loan validated - bring ID to counter for cash
 - Loan due soon (7 days before)
-- Loan overdue
-- Wallet transaction completed
+- Loan overdue - shirt will be forfeited
+- Loan forfeited - shirt moved to thrift store
+- Wallet transaction completed (cash in/out processed)
 
 ### Admin Notifications:
-- New pawn request submitted
-- Item ready for validation
-- Loan overdue (requires action)
+- New shirt pawn request submitted
+- Shirt ready for physical validation
+- Loan overdue (requires forfeiture action)
+- Forfeited shirt added to thrift inventory
 
 ---
 
@@ -495,16 +576,18 @@ Loan (1) ─────< (Many) TransactionLog
 ## ERROR HANDLING
 
 ### Common User Errors:
-- Insufficient wallet balance → Show current balance and required amount
-- Invalid file upload → Show supported formats and size limits
+- Payment at counter required → Show "Please proceed to counter" message
+- Invalid shirt photo upload → Show supported formats (JPG, PNG) and size limits
 - Network error → Retry option with error message
 - Session expired → Redirect to login
+- Insufficient wallet balance → Redirect to counter for cash transaction
 
 ### Common Admin Errors:
-- Duplicate validation → Prevent processing same item twice
-- Invalid amount → Validate numeric input
-- Missing required fields → Highlight errors
+- Duplicate validation → Prevent processing same shirt twice
+- Invalid loan amount → Validate numeric input and reasonable shirt value
+- Missing shirt condition details → Highlight required fields
 - Permission denied → Check admin role
+- Fake brand detected → Reject with authenticity reason
 
 ---
 
@@ -527,27 +610,35 @@ Loan (1) ─────< (Many) TransactionLog
 USER SIDE:                          ADMIN SIDE:
 Register/Login                      Admin Login
     ↓                                   ↓
-Create Pawn Request              Review Requests
+Create Shirt Pawn Request        Review Shirt Requests
+(Upload photos + details)        (Check brand, condition, value)
     ↓                                   ↓
 Status: PENDING ──────────────→ Approve/Reject
     ↓                                   ↓
-Status: APPROVED ─────────────→ Validate & Release
+Status: APPROVED                 Awaiting Physical Validation
     ↓                                   ↓
-Money in Wallet ←───────────── Loan Created
-    ↓                                   
-Use funds or Redeem                 Monitor Loans
+Bring Shirt to Counter ────────→ Inspect Shirt (tags, condition)
     ↓                                   ↓
-Redeem Item ──────────────────→ Process Payment
-    ↓                              (or Forfeit)
-Status: REDEEMED                       ↓
-    ↓                              Update Status
-Renew Loan (optional) ─────────→ Re-validate
-    ↓
-Cycle repeats
+Receive Cash Over Counter ←──── Validate & Create Loan
+    ↓                                   ↓
+Shirt Stored in Pawnshop         Tag & Store in Inventory
+    ↓                                   ↓
+Monitor Loan in Dashboard        Monitor Active Loans
+    ↓                                   ↓
+Bring Cash to Redeem ──────────→ Process Payment
+    ↓                                   ↓
+Receive Shirt Back ←─────────── Return Shirt to User
+              OR                           OR
+    ↓                                   ↓
+Don't Pay by Due Date ─────────→ Forfeit Loan
+    ↓                                   ↓
+Lose Shirt Ownership             Move to Thrift Store Inventory
+                                        ↓
+                                   List for Resale at Market Price
 ```
 
 ---
 
 **System Version**: 1.0  
 **Last Updated**: December 8, 2025  
-**Tech Stack**: Spring Boot, React, PostgreSQL
+**Tech Stack**: Spring Boot, React, PostgreSQL/MySQL
