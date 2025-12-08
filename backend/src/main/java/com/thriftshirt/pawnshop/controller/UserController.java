@@ -1,6 +1,8 @@
 package com.thriftshirt.pawnshop.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.thriftshirt.pawnshop.dto.request.CreatePawnRequestDTO;
@@ -49,6 +52,12 @@ public class UserController {
 
     @Autowired
     private TransactionLogService transactionLogService;
+
+    @Autowired
+    private com.thriftshirt.pawnshop.service.UserService userService;
+
+    @Autowired
+    private com.thriftshirt.pawnshop.repository.UserRepository userRepository;
 
     @GetMapping("/dashboard")
     public ResponseEntity<ApiResponse> getUserDashboard(Authentication authentication) {
@@ -191,9 +200,6 @@ public class UserController {
         }
 
         try {
-            // Get pawn request first
-            var pawnResponse = pawnRequestService.getPawnRequestById(pawnId);
-            
             // Find the associated loan
             List<com.thriftshirt.pawnshop.entity.Loan> userLoans = loanService.getUserLoans(user.getId());
             com.thriftshirt.pawnshop.entity.Loan targetLoan = userLoans.stream()
@@ -201,7 +207,7 @@ public class UserController {
                     .findFirst()
                     .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("No active loan found for this pawn item"));
             
-            com.thriftshirt.pawnshop.entity.Loan loan = loanService.processPayment(targetLoan.getLoanId());
+            com.thriftshirt.pawnshop.entity.Loan loan = loanService.processPayment(targetLoan.getLoanId(), user.getId());
             
             logger.info("Loan {} redeemed successfully by user: {}", targetLoan.getLoanId(), user.getId());
             return ResponseEntity.ok(ApiResponse.success("Loan redeemed successfully", loan));
@@ -336,6 +342,110 @@ public class UserController {
             logger.error("Error clearing transaction history: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to clear transaction history"));
+        }
+    }
+
+    @PostMapping("/wallet/cash-in")
+    public ResponseEntity<ApiResponse> cashIn(
+            @RequestParam BigDecimal amount,
+            Authentication authentication) {
+        logger.info("Cash in requested by: {} for amount: {}", authentication.getName(), amount);
+
+        User user = (User) authentication.getPrincipal();
+
+        if (!user.getRole().name().equals("USER")) {
+            logger.warn("Non-user attempted to cash in: {}", authentication.getName());
+            return ResponseEntity.status(403)
+                    .body(ApiResponse.error("User privileges required"));
+        }
+
+        try {
+            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.error("Invalid amount. Amount must be greater than zero."));
+            }
+
+            BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
+            user.setWalletBalance(currentBalance.add(amount));
+            userService.saveUser(user);
+
+            logger.info("Cash in successful for user: {}. Amount: ₱{}", user.getId(), amount);
+            return ResponseEntity.ok(ApiResponse.success("Cash in successful", 
+                Map.of("newBalance", user.getWalletBalance(), "addedAmount", amount)));
+        } catch (Exception e) {
+            logger.error("Error processing cash in: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to process cash in: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/wallet/cash-out")
+    public ResponseEntity<ApiResponse> cashOut(
+            @RequestParam BigDecimal amount,
+            Authentication authentication) {
+        logger.info("Cash out requested by: {} for amount: {}", authentication.getName(), amount);
+
+        User user = (User) authentication.getPrincipal();
+
+        if (!user.getRole().name().equals("USER")) {
+            logger.warn("Non-user attempted to cash out: {}", authentication.getName());
+            return ResponseEntity.status(403)
+                    .body(ApiResponse.error("User privileges required"));
+        }
+
+        try {
+            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.error("Invalid amount. Amount must be greater than zero."));
+            }
+
+            BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
+            
+            if (currentBalance.compareTo(amount) < 0) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.error(String.format(
+                            "Insufficient balance. Available: ₱%.2f, Requested: ₱%.2f", 
+                            currentBalance.doubleValue(), amount.doubleValue())));
+            }
+
+            user.setWalletBalance(currentBalance.subtract(amount));
+            userService.saveUser(user);
+
+            logger.info("Cash out successful for user: {}. Amount: ₱{}", user.getId(), amount);
+            return ResponseEntity.ok(ApiResponse.success("Cash out successful", 
+                Map.of("newBalance", user.getWalletBalance(), "withdrawnAmount", amount)));
+        } catch (Exception e) {
+            logger.error("Error processing cash out: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to process cash out: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/wallet/balance")
+    public ResponseEntity<ApiResponse> getWalletBalance(Authentication authentication) {
+        logger.info("Wallet balance requested by: {}", authentication.getName());
+
+        User user = (User) authentication.getPrincipal();
+
+        if (!user.getRole().name().equals("USER")) {
+            logger.warn("Non-user attempted to get wallet balance: {}", authentication.getName());
+            return ResponseEntity.status(403)
+                    .body(ApiResponse.error("User privileges required"));
+        }
+
+        try {
+            // Refresh user from database to get latest balance
+            User refreshedUser = userRepository.findById(user.getId())
+                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
+            BigDecimal balance = refreshedUser.getWalletBalance() != null ? refreshedUser.getWalletBalance() : BigDecimal.ZERO;
+            
+            logger.info("Wallet balance retrieved for user {}: ₱{}", user.getId(), balance);
+            return ResponseEntity.ok(ApiResponse.success("Wallet balance retrieved", 
+                Map.of("balance", balance)));
+        } catch (Exception e) {
+            logger.error("Error retrieving wallet balance: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to retrieve wallet balance: " + e.getMessage()));
         }
     }
 

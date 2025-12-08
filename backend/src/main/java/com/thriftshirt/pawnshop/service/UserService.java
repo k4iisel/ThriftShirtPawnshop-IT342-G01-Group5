@@ -66,4 +66,11 @@ public class UserService {
         logger.info("User {} status changed to: {}", user.getUsername(), newStatus ? "ENABLED" : "DISABLED");
         return user;
     }
+
+    /**
+     * Save user (for wallet operations)
+     */
+    public User saveUser(User user) {
+        return userRepository.save(user);
+    }
 }

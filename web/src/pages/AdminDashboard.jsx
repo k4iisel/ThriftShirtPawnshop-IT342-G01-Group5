@@ -159,6 +159,11 @@ function AdminDashboard() {
                 <span className="nav-icon">📦</span> Inventory
               </Link>
             </li>
+            <li>
+              <Link to="/developer_admin_wallet" className="admin-nav-link">
+                <span className="nav-icon">💳</span> Wallet Management
+              </Link>
+            </li>
           </ul>
         </div>
 

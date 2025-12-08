@@ -1,5 +1,6 @@
 package com.thriftshirt.pawnshop.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -74,10 +75,14 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "wallet_balance", precision = 10, scale = 2)
+    private BigDecimal walletBalance = BigDecimal.ZERO;
+
     // Constructors
     public User() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        this.walletBalance = BigDecimal.ZERO;
     }
 
     public User(String username, String email, String password) {
@@ -236,5 +241,13 @@ public class User implements UserDetails {
 
     public void setSessionCreatedAt(LocalDateTime sessionCreatedAt) {
         this.sessionCreatedAt = sessionCreatedAt;
+    }
+
+    public BigDecimal getWalletBalance() {
+        return walletBalance;
+    }
+
+    public void setWalletBalance(BigDecimal walletBalance) {
+        this.walletBalance = walletBalance;
     }
 }

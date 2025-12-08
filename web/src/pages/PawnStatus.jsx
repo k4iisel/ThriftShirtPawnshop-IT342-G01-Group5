@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Header from '../components/Header';
 import ImageModal from '../components/ImageModal';
@@ -9,6 +9,7 @@ import '../styles/PawnStatus.css';
 
 function PawnStatus() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [pawns, setPawns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -60,29 +61,34 @@ function PawnStatus() {
         const allPawns = response.data;
         
         // Transform the API response data to match the UI structure
-        const transformedPawns = allPawns.map((pawn, index) => ({
-          pawnId: pawn.pawnId,
-          itemName: pawn.itemName,
-          brand: pawn.brand,
-          size: pawn.size,
-          category: pawn.category,
-          condition: pawn.condition,
-          description: pawn.description,
-          status: pawn.status || 'PENDING',
-          requestedAmount: pawn.requestedAmount,
-          estimatedValue: pawn.estimatedValue,
-          appraisalDate: pawn.appraisalDate,
-          appraisedBy: pawn.appraisedBy,
-          photos: pawn.photos,
-          // Generate placeholder values for display
-          image: 'https://via.placeholder.com/100x100?text=' + encodeURIComponent(pawn.itemName),
-          submissionDate: new Date().toLocaleDateString('en-GB'), // Current date
-          interestRate: 5,
-          interestAmount: pawn.requestedAmount ? pawn.requestedAmount * 0.05 : 0,
-          totalToRedeem: pawn.requestedAmount ? pawn.requestedAmount * 1.05 : 0,
-          loanPeriod: 30,
-          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB')
-        }));
+        const transformedPawns = allPawns.map((pawn, index) => {
+          // Use estimatedValue for loan calculations (matches backend), fallback to requestedAmount
+          const loanBaseAmount = pawn.estimatedValue || pawn.requestedAmount || 0;
+          
+          return {
+            pawnId: pawn.pawnId,
+            itemName: pawn.itemName,
+            brand: pawn.brand,
+            size: pawn.size,
+            category: pawn.category,
+            condition: pawn.condition,
+            description: pawn.description,
+            status: pawn.status || 'PENDING',
+            requestedAmount: pawn.requestedAmount,
+            estimatedValue: pawn.estimatedValue,
+            appraisalDate: pawn.appraisalDate,
+            appraisedBy: pawn.appraisedBy,
+            photos: pawn.photos,
+            // Generate placeholder values for display
+            image: 'https://via.placeholder.com/100x100?text=' + encodeURIComponent(pawn.itemName),
+            submissionDate: new Date().toLocaleDateString('en-GB'), // Current date
+            interestRate: 5,
+            interestAmount: loanBaseAmount * 0.05,
+            totalToRedeem: loanBaseAmount * 1.05,
+            loanPeriod: 30,
+            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB')
+          };
+        });
         setPawns(transformedPawns);
         
         if (transformedPawns.length === 0) {
@@ -103,14 +109,27 @@ function PawnStatus() {
   };
 
   const handleRedeemItem = async (pawn) => {
-    if (window.confirm(`Are you sure you want to redeem "${pawn.itemName}"? This will complete the loan payment and return your item.`)) {
+    // Calculate total redeem amount (loan + 5% interest)
+    // Use estimatedValue (what the backend loan uses) or fallback to requestedAmount
+    const loanAmount = pawn.estimatedValue || pawn.requestedAmount || 0;
+    const interestAmount = loanAmount * 0.05;
+    const totalRedeemAmount = loanAmount + interestAmount;
+    
+    const confirmMessage = `Are you sure you want to redeem "${pawn.itemName}"?\n\n` +
+      `Amount: ₱${loanAmount.toFixed(2)}\n` +
+      `Interest (5%): ₱${interestAmount.toFixed(2)}\n` +
+      `Total Amount: ₱${totalRedeemAmount.toFixed(2)}\n\n` +
+      `This amount will be deducted from your wallet balance. The loan will be completed and your item will be returned to you.`;
+      
+    if (window.confirm(confirmMessage)) {
       try {
         // For now, we'll use the pawnId as a proxy to find the loan
         // In a real scenario, we'd get the loan ID from the pawn data
         const response = await apiService.loan.redeem(pawn.pawnId);
         
         if (response.success) {
-          notify.notifySuccess('✅ Item redeemed successfully! Your loan has been paid.');
+          const totalAmount = (pawn.estimatedValue || pawn.requestedAmount || 0) * 1.05;
+          notify.notifySuccess(`✅ Item redeemed successfully! ₱${totalAmount.toFixed(2)} has been deducted from your wallet.`);
           // Refresh the pawn requests list
           fetchPawnRequests();
         } else {
@@ -118,27 +137,38 @@ function PawnStatus() {
         }
       } catch (error) {
         console.error('❌ Error redeeming item:', error);
-        notify.notifyError('❌ Error redeeming item: ' + error.message);
+        // Enhanced error message based on error type
+        let errorMessage = 'An unexpected error occurred. Please try again later.';
+        
+        if (error.status === 400 && error.data?.message) {
+          errorMessage = error.data.message; // This will show "Amount is not enough" etc.
+        } else if (error.status === 401) {
+          errorMessage = 'Authentication required. Please log in again.';
+        } else if (error.status === 403) {
+          errorMessage = 'Access denied. Insufficient permissions.';
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        notify.notifyError('❌ Error redeeming item: ' + errorMessage);
       }
     }
   };
 
   const handleRenewLoan = async (pawn) => {
-    if (window.confirm(`Are you sure you want to renew the loan for "${pawn.itemName}"? This will create a new loan with the same terms.`)) {
+    if (window.confirm(`Are you sure you want to renew the loan for "${pawn.itemName}"? The item status will be changed to PENDING for admin approval.`)) {
       try {
-        // For redeemed items, create a new loan
         const response = await apiService.loan.renew(pawn.pawnId);
         
         if (response.success) {
-          notify.notifySuccess('✅ New loan created successfully!');
-          // Refresh the pawn requests list
+          notify.notifySuccess('✅ Loan renewal requested! The item is now pending admin approval.');
           fetchPawnRequests();
         } else {
-          notify.notifyError('❌ Failed to create new loan: ' + (response.message || 'Unknown error'));
+          notify.notifyError('❌ Failed to renew loan: ' + (response.message || 'Unknown error'));
         }
       } catch (error) {
-        console.error('❌ Error creating new loan:', error);
-        notify.notifyError('❌ Error creating new loan: ' + error.message);
+        console.error('❌ Error renewing loan:', error);
+        notify.notifyError('❌ Error renewing loan: ' + error.message);
       }
     }
   };
@@ -304,13 +334,6 @@ function PawnStatus() {
                     >
                       Renew Loan
                     </button>
-                  </div>
-                )}
-                {pawn.status === 'REJECTED' && (
-                  <div className="status-message-container">
-                    <div className="status-message">
-                      This request was rejected
-                    </div>
                   </div>
                 )}
 

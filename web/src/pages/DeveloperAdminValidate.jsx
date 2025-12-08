@@ -48,7 +48,29 @@ function DeveloperAdminValidate() {
             fetchRequests(); // Refresh list
         } catch (error) {
             console.error('Error validating pawn:', error);
-            notifyError('Failed to create loan');
+            const errorMessage = error.message || 'Failed to create loan';
+            if (errorMessage.includes('Loan already exists')) {
+                notifyError('This item has already been validated and has an active loan');
+            } else if (errorMessage.includes('must be APPROVED')) {
+                notifyError('Item must be APPROVED before validation');
+            } else {
+                notifyError(errorMessage);
+            }
+        }
+    };
+
+    const handleReject = async (pawnId, itemName) => {
+        if (!window.confirm(`Reject this item: "${itemName}"? The status will be changed to REJECTED.`)) {
+            return;
+        }
+
+        try {
+            await apiService.admin.updatePawnStatus(pawnId, 'REJECTED');
+            notifySuccess('Item rejected successfully');
+            fetchRequests(); // Refresh list
+        } catch (error) {
+            console.error('Error rejecting pawn:', error);
+            notifyError('Failed to reject item');
         }
     };
 
@@ -130,12 +152,20 @@ function DeveloperAdminValidate() {
                                                     }
                                                 </td>
                                                 <td>
-                                                    <button
-                                                        className="validate-action-btn"
-                                                        onClick={() => handleValidate(req.pawnId, (req.estimatedValue || req.requestedAmount))}
-                                                    >
-                                                        Validate & Release Loan
-                                                    </button>
+                                                    <div className="validate-actions">
+                                                        <button
+                                                            className="validate-action-btn validate-btn"
+                                                            onClick={() => handleValidate(req.pawnId, (req.estimatedValue || req.requestedAmount))}
+                                                        >
+                                                            Validate & Release
+                                                        </button>
+                                                        <button
+                                                            className="validate-action-btn reject-btn"
+                                                            onClick={() => handleReject(req.pawnId, req.itemName)}
+                                                        >
+                                                            Reject
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))

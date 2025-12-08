@@ -1,5 +1,6 @@
 package com.thriftshirt.pawnshop.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.thriftshirt.pawnshop.dto.response.ApiResponse;
@@ -328,7 +330,11 @@ public class AdminController {
         }
 
         try {
-            com.thriftshirt.pawnshop.entity.Loan loan = loanService.processPayment(loanId);
+            // Get the loan to find the user ID
+            com.thriftshirt.pawnshop.entity.Loan loanToProcess = loanService.getLoanById(loanId);
+            Long userId = loanToProcess.getPawnItem().getUser().getId();
+            
+            com.thriftshirt.pawnshop.entity.Loan loan = loanService.processPayment(loanId, userId);
             return ResponseEntity.ok(ApiResponse.success("Payment processed successfully", loan));
         } catch (Exception e) {
             logger.error("Error processing payment: ", e);
@@ -377,6 +383,237 @@ public class AdminController {
                     "success", false,
                     "error", e.getMessage(),
                     "details", e.getClass().getSimpleName()));
+        }
+    }
+
+    // Admin wallet management endpoints
+    @PostMapping("/users/{userId}/wallet/add-funds")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> addFundsToUserWallet(
+            @PathVariable Long userId,
+            @RequestParam BigDecimal amount,
+            Authentication authentication) {
+        logger.info("Admin adding funds to user {} wallet. Amount: {}", userId, amount);
+
+        User adminUser = (User) authentication.getPrincipal();
+        if (!adminUser.getRole().name().equals("ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
+        }
+
+        try {
+            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Invalid amount. Amount must be greater than zero."));
+            }
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
+
+            BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
+            user.setWalletBalance(currentBalance.add(amount));
+            userRepository.save(user);
+
+            // Log the admin action
+            com.thriftshirt.pawnshop.entity.TransactionLog log = new com.thriftshirt.pawnshop.entity.TransactionLog();
+            log.setUser(adminUser);
+            log.setAction("ADMIN_ADD_FUNDS");
+            log.setRemarks(String.format("Admin added ₱%.2f to user %s (ID: %d) wallet. New balance: ₱%.2f", 
+                    amount.doubleValue(), user.getUsername(), userId, user.getWalletBalance().doubleValue()));
+            transactionLogService.logTransaction(log);
+
+            logger.info("Admin successfully added ₱{} to user {} wallet", amount, userId);
+            return ResponseEntity.ok(ApiResponse.success("Funds added successfully", 
+                    Map.of("userId", userId, "addedAmount", amount, "newBalance", user.getWalletBalance())));
+        } catch (Exception e) {
+            logger.error("Error adding funds to user wallet: ", e);
+            return ResponseEntity.status(500)
+                    .body(ApiResponse.error("Failed to add funds: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/users/{userId}/wallet/deduct-funds")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> deductFundsFromUserWallet(
+            @PathVariable Long userId,
+            @RequestParam BigDecimal amount,
+            Authentication authentication) {
+        logger.info("Admin deducting funds from user {} wallet. Amount: {}", userId, amount);
+
+        User adminUser = (User) authentication.getPrincipal();
+        if (!adminUser.getRole().name().equals("ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
+        }
+
+        try {
+            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Invalid amount. Amount must be greater than zero."));
+            }
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
+
+            BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
+            
+            if (currentBalance.compareTo(amount) < 0) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error(String.format(
+                                "Insufficient balance. User has ₱%.2f, requested to deduct ₱%.2f", 
+                                currentBalance.doubleValue(), amount.doubleValue())));
+            }
+
+            user.setWalletBalance(currentBalance.subtract(amount));
+            userRepository.save(user);
+
+            // Log the admin action
+            com.thriftshirt.pawnshop.entity.TransactionLog log = new com.thriftshirt.pawnshop.entity.TransactionLog();
+            log.setUser(adminUser);
+            log.setAction("ADMIN_DEDUCT_FUNDS");
+            log.setRemarks(String.format("Admin deducted ₱%.2f from user %s (ID: %d) wallet. New balance: ₱%.2f", 
+                    amount.doubleValue(), user.getUsername(), userId, user.getWalletBalance().doubleValue()));
+            transactionLogService.logTransaction(log);
+
+            logger.info("Admin successfully deducted ₱{} from user {} wallet", amount, userId);
+            return ResponseEntity.ok(ApiResponse.success("Funds deducted successfully", 
+                    Map.of("userId", userId, "deductedAmount", amount, "newBalance", user.getWalletBalance())));
+        } catch (Exception e) {
+            logger.error("Error deducting funds from user wallet: ", e);
+            return ResponseEntity.status(500)
+                    .body(ApiResponse.error("Failed to deduct funds: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/users/{userId}/wallet/balance")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> getUserWalletBalance(
+            @PathVariable Long userId,
+            Authentication authentication) {
+        logger.info("Admin checking wallet balance for user: {}", userId);
+
+        User adminUser = (User) authentication.getPrincipal();
+        if (!adminUser.getRole().name().equals("ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
+        }
+
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
+
+            BigDecimal balance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
+            
+            return ResponseEntity.ok(ApiResponse.success("Wallet balance retrieved", 
+                    Map.of("userId", userId, "username", user.getUsername(), "walletBalance", balance)));
+        } catch (Exception e) {
+            logger.error("Error getting user wallet balance: ", e);
+            return ResponseEntity.status(500)
+                    .body(ApiResponse.error("Failed to get wallet balance: " + e.getMessage()));
+        }
+    }
+
+    // Add cash to user wallet
+    @PostMapping("/users/{userId}/add-cash")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> addCashToUser(
+            @PathVariable Long userId,
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
+        logger.info("Admin adding cash to user {}", userId);
+
+        User admin = (User) authentication.getPrincipal();
+
+        try {
+            BigDecimal amount = new BigDecimal(request.get("amount").toString());
+            String reason = request.get("reason") != null ? request.get("reason").toString() : "Cash added by admin";
+
+            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                return ResponseEntity.status(400)
+                        .body(ApiResponse.error("Amount must be greater than zero"));
+            }
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
+
+            BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
+            BigDecimal newBalance = currentBalance.add(amount);
+            user.setWalletBalance(newBalance);
+            userRepository.save(user);
+
+            // Log transaction
+            com.thriftshirt.pawnshop.entity.TransactionLog log = new com.thriftshirt.pawnshop.entity.TransactionLog();
+            log.setUser(user);
+            log.setAction("ADMIN_ADD_CASH");
+            log.setRemarks(String.format("Admin %s added ₱%.2f to wallet. Reason: %s. New balance: ₱%.2f",
+                    admin.getUsername(), amount.doubleValue(), reason, newBalance.doubleValue()));
+            transactionLogService.logTransaction(log);
+
+            logger.info("✅ Admin {} added ₱{} to user {} wallet", admin.getId(), amount, userId);
+            return ResponseEntity.ok(ApiResponse.success("Cash added successfully",
+                    Map.of("userId", userId, "newBalance", newBalance, "amountAdded", amount)));
+        } catch (NumberFormatException e) {
+            logger.error("Invalid amount format: ", e);
+            return ResponseEntity.status(400)
+                    .body(ApiResponse.error("Invalid amount format"));
+        } catch (Exception e) {
+            logger.error("Error adding cash to user: ", e);
+            return ResponseEntity.status(500)
+                    .body(ApiResponse.error("Failed to add cash: " + e.getMessage()));
+        }
+    }
+
+    // Remove cash from user wallet
+    @PostMapping("/users/{userId}/remove-cash")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> removeCashFromUser(
+            @PathVariable Long userId,
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
+        logger.info("Admin removing cash from user {}", userId);
+
+        User admin = (User) authentication.getPrincipal();
+
+        try {
+            BigDecimal amount = new BigDecimal(request.get("amount").toString());
+            String reason = request.get("reason") != null ? request.get("reason").toString() : "Cash removed by admin";
+
+            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                return ResponseEntity.status(400)
+                        .body(ApiResponse.error("Amount must be greater than zero"));
+            }
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
+
+            BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
+
+            if (currentBalance.compareTo(amount) < 0) {
+                return ResponseEntity.status(400)
+                        .body(ApiResponse.error(String.format("Insufficient balance. Available: ₱%.2f, Requested: ₱%.2f",
+                                currentBalance.doubleValue(), amount.doubleValue())));
+            }
+
+            BigDecimal newBalance = currentBalance.subtract(amount);
+            user.setWalletBalance(newBalance);
+            userRepository.save(user);
+
+            // Log transaction
+            com.thriftshirt.pawnshop.entity.TransactionLog log = new com.thriftshirt.pawnshop.entity.TransactionLog();
+            log.setUser(user);
+            log.setAction("ADMIN_REMOVE_CASH");
+            log.setRemarks(String.format("Admin %s removed ₱%.2f from wallet. Reason: %s. New balance: ₱%.2f",
+                    admin.getUsername(), amount.doubleValue(), reason, newBalance.doubleValue()));
+            transactionLogService.logTransaction(log);
+
+            logger.info("✅ Admin {} removed ₱{} from user {} wallet", admin.getId(), amount, userId);
+            return ResponseEntity.ok(ApiResponse.success("Cash removed successfully",
+                    Map.of("userId", userId, "newBalance", newBalance, "amountRemoved", amount)));
+        } catch (NumberFormatException e) {
+            logger.error("Invalid amount format: ", e);
+            return ResponseEntity.status(400)
+                    .body(ApiResponse.error("Invalid amount format"));
+        } catch (Exception e) {
+            logger.error("Error removing cash from user: ", e);
+            return ResponseEntity.status(500)
+                    .body(ApiResponse.error("Failed to remove cash: " + e.getMessage()));
         }
     }
 

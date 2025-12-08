@@ -222,6 +222,15 @@ export const apiService = {
       return sessionStorage.getItem('username');
     },
 
+    getWalletBalance: async () => {
+      const response = await fetch(`${API_BASE_URL}/user/wallet/balance`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      return await handleResponse(response);
+    },
+
     // Check if user has active session (for admin access prevention)
     checkUserSession: async () => {
       const response = await fetch(`${API_BASE_URL}/auth/check-user-session`, {
@@ -300,6 +309,24 @@ export const apiService = {
       const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/toggle-status`, {
         method: 'POST',
         headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    },
+
+    addCashToUser: async (userId, amount, reason) => {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/add-cash`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ amount, reason }),
+      });
+      return await handleResponse(response);
+    },
+
+    removeCashFromUser: async (userId, amount, reason) => {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/remove-cash`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ amount, reason }),
       });
       return await handleResponse(response);
     },
@@ -450,6 +477,25 @@ export const apiService = {
       return await handleResponse(response);
     },
 
+    // Wallet Management
+    cashIn: async (amount) => {
+      const response = await fetch(`${API_BASE_URL}/user/wallet/cash-in?amount=${amount}`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+
+      return await handleResponse(response);
+    },
+
+    cashOut: async (amount) => {
+      const response = await fetch(`${API_BASE_URL}/user/wallet/cash-out?amount=${amount}`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+
+      return await handleResponse(response);
+    },
+
   },
 
   // File Upload
@@ -469,6 +515,17 @@ export const apiService = {
   },
 
   // Add more service endpoints here as needed (transactions, etc.)
+
+  // User endpoints
+  user: {
+    getWalletBalance: async () => {
+      const response = await fetch(`${API_BASE_URL}/user/wallet/balance`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    }
+  },
 
   // Generic API call method
   call: async (endpoint, options = {}) => {

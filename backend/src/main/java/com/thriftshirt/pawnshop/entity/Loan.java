@@ -1,9 +1,18 @@
 package com.thriftshirt.pawnshop.entity;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "loan")
@@ -94,6 +103,39 @@ public class Loan {
 
     public void setDateRedeemed(LocalDate dateRedeemed) {
         this.dateRedeemed = dateRedeemed;
+    }
+
+    /**
+     * Calculate the total amount to redeem (loan amount + interest + penalty)
+     */
+    public BigDecimal calculateTotalRedeemAmount() {
+        BigDecimal total = this.loanAmount != null ? this.loanAmount : BigDecimal.ZERO;
+        
+        // Add interest calculation if applicable
+        if (this.interestRate != null && this.interestRate > 0) {
+            BigDecimal interestAmount = total.multiply(BigDecimal.valueOf(this.interestRate))
+                    .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+            total = total.add(interestAmount);
+        }
+        
+        // Add penalty if exists
+        if (this.penalty != null) {
+            total = total.add(this.penalty);
+        }
+        
+        return total;
+    }
+
+    /**
+     * Calculate interest amount only
+     */
+    public BigDecimal calculateInterestAmount() {
+        if (this.loanAmount == null || this.interestRate == null || this.interestRate <= 0) {
+            return BigDecimal.ZERO;
+        }
+        
+        return this.loanAmount.multiply(BigDecimal.valueOf(this.interestRate))
+                .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
     }
 
 }

@@ -1,0 +1,226 @@
+/* Wallet Management Specific Styles */
+.wallet-balance-cell {
+    font-weight: 600;
+    color: #27ae60;
+    font-size: 16px;
+}
+
+.wallet-action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.wallet-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.wallet-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.add-btn {
+    background: linear-gradient(135deg, #27ae60, #229954);
+    color: white;
+}
+
+.add-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+}
+
+.remove-btn {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.remove-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+}
+
+/* Modal Styles */
+.wallet-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.wallet-modal {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.wallet-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 32px;
+    color: #95a5a6;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+    width: 35px;
+    height: 35px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wallet-modal-close:hover {
+    color: #2c3e50;
+    transform: rotate(90deg);
+}
+
+.wallet-modal-title {
+    margin: 0 0 20px 0;
+    color: #2c3e50;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.wallet-modal-user-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.wallet-modal-user-info p {
+    margin: 5px 0;
+    color: #555;
+}
+
+.wallet-modal-user-info strong {
+    color: #2c3e50;
+}
+
+.wallet-modal-form {
+    margin-bottom: 20px;
+}
+
+.wallet-form-group {
+    margin-bottom: 15px;
+}
+
+.wallet-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #2c3e50;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.wallet-form-group input,
+.wallet-form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.wallet-form-group input:focus,
+.wallet-form-group textarea:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.wallet-modal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.wallet-modal-actions button {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.wallet-modal-cancel {
+    background: #95a5a6;
+    color: white;
+}
+
+.wallet-modal-cancel:hover {
+    background: #7f8c8d;
+}
+
+.wallet-modal-submit {
+    color: white;
+}
+
+.wallet-modal-submit.add {
+    background: linear-gradient(135deg, #27ae60, #229954);
+}
+
+.wallet-modal-submit.add:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+}
+
+.wallet-modal-submit.remove {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.wallet-modal-submit.remove:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+}
+
+.role-banned {
+    background: #e74c3c;
+    color: white;
+}

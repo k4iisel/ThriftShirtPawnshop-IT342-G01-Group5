@@ -153,6 +153,52 @@
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
+/* Wallet Card Specific Styling */
+.wallet-card {
+  position: relative;
+}
+
+.wallet-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  justify-content: center;
+}
+
+.cash-in-btn,
+.cash-out-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cash-in-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.cash-in-btn:hover {
+  background-color: #218838;
+  transform: translateY(-1px);
+}
+
+.cash-out-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.cash-out-btn:hover {
+  background-color: #c82333;
+  transform: translateY(-1px);
+}
+
 .user-stat-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
@@ -594,6 +640,10 @@
   font-weight: 600;
   color: #333;
   margin: 0 0 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .log-details {
@@ -601,6 +651,47 @@
   color: #666;
   margin: 0 0 6px 0;
   line-height: 1.4;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-approved {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-rejected {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.status-pawned {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-redeemed {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.status-forfeited {
+  background: #fff3cd;
+  color: #856404;
 }
 
 .log-time {
@@ -631,6 +722,10 @@
 
 .log-icon-error {
   background: linear-gradient(135deg, #f44336, #d32f2f);
+}
+
+.log-icon-info {
+  background: linear-gradient(135deg, #2196f3, #1976d2);
 }
 
 .log-icon-info {

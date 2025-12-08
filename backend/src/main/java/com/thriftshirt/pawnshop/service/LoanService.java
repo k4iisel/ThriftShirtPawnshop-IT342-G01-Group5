@@ -14,10 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.thriftshirt.pawnshop.entity.Loan;
 import com.thriftshirt.pawnshop.entity.PawnRequest;
 import com.thriftshirt.pawnshop.entity.TransactionLog;
+import com.thriftshirt.pawnshop.entity.User;
 import com.thriftshirt.pawnshop.exception.BadRequestException;
 import com.thriftshirt.pawnshop.exception.ResourceNotFoundException;
 import com.thriftshirt.pawnshop.repository.LoanRepository;
 import com.thriftshirt.pawnshop.repository.PawnRequestRepository;
+import com.thriftshirt.pawnshop.repository.UserRepository;
 
 @Service
 @Transactional
@@ -34,6 +36,17 @@ public class LoanService {
     @Autowired
     private TransactionLogService transactionLogService;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    /**
+     * Get loan by ID
+     */
+    public Loan getLoanById(Long loanId) {
+        return loanRepository.findById(loanId)
+                .orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
+    }
+
     /**
      * Create a loan from an approved pawn request
      */
@@ -43,20 +56,38 @@ public class LoanService {
         PawnRequest pawnRequest = pawnRequestRepository.findById(pawnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pawn request not found"));
 
+        // Check if loan already exists and is active
+        if (pawnRequest.getLoan() != null && "PAWNED".equals(pawnRequest.getStatus())) {
+            logger.info("Loan already exists for pawn ID: {}. Returning existing loan.", pawnId);
+            return pawnRequest.getLoan();
+        }
+
         // Validate status
         if (!"APPROVED".equals(pawnRequest.getStatus())) {
             throw new BadRequestException(
                     "Cannot create loan. Pawn request status must be APPROVED, but is: " + pawnRequest.getStatus());
         }
 
-        // Check if loan already exists
-        if (pawnRequest.getLoan() != null) {
-            throw new BadRequestException("Loan already exists for this pawn request");
+        // Check if there's an existing loan
+        Loan existingLoan = pawnRequest.getLoan();
+        boolean isRenewal = existingLoan != null && "PAID".equals(existingLoan.getStatus());
+        
+        // If there's an active loan (not paid), throw error
+        if (existingLoan != null && !"PAID".equals(existingLoan.getStatus())) {
+            throw new BadRequestException("An active loan already exists for this pawn request");
         }
 
-        // Create loan
-        Loan loan = new Loan();
-        loan.setPawnItem(pawnRequest);
+        // Create or reuse loan
+        Loan loan;
+        if (isRenewal) {
+            // Reuse existing loan for renewal
+            loan = existingLoan;
+            logger.info("Renewing existing loan ID: {} for pawn ID: {}", loan.getLoanId(), pawnId);
+        } else {
+            // Create new loan
+            loan = new Loan();
+            loan.setPawnItem(pawnRequest);
+        }
 
         Double loanAmountDouble = pawnRequest.getEstimatedValue() != null ? pawnRequest.getEstimatedValue()
                 : pawnRequest.getRequestedAmount();
@@ -72,10 +103,20 @@ public class LoanService {
         loan.setDueDate(LocalDate.now().plusDays(30)); // 30 Days
         loan.setStatus("ACTIVE");
         loan.setPenalty(BigDecimal.ZERO);
+        loan.setDateRedeemed(null); // Clear redemption date for renewals
 
         // Setup bidirectional relationship
         pawnRequest.setLoan(loan);
         pawnRequest.setStatus("PAWNED");
+
+        // Add loan amount to user's wallet
+        User user = pawnRequest.getUser();
+        BigDecimal currentWalletBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
+        user.setWalletBalance(currentWalletBalance.add(loan.getLoanAmount()));
+        userRepository.save(user);
+        
+        logger.info("💰 Added ₱{} to user {}'s wallet. New balance: ₱{}", 
+            loan.getLoanAmount(), user.getId(), user.getWalletBalance());
 
         // Save via PawnRequest (cascades to Loan)
         pawnRequest = pawnRequestRepository.save(pawnRequest);
@@ -87,7 +128,8 @@ public class LoanService {
         TransactionLog log = new TransactionLog();
         log.setUser(pawnRequest.getUser());
         log.setAction("LOAN_CREATED");
-        log.setRemarks("Loan created for item: " + pawnRequest.getItemName() + " (ID: " + pawnId + ") - Requested amount: ₱" + pawnRequest.getRequestedAmount());
+        log.setRemarks(String.format("Loan created for item: %s (ID: %d). ₱%.2f added to wallet. New wallet balance: ₱%.2f", 
+            pawnRequest.getItemName(), pawnId, loan.getLoanAmount().doubleValue(), user.getWalletBalance().doubleValue()));
         log.setCondition(pawnRequest.getCondition());
         log.setPhotos(pawnRequest.getPhotos());
         transactionLogService.logTransaction(log);
@@ -107,8 +149,8 @@ public class LoanService {
     /**
      * Process loan payment (Redeem item)
      */
-    public Loan processPayment(Long loanId) {
-        logger.info("Processing payment for loan ID: {}", loanId);
+    public Loan processPayment(Long loanId, Long userId) {
+        logger.info("Processing payment for loan ID: {} by user: {}", loanId, userId);
 
         Loan loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
@@ -117,24 +159,69 @@ public class LoanService {
             throw new BadRequestException("Loan is not active. Current status: " + loan.getStatus());
         }
 
+        // Get user and validate ownership
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        PawnRequest pawn = loan.getPawnItem();
+        if (!pawn.getUser().getId().equals(userId)) {
+            throw new BadRequestException("You can only redeem your own items");
+        }
+
+        // Calculate total redeem amount (loan + 5% interest + penalty)
+        BigDecimal totalRedeemAmount = loan.calculateTotalRedeemAmount();
+        BigDecimal userWalletBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
+
+        // Auto-sync wallet if empty but has active loans (for backward compatibility)
+        if (userWalletBalance.compareTo(BigDecimal.ZERO) == 0) {
+            List<Loan> userActiveLoans = loanRepository.findAll().stream()
+                .filter(l -> "ACTIVE".equals(l.getStatus()))
+                .filter(l -> l.getPawnItem().getUser().getId().equals(userId))
+                .collect(Collectors.toList());
+            
+            if (!userActiveLoans.isEmpty()) {
+                BigDecimal totalLoanAmount = userActiveLoans.stream()
+                    .map(Loan::getLoanAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                
+                user.setWalletBalance(totalLoanAmount);
+                userRepository.save(user);
+                userWalletBalance = totalLoanAmount;
+                logger.info("💰 Auto-synced wallet for user {}. Added ₱{} from {} active loan(s)", 
+                    userId, totalLoanAmount, userActiveLoans.size());
+            }
+        }
+
+        // Validate wallet balance
+        if (userWalletBalance.compareTo(totalRedeemAmount) < 0) {
+            throw new BadRequestException(String.format(
+                "Amount is not enough. Required: ₱%.2f, Available: ₱%.2f", 
+                totalRedeemAmount.doubleValue(), userWalletBalance.doubleValue()
+            ));
+        }
+
+        // Deduct amount from wallet
+        user.setWalletBalance(userWalletBalance.subtract(totalRedeemAmount));
+        userRepository.save(user);
+
         // Update Loan
         loan.setStatus("PAID");
         loan.setDateRedeemed(LocalDate.now());
 
         // Update Pawn Item
-        PawnRequest pawn = loan.getPawnItem();
         pawn.setStatus("REDEEMED");
 
         loanRepository.save(loan);
         pawnRequestRepository.save(pawn); // Explicitly save parent to ensure sync
 
-        logger.info("✅ Loan {} paid and item redeemed", loanId);
+        logger.info("✅ Loan {} paid and item redeemed. Amount deducted: ₱{}", loanId, totalRedeemAmount);
 
         // Log transaction
         TransactionLog log = new TransactionLog();
         log.setUser(pawn.getUser());
         log.setAction("LOAN_PAID");
-        log.setRemarks("Loan " + loanId + " paid. Item " + pawn.getItemName() + " redeemed.");
+        log.setRemarks(String.format("Loan %d paid (₱%.2f deducted from wallet). Item %s redeemed.", 
+                loanId, totalRedeemAmount.doubleValue(), pawn.getItemName()));
         log.setCondition(pawn.getCondition());
         transactionLogService.logTransaction(log);
 
@@ -188,7 +275,7 @@ public class LoanService {
     }
 
     /**
-     * Renew loan for redeemed items (reactivate existing loan)
+     * Renew loan for redeemed items (change status back to PENDING for admin approval)
      */
     public Loan renewLoan(Long pawnId) {
         logger.info("Renewing loan for pawn ID: {}", pawnId);
@@ -196,7 +283,7 @@ public class LoanService {
         PawnRequest pawnRequest = pawnRequestRepository.findById(pawnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pawn request not found"));
 
-        // Check if item is redeemed and can have a new loan
+        // Check if item is redeemed and can be renewed
         if (!"REDEEMED".equals(pawnRequest.getStatus())) {
             throw new BadRequestException("Loans can only be renewed for redeemed items. Current status: " + pawnRequest.getStatus());
         }
@@ -207,39 +294,26 @@ public class LoanService {
             throw new BadRequestException("No existing loan found for this pawn item");
         }
 
-        // Reset the loan to active status with new terms
-        Double loanAmountDouble = pawnRequest.getEstimatedValue() != null ? pawnRequest.getEstimatedValue()
-                : pawnRequest.getRequestedAmount();
+        // Change pawn request status to APPROVED so it appears in admin validate page
+        pawnRequest.setStatus("APPROVED");
 
-        if (loanAmountDouble == null) {
-            throw new BadRequestException("Cannot renew loan: No amount value found");
-        }
+        // Keep the loan in PAID status
+        // Admin will validate and create/renew the loan when they process it
 
-        existingLoan.setLoanAmount(BigDecimal.valueOf(loanAmountDouble));
-        existingLoan.setInterestRate(5); // 5%
-        existingLoan.setDueDate(LocalDate.now().plusDays(30)); // 30 Days
-        existingLoan.setStatus("ACTIVE");
-        existingLoan.setPenalty(BigDecimal.ZERO);
-        existingLoan.setDateRedeemed(null); // Clear redemption date
+        // Save the pawn request
+        pawnRequestRepository.save(pawnRequest);
 
-        // Update pawn request status to PAWNED
-        pawnRequest.setStatus("PAWNED");
-
-        // Save both entities
-        pawnRequest = pawnRequestRepository.save(pawnRequest);
-        Loan renewedLoan = loanRepository.save(existingLoan);
-
-        logger.info("✅ Loan renewed successfully. Loan ID: {}, Pawn ID: {}", renewedLoan.getLoanId(), pawnId);
+        logger.info("✅ Loan renewal requested. Pawn ID: {} status changed to APPROVED for validation", pawnId);
 
         // Log transaction
         TransactionLog log = new TransactionLog();
         log.setUser(pawnRequest.getUser());
-        log.setAction("LOAN_RENEWED");
-        log.setRemarks("Loan renewed for previously redeemed item: " + pawnRequest.getItemName() + " (Pawn ID: " + pawnId + ")");
+        log.setAction("LOAN_RENEWAL_REQUESTED");
+        log.setRemarks("Loan renewal requested for previously redeemed item: " + pawnRequest.getItemName() + " (Pawn ID: " + pawnId + "). Status changed to APPROVED, awaiting validation.");
         log.setCondition(pawnRequest.getCondition());
         transactionLogService.logTransaction(log);
 
-        return renewedLoan;
+        return existingLoan;
 
     }
 

@@ -53,6 +53,14 @@ public class PawnRequestService {
             throw new BadRequestException("Requested amount cannot exceed 10,000");
         }
 
+        // Validate that requested loan amount doesn't exceed estimated value
+        if (requestDTO.getEstimatedValue() != null && requestDTO.getRequestedAmount() > requestDTO.getEstimatedValue()) {
+            throw new BadRequestException(String.format(
+                "Requested loan amount (%.2f) cannot exceed the estimated value of the item (%.2f)",
+                requestDTO.getRequestedAmount(), requestDTO.getEstimatedValue()
+            ));
+        }
+
         // Validate photos - maximum 2 images
         if (requestDTO.getPhotos() != null && !requestDTO.getPhotos().isEmpty()) {
             int imageCount = countImagesInJson(requestDTO.getPhotos());
@@ -248,11 +256,8 @@ public class PawnRequestService {
                 .filter(req -> "PAWNED".equals(req.getStatus()))
                 .count();
 
-        // 2. Loan Amount (Total)
-        BigDecimal totalLoanAmount = userRequests.stream()
-                .filter(req -> "PAWNED".equals(req.getStatus()) && req.getLoan() != null)
-                .map(req -> req.getLoan().getLoanAmount())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // 2. Wallet Balance
+        BigDecimal walletBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
 
         // 3. Due Soon (within 3 days)
         LocalDate today = LocalDate.now();
@@ -268,7 +273,7 @@ public class PawnRequestService {
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("activePawns", activePawns);
-        stats.put("loanAmount", totalLoanAmount);
+        stats.put("loanAmount", walletBalance);
         stats.put("dueSoon", dueSoon);
 
         return stats;
