@@ -120,6 +120,13 @@ export const apiService = {
 
       const data = await handleResponse(response);
 
+      // Clear any existing user session to prevent conflicts
+      sessionStorage.removeItem('authToken');
+      sessionStorage.removeItem('userRole');
+      sessionStorage.removeItem('username');
+      sessionStorage.removeItem('email');
+      sessionStorage.removeItem('user');
+
       // Store admin token if present
       if (data.token) {
         sessionStorage.setItem('adminToken', data.token);
