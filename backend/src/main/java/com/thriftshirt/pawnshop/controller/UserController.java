@@ -35,7 +35,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/user")
-@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173" })
+
 @PreAuthorize("hasRole('USER')")
 public class UserController {
 
@@ -205,10 +205,12 @@ public class UserController {
             com.thriftshirt.pawnshop.entity.Loan targetLoan = userLoans.stream()
                     .filter(loan -> loan.getPawnItem().getPawnId().equals(pawnId))
                     .findFirst()
-                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("No active loan found for this pawn item"));
-            
-            com.thriftshirt.pawnshop.entity.Loan loan = loanService.processPayment(targetLoan.getLoanId(), user.getId());
-            
+                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException(
+                            "No active loan found for this pawn item"));
+
+            com.thriftshirt.pawnshop.entity.Loan loan = loanService.processPayment(targetLoan.getLoanId(),
+                    user.getId());
+
             logger.info("Loan {} redeemed successfully by user: {}", targetLoan.getLoanId(), user.getId());
             return ResponseEntity.ok(ApiResponse.success("Loan redeemed successfully", loan));
         } catch (Exception e) {
@@ -262,7 +264,7 @@ public class UserController {
                     .stream()
                     .filter(pawn -> "PAWNED".equals(pawn.getStatus()))
                     .collect(java.util.stream.Collectors.toList());
-            
+
             return ResponseEntity.ok(ApiResponse.success("User loans retrieved successfully", pawnedItems));
         } catch (Exception e) {
             logger.error("Error retrieving user loans: ", e);
@@ -309,7 +311,7 @@ public class UserController {
 
         try {
             boolean deleted = transactionLogService.deleteUserTransactionLog(user.getId(), logId);
-            
+
             if (deleted) {
                 return ResponseEntity.ok(ApiResponse.success("Transaction log deleted successfully", null));
             } else {
@@ -370,8 +372,8 @@ public class UserController {
             userService.saveUser(user);
 
             logger.info("Cash in successful for user: {}. Amount: ₱{}", user.getId(), amount);
-            return ResponseEntity.ok(ApiResponse.success("Cash in successful", 
-                Map.of("newBalance", user.getWalletBalance(), "addedAmount", amount)));
+            return ResponseEntity.ok(ApiResponse.success("Cash in successful",
+                    Map.of("newBalance", user.getWalletBalance(), "addedAmount", amount)));
         } catch (Exception e) {
             logger.error("Error processing cash in: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -400,20 +402,20 @@ public class UserController {
             }
 
             BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
-            
+
             if (currentBalance.compareTo(amount) < 0) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(ApiResponse.error(String.format(
-                            "Insufficient balance. Available: ₱%.2f, Requested: ₱%.2f", 
-                            currentBalance.doubleValue(), amount.doubleValue())));
+                                "Insufficient balance. Available: ₱%.2f, Requested: ₱%.2f",
+                                currentBalance.doubleValue(), amount.doubleValue())));
             }
 
             user.setWalletBalance(currentBalance.subtract(amount));
             userService.saveUser(user);
 
             logger.info("Cash out successful for user: {}. Amount: ₱{}", user.getId(), amount);
-            return ResponseEntity.ok(ApiResponse.success("Cash out successful", 
-                Map.of("newBalance", user.getWalletBalance(), "withdrawnAmount", amount)));
+            return ResponseEntity.ok(ApiResponse.success("Cash out successful",
+                    Map.of("newBalance", user.getWalletBalance(), "withdrawnAmount", amount)));
         } catch (Exception e) {
             logger.error("Error processing cash out: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -436,18 +438,19 @@ public class UserController {
         try {
             // Refresh user from database to get latest balance
             User refreshedUser = userRepository.findById(user.getId())
-                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
-            BigDecimal balance = refreshedUser.getWalletBalance() != null ? refreshedUser.getWalletBalance() : BigDecimal.ZERO;
-            
+                    .orElseThrow(
+                            () -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
+            BigDecimal balance = refreshedUser.getWalletBalance() != null ? refreshedUser.getWalletBalance()
+                    : BigDecimal.ZERO;
+
             logger.info("Wallet balance retrieved for user {}: ₱{}", user.getId(), balance);
-            return ResponseEntity.ok(ApiResponse.success("Wallet balance retrieved", 
-                Map.of("balance", balance)));
+            return ResponseEntity.ok(ApiResponse.success("Wallet balance retrieved",
+                    Map.of("balance", balance)));
         } catch (Exception e) {
             logger.error("Error retrieving wallet balance: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to retrieve wallet balance: " + e.getMessage()));
         }
     }
-
 
 }

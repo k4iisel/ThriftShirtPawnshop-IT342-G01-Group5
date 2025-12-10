@@ -29,7 +29,7 @@ import com.thriftshirt.pawnshop.service.PawnRequestService;
 
 @RestController
 @RequestMapping("/admin")
-@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173" })
+
 public class AdminController {
 
     private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
@@ -333,7 +333,7 @@ public class AdminController {
             // Get the loan to find the user ID
             com.thriftshirt.pawnshop.entity.Loan loanToProcess = loanService.getLoanById(loanId);
             Long userId = loanToProcess.getPawnItem().getUser().getId();
-            
+
             com.thriftshirt.pawnshop.entity.Loan loan = loanService.processPayment(loanId, userId);
             return ResponseEntity.ok(ApiResponse.success("Payment processed successfully", loan));
         } catch (Exception e) {
@@ -407,7 +407,8 @@ public class AdminController {
             }
 
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
+                    .orElseThrow(
+                            () -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
 
             BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
             user.setWalletBalance(currentBalance.add(amount));
@@ -417,12 +418,12 @@ public class AdminController {
             com.thriftshirt.pawnshop.entity.TransactionLog log = new com.thriftshirt.pawnshop.entity.TransactionLog();
             log.setUser(adminUser);
             log.setAction("ADMIN_ADD_FUNDS");
-            log.setRemarks(String.format("Admin added ₱%.2f to user %s (ID: %d) wallet. New balance: ₱%.2f", 
+            log.setRemarks(String.format("Admin added ₱%.2f to user %s (ID: %d) wallet. New balance: ₱%.2f",
                     amount.doubleValue(), user.getUsername(), userId, user.getWalletBalance().doubleValue()));
             transactionLogService.logTransaction(log);
 
             logger.info("Admin successfully added ₱{} to user {} wallet", amount, userId);
-            return ResponseEntity.ok(ApiResponse.success("Funds added successfully", 
+            return ResponseEntity.ok(ApiResponse.success("Funds added successfully",
                     Map.of("userId", userId, "addedAmount", amount, "newBalance", user.getWalletBalance())));
         } catch (Exception e) {
             logger.error("Error adding funds to user wallet: ", e);
@@ -451,14 +452,15 @@ public class AdminController {
             }
 
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
+                    .orElseThrow(
+                            () -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
 
             BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
-            
+
             if (currentBalance.compareTo(amount) < 0) {
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error(String.format(
-                                "Insufficient balance. User has ₱%.2f, requested to deduct ₱%.2f", 
+                                "Insufficient balance. User has ₱%.2f, requested to deduct ₱%.2f",
                                 currentBalance.doubleValue(), amount.doubleValue())));
             }
 
@@ -469,12 +471,12 @@ public class AdminController {
             com.thriftshirt.pawnshop.entity.TransactionLog log = new com.thriftshirt.pawnshop.entity.TransactionLog();
             log.setUser(adminUser);
             log.setAction("ADMIN_DEDUCT_FUNDS");
-            log.setRemarks(String.format("Admin deducted ₱%.2f from user %s (ID: %d) wallet. New balance: ₱%.2f", 
+            log.setRemarks(String.format("Admin deducted ₱%.2f from user %s (ID: %d) wallet. New balance: ₱%.2f",
                     amount.doubleValue(), user.getUsername(), userId, user.getWalletBalance().doubleValue()));
             transactionLogService.logTransaction(log);
 
             logger.info("Admin successfully deducted ₱{} from user {} wallet", amount, userId);
-            return ResponseEntity.ok(ApiResponse.success("Funds deducted successfully", 
+            return ResponseEntity.ok(ApiResponse.success("Funds deducted successfully",
                     Map.of("userId", userId, "deductedAmount", amount, "newBalance", user.getWalletBalance())));
         } catch (Exception e) {
             logger.error("Error deducting funds from user wallet: ", e);
@@ -497,11 +499,12 @@ public class AdminController {
 
         try {
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
+                    .orElseThrow(
+                            () -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
 
             BigDecimal balance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
-            
-            return ResponseEntity.ok(ApiResponse.success("Wallet balance retrieved", 
+
+            return ResponseEntity.ok(ApiResponse.success("Wallet balance retrieved",
                     Map.of("userId", userId, "username", user.getUsername(), "walletBalance", balance)));
         } catch (Exception e) {
             logger.error("Error getting user wallet balance: ", e);
@@ -531,7 +534,8 @@ public class AdminController {
             }
 
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
+                    .orElseThrow(
+                            () -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
 
             BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
             BigDecimal newBalance = currentBalance.add(amount);
@@ -581,14 +585,16 @@ public class AdminController {
             }
 
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
+                    .orElseThrow(
+                            () -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
 
             BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
 
             if (currentBalance.compareTo(amount) < 0) {
                 return ResponseEntity.status(400)
-                        .body(ApiResponse.error(String.format("Insufficient balance. Available: ₱%.2f, Requested: ₱%.2f",
-                                currentBalance.doubleValue(), amount.doubleValue())));
+                        .body(ApiResponse
+                                .error(String.format("Insufficient balance. Available: ₱%.2f, Requested: ₱%.2f",
+                                        currentBalance.doubleValue(), amount.doubleValue())));
             }
 
             BigDecimal newBalance = currentBalance.subtract(amount);

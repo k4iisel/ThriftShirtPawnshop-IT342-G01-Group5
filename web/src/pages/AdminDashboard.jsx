@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import useNotify from '../hooks/useNotify';
 import useAuth from '../hooks/useAuth';
+import apiService from '../services/apiService';
 import logo from '../assets/images/logo.png';
 import '../styles/AdminDashboard.css';
 
@@ -31,18 +32,8 @@ function AdminDashboard() {
       try {
         const adminToken = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
         if (adminToken) {
-          // Make a request to validate the token
-          const response = await fetch('http://localhost:8080/api/admin/health', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${adminToken}`
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error('Admin session invalid');
-          }
+          // Validate using centralized service
+          await apiService.checkAdminAccess();
         }
       } catch (error) {
         console.error('Admin token validation error:', error);
