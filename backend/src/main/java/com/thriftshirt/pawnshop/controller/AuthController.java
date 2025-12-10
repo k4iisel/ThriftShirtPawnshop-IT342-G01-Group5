@@ -85,6 +85,15 @@ public class AuthController {
             if (authentication != null && authentication.isAuthenticated() &&
                     !authentication.getName().equals("anonymousUser")) {
 
+                // Check if the authenticated user is an ADMIN
+                boolean isAdmin = authentication.getAuthorities().stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+                if (isAdmin) {
+                    logger.info("✅ Admin access verified for user: {}", authentication.getName());
+                    return ResponseEntity.ok(new ApiResponse(true, "Admin access allowed", null));
+                }
+
                 logger.warn(
                         "🚫 ADMIN ACCESS BLOCKED - User '{}' attempting to access admin while logged in as regular user",
                         authentication.getName());
@@ -95,8 +104,10 @@ public class AuthController {
                                 null));
             }
 
-            logger.info("✅ Admin access check passed - No active user session detected");
-            return ResponseEntity.ok(new ApiResponse(true, "Admin access allowed", null));
+            // No session at all, which is also valid for a pre-login check (frontend will
+            // handle login redirect)
+            // But for an "access check", if no session, it's not allowed.
+            return ResponseEntity.status(401).body(new ApiResponse(false, "No active admin session", null));
 
         } catch (Exception e) {
             logger.error("❌ Error checking admin access: {}", e.getMessage());
@@ -114,13 +125,22 @@ public class AuthController {
             if (authentication != null && authentication.isAuthenticated() &&
                     !authentication.getName().equals("anonymousUser")) {
 
-                logger.warn(
-                        "🚫 ADMIN LOGIN BLOCKED - User '{}' attempted admin login while authenticated as regular user",
-                        authentication.getName());
+                // Check if the current user is an admin
+                boolean isAdmin = authentication.getAuthorities().stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
-                return ResponseEntity.status(403).body(
-                        new AuthResponse(null, null, null, null,
-                                "🚫 Access Denied: Cannot access admin login while logged in as a regular user. Please logout first."));
+                // Only block if it's a regular user trying to access admin login
+                if (!isAdmin) {
+                    logger.warn(
+                            "🚫 ADMIN LOGIN BLOCKED - User '{}' attempted admin login while authenticated as regular user",
+                            authentication.getName());
+
+                    return ResponseEntity.status(403).body(
+                            new AuthResponse(null, null, null, null,
+                                    "🚫 Access Denied: Cannot access admin login while logged in as a regular user. Please logout first."));
+                }
+                // If it IS an admin, we allow the login process to continue
+                // (re-authentication/token refresh)
             }
 
             logger.info("Admin login attempt for: {}", loginRequest.getUsernameOrEmail());
