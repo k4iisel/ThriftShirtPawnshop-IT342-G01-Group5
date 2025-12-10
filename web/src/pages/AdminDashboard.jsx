@@ -33,7 +33,7 @@ function AdminDashboard() {
         const adminToken = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
         if (adminToken) {
           // Validate using centralized service
-          await apiService.checkAdminAccess();
+          await apiService.auth.checkAdminAccess();
         }
       } catch (error) {
         console.error('Admin token validation error:', error);

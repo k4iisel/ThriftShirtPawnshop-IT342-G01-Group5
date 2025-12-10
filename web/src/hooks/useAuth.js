@@ -30,7 +30,7 @@ export const useAuth = (requiredRole = 'USER') => {
 
           // Validate admin token with backend
           try {
-            await apiService.checkAdminAccess();
+            await apiService.auth.checkAdminAccess();
           } catch (error) {
             console.error('Admin validation failed:', error);
             throw new Error('Admin session invalid');
