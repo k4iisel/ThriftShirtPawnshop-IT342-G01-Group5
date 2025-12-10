@@ -29,15 +29,10 @@ export const useAuth = (requiredRole = 'USER') => {
           }
 
           // Validate admin token with backend
-          const response = await fetch('http://localhost:8080/api/admin/health', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${adminToken}`
-            },
-          });
-
-          if (!response.ok) {
+          try {
+            await apiService.checkAdminAccess();
+          } catch (error) {
+            console.error('Admin validation failed:', error);
             throw new Error('Admin session invalid');
           }
         } else {
@@ -87,7 +82,7 @@ export const useAuth = (requiredRole = 'USER') => {
         }
       } catch (error) {
         console.error('Authentication validation failed:', error);
-        
+
         if (requiredRole === 'ADMIN') {
           // Clear invalid admin tokens
           sessionStorage.removeItem('adminToken');
