@@ -328,7 +328,7 @@
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
@@ -342,6 +342,19 @@
   gap: 16px;
 }
 
+.stat-card.revenue {
+  background: linear-gradient(135deg, #2c5f2d, #3d8f3f);
+  border-color: #1a3d1a;
+}
+
+.stat-card.revenue .stat-icon {
+  background: #4caf50;
+}
+
+.stat-card.revenue .stat-number {
+  color: #a5d6a7;
+}
+
 .stat-icon {
   font-size: 24px;
   background: #ffc107;
@@ -353,12 +366,14 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
 .stat-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
 }
 
 .stat-number {
@@ -371,6 +386,12 @@
   font-size: 12px;
   color: #e6e6e6;
   font-weight: 500;
+}
+
+.stat-sublabel {
+  font-size: 10px;
+  color: #b0b0b0;
+  font-style: italic;
 }
 
 .admin-activity,
@@ -489,7 +510,7 @@
   }
 
   .stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .admin-footer-content {

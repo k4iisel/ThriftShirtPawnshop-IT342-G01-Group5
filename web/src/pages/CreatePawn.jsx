@@ -17,7 +17,7 @@ function CreatePawn() {
     size: '',
     condition: '',
     description: '',
-    requestedAmount: '',
+    loanAmount: '',
     estimatedValue: '',
     images: []
   });
@@ -129,13 +129,13 @@ function CreatePawn() {
       return;
     }
 
-    if (!formData.requestedAmount || formData.requestedAmount < 50) {
-      notify.notifyError('Requested amount must be at least ₱50');
+    if (!formData.loanAmount || formData.loanAmount < 50) {
+      notify.notifyError('Loan amount must be at least ₱50');
       return;
     }
 
-    if (formData.requestedAmount > 10000) {
-      notify.notifyError('Requested amount cannot exceed ₱10,000');
+    if (formData.loanAmount > 10000) {
+      notify.notifyError('Loan amount cannot exceed ₱10,000');
       return;
     }
 
@@ -165,7 +165,7 @@ function CreatePawn() {
         size: formData.size,
         condition: formData.condition,
         description: formData.description || null,
-        requestedAmount: parseFloat(formData.requestedAmount),
+        loanAmount: parseFloat(formData.loanAmount),
         estimatedValue: formData.estimatedValue ? parseFloat(formData.estimatedValue) : null,
         photos: photosString, // Store as JSON array of URLs
         category: 'Thrift Shirt' // Default category
@@ -188,7 +188,7 @@ function CreatePawn() {
           size: '',
           condition: '',
           description: '',
-          requestedAmount: '',
+          loanAmount: '',
           estimatedValue: '',
           images: []
         });
@@ -345,38 +345,21 @@ function CreatePawn() {
             <div className="form-section">
               <h2>Loan Information</h2>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="requestedAmount">Requested Loan Amount (₱) *</label>
-                  <input
-                    type="number"
-                    id="requestedAmount"
-                    name="requestedAmount"
-                    value={formData.requestedAmount}
-                    onChange={handleInputChange}
-                    placeholder="500"
-                    min="150"
-                    max="10000"
-                    step="0.01"
-                    required
-                  />
-                  <small>Minimum: ₱150, Maximum: ₱10,000</small>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="estimatedValue">Estimated Item Value (₱)</label>
-                  <input
-                    type="number"
-                    id="estimatedValue"
-                    name="estimatedValue"
-                    value={formData.estimatedValue}
-                    onChange={handleInputChange}
-                    placeholder="1000"
-                    min="0"
-                    step="0.01"
-                  />
-                  <small>Your estimated value of the item</small>
-                </div>
+              <div className="form-group">
+                <label htmlFor="loanAmount">Loan Amount (₱) *</label>
+                <input
+                  type="number"
+                  id="loanAmount"
+                  name="loanAmount"
+                  value={formData.loanAmount}
+                  onChange={handleInputChange}
+                  placeholder="500"
+                  min="150"
+                  max="10000"
+                  step="0.01"
+                  required
+                />
+                <small>Minimum: ₱150, Maximum: ₱10,000</small>
               </div>
             </div>
 

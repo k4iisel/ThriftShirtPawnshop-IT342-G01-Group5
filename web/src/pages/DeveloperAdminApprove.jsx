@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useNotify from '../hooks/useNotify';
 import apiService from '../services/apiService';
+import ImageModal from '../components/ImageModal';
 import logo from '../assets/images/logo.png';
 import '../styles/DeveloperAdmin.css';
 
@@ -15,6 +16,9 @@ function DeveloperAdminApprove() {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('PENDING');
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [selectedImages, setSelectedImages] = useState([]);
+    const [selectedItemName, setSelectedItemName] = useState('');
 
     useEffect(() => {
         fetchRequests();
@@ -37,6 +41,28 @@ function DeveloperAdminApprove() {
         }
     };
 
+    const handleViewImages = (req) => {
+        let images = [];
+        try {
+            if (req.photos && typeof req.photos === 'string') {
+                const parsed = JSON.parse(req.photos);
+                images = Array.isArray(parsed) ? parsed : [req.photos];
+            } else if (Array.isArray(req.photos)) {
+                images = req.photos;
+            }
+        } catch (error) {
+            console.error('Error parsing photos:', error);
+        }
+        
+        if (images.length === 0) {
+            images = [`https://via.placeholder.com/400x400?text=${encodeURIComponent(req.itemName)}`];
+        }
+        
+        setSelectedImages(images);
+        setSelectedItemName(req.itemName);
+        setShowImageModal(true);
+    };
+
     const handleStatusUpdate = async (pawnId, newStatus) => {
         if (!window.confirm(`Are you sure you want to ${newStatus} this request?`)) {
             return;
@@ -54,6 +80,11 @@ function DeveloperAdminApprove() {
     };
 
     const filteredRequests = requests.filter(req => {
+        // Exclude FORFEITED, PAWNED, and REDEEMED statuses
+        const allowedStatuses = ['PENDING', 'APPROVED', 'REJECTED'];
+        if (!allowedStatuses.includes(req.status)) return false;
+        
+        // Apply filter
         if (filter === 'ALL') return true;
         return req.status === filter;
     });
@@ -86,28 +117,28 @@ function DeveloperAdminApprove() {
                             onClick={() => setFilter('PENDING')}
                             style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: filter === 'PENDING' ? '#007bff' : '#fff', color: filter === 'PENDING' ? '#fff' : '#333', cursor: 'pointer' }}
                         >
-                            Pending
+                            Pending ({requests.filter(r => r.status === 'PENDING').length})
                         </button>
                         <button
                             className={`filter-btn ${filter === 'APPROVED' ? 'active' : ''}`}
                             onClick={() => setFilter('APPROVED')}
                             style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: filter === 'APPROVED' ? '#28a745' : '#fff', color: filter === 'APPROVED' ? '#fff' : '#333', cursor: 'pointer' }}
                         >
-                            Approved
+                            Approved ({requests.filter(r => r.status === 'APPROVED').length})
                         </button>
                         <button
                             className={`filter-btn ${filter === 'REJECTED' ? 'active' : ''}`}
                             onClick={() => setFilter('REJECTED')}
                             style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: filter === 'REJECTED' ? '#dc3545' : '#fff', color: filter === 'REJECTED' ? '#fff' : '#333', cursor: 'pointer' }}
                         >
-                            Rejected
+                            Rejected ({requests.filter(r => r.status === 'REJECTED').length})
                         </button>
                         <button
                             className={`filter-btn ${filter === 'ALL' ? 'active' : ''}`}
                             onClick={() => setFilter('ALL')}
                             style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: filter === 'ALL' ? '#6c757d' : '#fff', color: filter === 'ALL' ? '#fff' : '#333', cursor: 'pointer' }}
                         >
-                            All
+                            All ({requests.filter(r => ['PENDING', 'APPROVED', 'REJECTED'].includes(r.status)).length})
                         </button>
                     </div>
 
@@ -125,7 +156,7 @@ function DeveloperAdminApprove() {
                                         <th style={{ padding: '12px', textAlign: 'left' }}>Photos</th>
                                         <th style={{ padding: '12px', textAlign: 'left' }}>Category</th>
                                         <th style={{ padding: '12px', textAlign: 'left' }}>Condition</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Amount</th>
+                                        <th style={{ padding: '12px', textAlign: 'left' }}>Loan Amount</th>
                                         <th style={{ padding: '12px', textAlign: 'left' }}>Status</th>
                                         <th style={{ padding: '12px', textAlign: 'left' }}>Actions</th>
                                     </tr>
@@ -152,9 +183,19 @@ function DeveloperAdminApprove() {
                                                                     const parsed = JSON.parse(req.photos);
                                                                     const urls = Array.isArray(parsed) ? parsed : [req.photos];
                                                                     return urls.map((url, i) => (
-                                                                        <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                                                                            <img src={url} alt="Item" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
-                                                                        </a>
+                                                                        <img 
+                                                                            key={i} 
+                                                                            src={url} 
+                                                                            alt="Item" 
+                                                                            style={{ 
+                                                                                width: '40px', 
+                                                                                height: '40px', 
+                                                                                objectFit: 'cover', 
+                                                                                borderRadius: '4px',
+                                                                                cursor: 'pointer'
+                                                                            }}
+                                                                            onClick={() => handleViewImages(req)}
+                                                                        />
                                                                     ));
                                                                 } catch (e) { return null; }
                                                             })()}
@@ -163,7 +204,7 @@ function DeveloperAdminApprove() {
                                                 </td>
                                                 <td style={{ padding: '12px' }}>{req.category}</td>
                                                 <td style={{ padding: '12px' }}>{req.condition}</td>
-                                                <td style={{ padding: '12px' }}>₱{req.requestedAmount?.toFixed(2)}</td>
+                                                <td style={{ padding: '12px' }}>₱{(req.loanAmount || req.requestedAmount || 0).toFixed(2)}</td>
                                                 <td style={{ padding: '12px' }}>
                                                     <span style={{
                                                         padding: '4px 8px',
@@ -217,6 +258,15 @@ function DeveloperAdminApprove() {
                     )}
                 </div>
             </main>
+
+            {/* Image Modal */}
+            {showImageModal && (
+                <ImageModal
+                    images={selectedImages}
+                    itemName={selectedItemName}
+                    onClose={() => setShowImageModal(false)}
+                />
+            )}
         </div>
     );
 }

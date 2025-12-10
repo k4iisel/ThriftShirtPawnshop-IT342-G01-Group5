@@ -1,6 +1,7 @@
 package com.thriftshirt.pawnshop.entity;
 
 import java.time.LocalDate;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.CascadeType;
@@ -46,8 +47,8 @@ public class PawnRequest {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "requested_amount")
-    private Double requestedAmount;
+    @Column(name = "loan_amount")
+    private Double loanAmount;
 
     @Column(name = "estimated_value")
     private Double estimatedValue;
@@ -131,12 +132,12 @@ public class PawnRequest {
         this.description = description;
     }
 
-    public Double getRequestedAmount() {
-        return requestedAmount;
+    public Double getLoanAmount() {
+        return loanAmount;
     }
 
-    public void setRequestedAmount(Double requestedAmount) {
-        this.requestedAmount = requestedAmount;
+    public void setLoanAmount(Double loanAmount) {
+        this.loanAmount = loanAmount;
     }
 
     public Double getEstimatedValue() {

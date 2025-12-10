@@ -32,7 +32,7 @@ function PawnStatus() {
       const matchingPawn = pawns.find(p => 
         p.pawnId === selectedPawn.id || 
         p.id === selectedPawn.id ||
-        (p.itemName === selectedPawn.itemName && p.requestedAmount === selectedPawn.requestedAmount)
+        (p.itemName === selectedPawn.itemName && p.loanAmount === selectedPawn.loanAmount)
       );
       
       if (matchingPawn) {
@@ -62,9 +62,18 @@ function PawnStatus() {
         
         // Transform the API response data to match the UI structure
         const transformedPawns = allPawns.map((pawn, index) => {
-          // Use estimatedValue for loan calculations (matches backend), fallback to requestedAmount
-          const loanBaseAmount = pawn.estimatedValue || pawn.requestedAmount || 0;
-          
+          const loanBaseAmount = pawn.estimatedValue || pawn.loanAmount || pawn.requestedAmount || 0;
+          let loanPeriod = 30;
+          let dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          if (pawn.dueDate) {
+            const now = new Date();
+            const due = new Date(pawn.dueDate);
+            // Calculate days difference, inclusive
+            const diffTime = due.getTime() - now.getTime();
+            const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+            loanPeriod = diffDays;
+            dueDate = due;
+          }
           return {
             pawnId: pawn.pawnId,
             itemName: pawn.itemName,
@@ -74,7 +83,7 @@ function PawnStatus() {
             condition: pawn.condition,
             description: pawn.description,
             status: pawn.status || 'PENDING',
-            requestedAmount: pawn.requestedAmount,
+            loanAmount: pawn.loanAmount || pawn.requestedAmount,
             estimatedValue: pawn.estimatedValue,
             appraisalDate: pawn.appraisalDate,
             appraisedBy: pawn.appraisedBy,
@@ -82,11 +91,11 @@ function PawnStatus() {
             // Generate placeholder values for display
             image: 'https://via.placeholder.com/100x100?text=' + encodeURIComponent(pawn.itemName),
             submissionDate: new Date().toLocaleDateString('en-GB'), // Current date
-            interestRate: 5,
-            interestAmount: loanBaseAmount * 0.05,
-            totalToRedeem: loanBaseAmount * 1.05,
-            loanPeriod: 30,
-            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB')
+            interestRate: pawn.interestRate || 5,
+            interestAmount: loanBaseAmount * ((pawn.interestRate || 5) / 100),
+            totalToRedeem: loanBaseAmount * (1 + (pawn.interestRate || 5) / 100),
+            loanPeriod,
+            dueDate: dueDate.toLocaleDateString('en-GB')
           };
         });
         setPawns(transformedPawns);
@@ -110,8 +119,8 @@ function PawnStatus() {
 
   const handleRedeemItem = async (pawn) => {
     // Calculate total redeem amount (loan + 5% interest)
-    // Use estimatedValue (what the backend loan uses) or fallback to requestedAmount
-    const loanAmount = pawn.estimatedValue || pawn.requestedAmount || 0;
+    // Use estimatedValue (what the backend loan uses) or fallback to loanAmount or requestedAmount
+    const loanAmount = pawn.estimatedValue || pawn.loanAmount || pawn.requestedAmount || 0;
     const interestAmount = loanAmount * 0.05;
     const totalRedeemAmount = loanAmount + interestAmount;
     
@@ -128,7 +137,7 @@ function PawnStatus() {
         const response = await apiService.loan.redeem(pawn.pawnId);
         
         if (response.success) {
-          const totalAmount = (pawn.estimatedValue || pawn.requestedAmount || 0) * 1.05;
+          const totalAmount = (pawn.estimatedValue || pawn.loanAmount || pawn.requestedAmount || 0) * 1.05;
           notify.notifySuccess(`✅ Item redeemed successfully! ₱${totalAmount.toFixed(2)} has been deducted from your wallet.`);
           // Refresh the pawn requests list
           fetchPawnRequests();
@@ -252,7 +261,7 @@ function PawnStatus() {
                   <div className="item-info">
                     <div className="item-title-row">
                       <h3>{pawn.itemName}</h3>
-                      {pawn.status === 'PENDING' && (
+                      {(pawn.status === 'PENDING' || pawn.status === 'REJECTED') && (
                         <button 
                           className="delete-icon-btn"
                           onClick={() => handleDeletePawn(pawn.pawnId)}
@@ -280,8 +289,8 @@ function PawnStatus() {
                   
                   <div className="financial-summary">
                     <div className="summary-row">
-                      <span>Requested Amount:</span>
-                      <span className="amount">₱{pawn.requestedAmount ? pawn.requestedAmount.toFixed(2) : '0.00'}</span>
+                      <span>Loan Amount:</span>
+                      <span className="amount">₱{pawn.loanAmount ? pawn.loanAmount.toFixed(2) : '0.00'}</span>
                     </div>
                     {pawn.estimatedValue && (
                       <div className="summary-row">

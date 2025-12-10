@@ -20,10 +20,10 @@ public class CreatePawnRequestDTO {
     
     private String description;
     
-    @NotNull(message = "Requested amount is required")
-    @Min(value = 150, message = "Requested amount must be at least 150")
-    @Max(value = 10000, message = "Requested amount cannot exceed 10,000")
-    private Double requestedAmount;
+    @NotNull(message = "Loan amount is required")
+    @Min(value = 150, message = "Loan amount must be at least 150")
+    @Max(value = 10000, message = "Loan amount cannot exceed 10,000")
+    private Double loanAmount;
     
     private Double estimatedValue;
     
@@ -76,12 +76,12 @@ public class CreatePawnRequestDTO {
         this.description = description;
     }
     
-    public Double getRequestedAmount() {
-        return requestedAmount;
+    public Double getLoanAmount() {
+        return loanAmount;
     }
     
-    public void setRequestedAmount(Double requestedAmount) {
-        this.requestedAmount = requestedAmount;
+    public void setLoanAmount(Double loanAmount) {
+        this.loanAmount = loanAmount;
     }
     
     public Double getEstimatedValue() {

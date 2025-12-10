@@ -99,8 +99,17 @@ function Dashboard() {
   const [cashTransactionType, setCashTransactionType] = useState('');
 
   // Function to fetch recent activity (all statuses, sorted by most recent)
-  const fetchRecentPawnedItems = async () => {
+  const fetchRecentPawnedItems = async (force = false) => {
     try {
+      // Check if activity is cleared (skip check if force is true)
+      if (!force) {
+        const isCleared = localStorage.getItem('recentActivityCleared') === 'true';
+        if (isCleared) {
+          setRecentPawnedItems([]);
+          return;
+        }
+      }
+
       const response = await apiService.pawnRequest.getAll();
       
       if (response.success && response.data) {
@@ -118,6 +127,15 @@ function Dashboard() {
       }
     } catch (error) {
       console.error('Error fetching recent activity:', error);
+    }
+  };
+
+  // Function to clear recent activity
+  const clearRecentActivity = () => {
+    if (window.confirm('Are you sure you want to clear recent activity display? This will remain cleared even after refresh.')) {
+      setRecentPawnedItems([]);
+      localStorage.setItem('recentActivityCleared', 'true');
+      notify.notifySuccess('Recent activity cleared');
     }
   };
 
@@ -265,7 +283,10 @@ function Dashboard() {
     setRefreshing(true);
     
     try {
-      await fetchRecentPawnedItems();
+      // Clear the cleared flag to allow fetching new data
+      localStorage.removeItem('recentActivityCleared');
+      // Force fetch even if cleared flag was set
+      await fetchRecentPawnedItems(true);
     } catch (error) {
       console.error('Error refreshing recent pawns:', error);
     } finally {
@@ -353,10 +374,9 @@ function Dashboard() {
             <div className="activity-logs-actions">
               <button 
                 className="clear-activity-btn"
-                onClick={refreshRecentPawns}
-                disabled={refreshing}
+                onClick={clearRecentActivity}
               >
-                {refreshing ? 'Refreshing...' : 'Refresh'}
+                Clear
               </button>
             </div>
           </div>
@@ -442,7 +462,7 @@ function Dashboard() {
                         </span>
                       </p>
                       <p className="log-details">
-                        ₱{parseFloat(pawn.requestedAmount).toFixed(2)}
+                        ₱{parseFloat(pawn.loanAmount || pawn.requestedAmount || 0).toFixed(2)}
                       </p>
                       <p className="log-time">{formatDateTime(activityDate)}</p>
                     </div>

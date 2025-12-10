@@ -116,14 +116,11 @@ public class AdminController {
         // 1. Total Users
         long totalUsers = userRepository.count();
 
-        // 2. Aclive Loans (Active Pawns)
+        // 2. Active Loans (Active Pawns)
         long activePawns = loanRepository.countByStatus("ACTIVE");
 
-        // 3. Revenue (From PAID loans)
-        java.math.BigDecimal revenue = loanRepository.sumLoanAmountByStatus("PAID");
-        if (revenue == null) {
-            revenue = java.math.BigDecimal.ZERO;
-        }
+        // 3. Revenue (System capital available)
+        java.math.BigDecimal revenue = loanService.calculateCurrentRevenue();
 
         Map<String, Object> stats = Map.of(
                 "totalUsers", totalUsers,
@@ -156,11 +153,11 @@ public class AdminController {
         }
     }
 
-    // Get all inventory items (APPROVED and FORFEITED)
+    // Get all inventory items (FORFEITED only)
     @GetMapping("/inventory")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> getInventory(Authentication authentication) {
-        logger.info("Admin fetching inventory (approved and forfeited items): {}", authentication.getName());
+    public ResponseEntity<ApiResponse> getInventoryItems(Authentication authentication) {
+        logger.info("Admin fetching inventory (forfeited items only): {}", authentication.getName());
 
         User user = (User) authentication.getPrincipal();
         if (!user.getRole().name().equals("ADMIN")) {
@@ -276,8 +273,11 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> validatePawnRequest(
             @PathVariable Long pawnId,
+            @RequestParam(required = false, defaultValue = "5") Integer interestRate,
+            @RequestParam(required = false, defaultValue = "30") Integer daysUntilDue,
             Authentication authentication) {
-        logger.info("Admin validating pawn request {}: {}", pawnId, authentication.getName());
+        logger.info("Admin validating pawn request {}: {} with interest: {}%, days: {}",
+            pawnId, authentication.getName(), interestRate, daysUntilDue);
 
         User user = (User) authentication.getPrincipal();
 
@@ -287,7 +287,7 @@ public class AdminController {
         }
 
         try {
-            com.thriftshirt.pawnshop.entity.Loan loan = loanService.createLoan(pawnId);
+            com.thriftshirt.pawnshop.entity.Loan loan = loanService.createLoan(pawnId, interestRate, daysUntilDue);
             return ResponseEntity.ok(ApiResponse.success("Pawn validated and loan created successfully", loan));
         } catch (Exception e) {
             logger.error("Error validating pawn request: ", e);
@@ -530,6 +530,19 @@ public class AdminController {
                         .body(ApiResponse.error("Amount must be greater than zero"));
             }
 
+            BigDecimal totalRevenue = loanService.calculateCurrentRevenue();
+
+            // Check if there's enough revenue to add cash
+            if (totalRevenue.compareTo(amount) < 0) {
+                return ResponseEntity.status(400)
+                        .body(ApiResponse.error(String.format(
+                            "Insufficient revenue! Current revenue: ₱%.2f, Required: ₱%.2f. Need ₱%.2f more.",
+                            totalRevenue.doubleValue(), 
+                            amount.doubleValue(), 
+                            amount.subtract(totalRevenue).doubleValue()
+                        )));
+            }
+
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
 
@@ -546,7 +559,15 @@ public class AdminController {
                     admin.getUsername(), amount.doubleValue(), reason, newBalance.doubleValue()));
             transactionLogService.logTransaction(log);
 
-            logger.info("✅ Admin {} added ₱{} to user {} wallet", admin.getId(), amount, userId);
+            // Log revenue deduction (money given out from system)
+            com.thriftshirt.pawnshop.entity.TransactionLog revenueLog = new com.thriftshirt.pawnshop.entity.TransactionLog();
+            revenueLog.setUser(user);
+            revenueLog.setAction("REVENUE_DEDUCTED_CASH_ADDED");
+            revenueLog.setRemarks(String.format("Revenue deducted: ₱%.2f (Cash added to %s by admin). Reason: %s",
+                    amount.doubleValue(), user.getUsername(), reason));
+            transactionLogService.logTransaction(revenueLog);
+
+            logger.info("✅ Admin {} added ₱{} to user {} wallet. Revenue deducted.", admin.getId(), amount, userId);
             return ResponseEntity.ok(ApiResponse.success("Cash added successfully",
                     Map.of("userId", userId, "newBalance", newBalance, "amountAdded", amount)));
         } catch (NumberFormatException e) {
@@ -591,6 +612,10 @@ public class AdminController {
                                 currentBalance.doubleValue(), amount.doubleValue())));
             }
 
+            BigDecimal totalRevenue = loanService.calculateCurrentRevenue();
+
+            // Removing cash returns funds to revenue pool, no need to check availability
+
             BigDecimal newBalance = currentBalance.subtract(amount);
             user.setWalletBalance(newBalance);
             userRepository.save(user);
@@ -603,7 +628,15 @@ public class AdminController {
                     admin.getUsername(), amount.doubleValue(), reason, newBalance.doubleValue()));
             transactionLogService.logTransaction(log);
 
-            logger.info("✅ Admin {} removed ₱{} from user {} wallet", admin.getId(), amount, userId);
+            // Log revenue increase (money taken back into system)
+            com.thriftshirt.pawnshop.entity.TransactionLog revenueLog = new com.thriftshirt.pawnshop.entity.TransactionLog();
+            revenueLog.setUser(user);
+            revenueLog.setAction("REVENUE_EARNED_CASH_REMOVED");
+            revenueLog.setRemarks(String.format("Revenue earned: ₱%.2f (Cash removed from %s by admin). Reason: %s",
+                    amount.doubleValue(), user.getUsername(), reason));
+            transactionLogService.logTransaction(revenueLog);
+
+            logger.info("✅ Admin {} removed ₱{} from user {} wallet. Revenue increased.", admin.getId(), amount, userId);
             return ResponseEntity.ok(ApiResponse.success("Cash removed successfully",
                     Map.of("userId", userId, "newBalance", newBalance, "amountRemoved", amount)));
         } catch (NumberFormatException e) {

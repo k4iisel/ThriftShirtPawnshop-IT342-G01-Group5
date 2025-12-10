@@ -106,18 +106,36 @@
 }
 
 .dev-admin-search {
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: #ffffff;
-  font-size: 14px;
-  width: 250px;
+  flex: 1;
+  max-width: 600px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  transition: all 0.2s ease;
 }
 
-.dev-admin-search:focus {
-  outline: none;
+.dev-admin-search:focus-within {
   border-color: #3b82f6;
+  background: #ffffff;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.dev-admin-search-input {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: #374151;
+  transition: all 0.2s ease;
+}
+
+.dev-admin-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.dev-admin-search-input:focus {
+  outline: none;
 }
 
 .dev-admin-count {

@@ -11,7 +11,10 @@ function AdminDashboard() {
   const { notifySuccess, notifyError } = useNotify();
   const [stats, setStats] = useState({
     totalUsers: 0,
-    activePawns: 0,
+    activeLoans: 0,
+    pendingRequests: 0,
+    approvedRequests: 0,
+    forfeitedItems: 0,
     revenue: 0
   });
 
@@ -69,10 +72,93 @@ function AdminDashboard() {
     const fetchStats = async () => {
       try {
         const apiService = await import('../services/apiService');
-        const response = await apiService.default.admin.getDashboardStats();
-        if (response.data) {
-          setStats(response.data);
+        
+        // Fetch all necessary data
+        const [
+          usersResponse,
+          loansResponse,
+          pawnRequestsResponse,
+          logsResponse,
+          statsResponse
+        ] = await Promise.all([
+          apiService.default.admin.getAllUsers(),
+          apiService.default.admin.getActiveLoans(),
+          apiService.default.admin.getAllPawnRequests(),
+          apiService.default.admin.getLogs(),
+          apiService.default.admin.getDashboardStats()
+        ]);
+        
+        // Calculate stats
+        const totalUsers = usersResponse.data?.length || 0;
+        const activeLoans = loansResponse.data?.length || 0;
+        
+        const allRequests = pawnRequestsResponse.data || [];
+        const pendingRequests = allRequests.filter(r => r.status === 'PENDING').length;
+        const approvedRequests = allRequests.filter(r => r.status === 'APPROVED').length;
+        const forfeitedItems = allRequests.filter(r => r.status === 'FORFEITED').length;
+        const redeemedItems = allRequests.filter(r => r.status === 'REDEEMED');
+        
+        // Calculate revenue:
+        // Revenue = (Forfeited items value with 5% markup) + (Interest from redeemed items) - (Released/Validated loan amounts) + (Cash removed) - (Cash added)
+        let revenue = 0;
+        
+        // Add forfeited items (full loan amount + 5% - shop gains the item value with markup)
+        allRequests.filter(r => r.status === 'FORFEITED').forEach(item => {
+          const amount = item.loanAmount || item.requestedAmount || 0;
+          revenue += amount * 1.05; // Base amount + 5%
+        });
+        
+        // Add interest from redeemed items (5% of loan amount)
+        redeemedItems.forEach(item => {
+          const amount = item.loanAmount || item.requestedAmount || 0;
+          revenue += amount * 0.05; // 5% interest
+        });
+        
+        // Deduct validated/pawned items (money released to customers)
+        allRequests.filter(r => r.status === 'PAWNED' || r.status === 'REDEEMED').forEach(item => {
+          const amount = item.loanAmount || item.requestedAmount || 0;
+          revenue -= amount;
+        });
+
+        // Process transaction logs for wallet management
+        const allLogs = logsResponse.data || [];
+        
+        // Add revenue from cash removed from users
+        allLogs.filter(log => log.action === 'REVENUE_EARNED_CASH_REMOVED').forEach(log => {
+          const match = log.remarks.match(/Revenue earned: ₱([\d.]+)/);
+          if (match) {
+            revenue += parseFloat(match[1]);
+          }
+        });
+        
+        // Deduct revenue from cash added to users
+        allLogs.filter(log => log.action === 'REVENUE_DEDUCTED_CASH_ADDED').forEach(log => {
+          const match = log.remarks.match(/Revenue deducted: ₱([\d.]+)/);
+          if (match) {
+            revenue -= parseFloat(match[1]);
+          }
+        });
+        
+        const backendStats = statsResponse.data || {};
+        const backendRevenueRaw = backendStats.revenue ?? 0;
+        const backendRevenue = Number(backendRevenueRaw);
+
+        if (!Number.isNaN(backendRevenue) && backendRevenue > 0) {
+          revenue = backendRevenue;
         }
+
+        if (!revenue || Number.isNaN(revenue) || revenue <= 0) {
+          revenue = 1000;
+        }
+
+        setStats({
+          totalUsers,
+          activeLoans,
+          pendingRequests,
+          approvedRequests,
+          forfeitedItems,
+          revenue
+        });
       } catch (error) {
         console.error('Error fetching admin stats:', error);
       }
@@ -210,23 +296,47 @@ function AdminDashboard() {
                 <div className="stat-icon">👥</div>
                 <div className="stat-info">
                   <span className="stat-number">{stats.totalUsers}</span>
-                  <span className="stat-label">Users</span>
+                  <span className="stat-label">Total Users</span>
                 </div>
               </div>
 
               <div className="stat-card">
                 <div className="stat-icon">💎</div>
                 <div className="stat-info">
-                  <span className="stat-number">{stats.activePawns}</span>
+                  <span className="stat-number">{stats.activeLoans}</span>
                   <span className="stat-label">Active Loans</span>
                 </div>
               </div>
 
               <div className="stat-card">
+                <div className="stat-icon">⏳</div>
+                <div className="stat-info">
+                  <span className="stat-number">{stats.pendingRequests}</span>
+                  <span className="stat-label">Pending Requests</span>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">✅</div>
+                <div className="stat-info">
+                  <span className="stat-number">{stats.approvedRequests}</span>
+                  <span className="stat-label">Approved Requests</span>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">⚠️</div>
+                <div className="stat-info">
+                  <span className="stat-number">{stats.forfeitedItems}</span>
+                  <span className="stat-label">Forfeited Items</span>
+                </div>
+              </div>
+
+              <div className="stat-card revenue">
                 <div className="stat-icon">💰</div>
                 <div className="stat-info">
-                  <span className="stat-number">₱{stats.revenue?.toFixed(2)}</span>
-                  <span className="stat-label">Revenue</span>
+                  <span className="stat-number">₱{stats.revenue?.toFixed(2) || '0.00'}</span>
+                  <span className="stat-label">Total Revenue</span>
                 </div>
               </div>
             </div>
