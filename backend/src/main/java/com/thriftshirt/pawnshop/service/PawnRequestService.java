@@ -19,7 +19,7 @@ import com.thriftshirt.pawnshop.entity.PawnRequest;
 import com.thriftshirt.pawnshop.entity.User;
 import com.thriftshirt.pawnshop.exception.BadRequestException;
 import com.thriftshirt.pawnshop.exception.ResourceNotFoundException;
-import com.thriftshirt.pawnshop.repository.LoanRepository;
+
 import com.thriftshirt.pawnshop.repository.PawnRequestRepository;
 import com.thriftshirt.pawnshop.repository.UserRepository;
 
@@ -34,9 +34,6 @@ public class PawnRequestService {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private LoanRepository loanRepository;
 
     /**
      * Create a new pawn request
@@ -54,11 +51,11 @@ public class PawnRequestService {
         }
 
         // Validate that requested loan amount doesn't exceed estimated value
-        if (requestDTO.getEstimatedValue() != null && requestDTO.getRequestedAmount() > requestDTO.getEstimatedValue()) {
+        if (requestDTO.getEstimatedValue() != null
+                && requestDTO.getRequestedAmount() > requestDTO.getEstimatedValue()) {
             throw new BadRequestException(String.format(
-                "Requested loan amount (%.2f) cannot exceed the estimated value of the item (%.2f)",
-                requestDTO.getRequestedAmount(), requestDTO.getEstimatedValue()
-            ));
+                    "Requested loan amount (%.2f) cannot exceed the estimated value of the item (%.2f)",
+                    requestDTO.getRequestedAmount(), requestDTO.getEstimatedValue()));
         }
 
         // Validate photos - maximum 2 images
@@ -79,7 +76,8 @@ public class PawnRequestService {
         // Check if user has any pending pawn requests that are not yet processed
         List<PawnRequest> pendingRequests = pawnRequestRepository.findPendingOrApprovedByUser(user);
         if (!pendingRequests.isEmpty()) {
-            throw new BadRequestException("You cannot create a new pawn request while you have pending requests awaiting approval. Please wait for your current request to be processed.");
+            throw new BadRequestException(
+                    "You cannot create a new pawn request while you have pending requests awaiting approval. Please wait for your current request to be processed.");
         }
 
         // Create new pawn request
@@ -175,11 +173,11 @@ public class PawnRequestService {
 
         List<PawnRequest> approvedItems = pawnRequestRepository.findByStatus("APPROVED");
         List<PawnRequest> forfeitedItems = pawnRequestRepository.findByStatus("FORFEITED");
-        
+
         List<PawnRequest> allInventoryItems = new java.util.ArrayList<>();
         allInventoryItems.addAll(approvedItems);
         allInventoryItems.addAll(forfeitedItems);
-        
+
         return allInventoryItems.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -195,20 +193,20 @@ public class PawnRequestService {
                 .orElseThrow(() -> new ResourceNotFoundException("Pawn request not found"));
 
         pawnRequest.setStatus(status);
-        
+
         // Set appraisal date and appraised by when status is changed to APPROVED
         if ("APPROVED".equals(status)) {
             pawnRequest.setAppraisalDate(LocalDate.now());
             pawnRequest.setAppraisedBy(adminUser.getUsername());
-            logger.info("Setting appraisal date for pawn request {}: {} by admin: {}", 
-                       pawnId, LocalDate.now(), adminUser.getUsername());
+            logger.info("Setting appraisal date for pawn request {}: {} by admin: {}",
+                    pawnId, LocalDate.now(), adminUser.getUsername());
         }
-        
+
         PawnRequest updated = pawnRequestRepository.save(pawnRequest);
 
         return mapToResponse(updated);
     }
-    
+
     /**
      * Update pawn request status (for admin) - backward compatibility
      */
@@ -300,7 +298,8 @@ public class PawnRequestService {
     }
 
     /**
-     * Count the number of images in a JSON array string (e.g., ["image1", "image2"])
+     * Count the number of images in a JSON array string (e.g., ["image1",
+     * "image2"])
      */
     private int countImagesInJson(String jsonPhotos) {
         if (jsonPhotos == null || jsonPhotos.trim().isEmpty()) {
