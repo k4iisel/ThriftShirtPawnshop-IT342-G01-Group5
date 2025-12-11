@@ -70,10 +70,11 @@ function Dashboard() {
   // Use the authentication hook
   useAuth('USER');
 
-  // Get user data from storage
+  // Get user data from storage or API
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
+    // Initial load from storage
     const storedUser = sessionStorage.getItem('user');
     if (storedUser) {
       try {
@@ -83,6 +84,20 @@ function Dashboard() {
         console.error('Error parsing user data:', error);
       }
     }
+
+    // Fetch latest profile from API to ensure we have the name
+    const fetchProfile = async () => {
+      try {
+        const profile = await apiService.auth.getProfile();
+        setUserData(profile);
+        // Also update session storage with latest data
+        sessionStorage.setItem('user', JSON.stringify(profile));
+      } catch (error) {
+        console.error('Error fetching dashboard profile:', error);
+      }
+    };
+
+    fetchProfile();
   }, []);
 
   const [userStats, setUserStats] = useState({
@@ -279,7 +294,7 @@ function Dashboard() {
 
         {/* Welcome Section */}
         <div className="welcome-section">
-          <h2>Welcome back, {userData?.username || userData?.firstName || 'user'}!</h2>
+          <h2>Welcome back, {userData?.firstName || userData?.username || 'user'}!</h2>
           <p>Here's what's happening with your account</p>
         </div>
 
