@@ -17,6 +17,7 @@ function DeveloperAdminValidate() {
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [interestRate, setInterestRate] = useState('');
     const [daysUntilDue, setDaysUntilDue] = useState('');
+    const [customLoanAmount, setCustomLoanAmount] = useState('');
 
     useEffect(() => {
         fetchRequests();
@@ -53,6 +54,7 @@ function DeveloperAdminValidate() {
         setSelectedRequest(null);
         setInterestRate('');
         setDaysUntilDue('');
+        setCustomLoanAmount('');
     };
 
     const handleValidate = async () => {
@@ -60,9 +62,10 @@ function DeveloperAdminValidate() {
 
         const finalInterestRate = interestRate === '' ? 5 : Number(interestRate);
         const finalDaysUntilDue = daysUntilDue === '' ? 30 : Number(daysUntilDue);
+        const finalCustomAmount = customLoanAmount && customLoanAmount.trim() !== '' ? Number(customLoanAmount) : null;
 
         try {
-            await apiService.admin.validatePawn(selectedRequest.pawnId, finalInterestRate, finalDaysUntilDue);
+            await apiService.admin.validatePawn(selectedRequest.pawnId, finalInterestRate, finalDaysUntilDue, finalCustomAmount);
             notifySuccess('Item validated and loan created successfully');
             handleCloseModal();
             fetchRequests(); // Refresh list
@@ -213,6 +216,20 @@ function DeveloperAdminValidate() {
                             
                             <div className="validate-modal-form">
                                 <div className="validate-form-group">
+                                    <label htmlFor="customAmount">Custom Loan Amount (Optional)</label>
+                                    <input
+                                        type="number"
+                                        id="customAmount"
+                                        value={customLoanAmount}
+                                        onChange={(e) => setCustomLoanAmount(e.target.value)}
+                                        placeholder="Leave empty to use original amount"
+                                        min="0"
+                                        step="0.01"
+                                    />
+                                    <small>Leave empty to use the original estimated value</small>
+                                </div>
+                                
+                                <div className="validate-form-group">
                                     <label htmlFor="interestRate">Interest Rate (%)</label>
                                     <input
                                         type="number"
@@ -243,8 +260,18 @@ function DeveloperAdminValidate() {
                             <div className="validate-modal-summary">
                                 <h4>Loan Summary</h4>
                                 <div className="validate-summary-row">
-                                    <span>Loan Amount:</span>
+                                    <span>Original Amount:</span>
                                     <span>₱{(selectedRequest.estimatedValue || selectedRequest.loanAmount || selectedRequest.requestedAmount || 0).toFixed(2)}</span>
+                                </div>
+                                {customLoanAmount && customLoanAmount.trim() !== '' && (
+                                    <div className="validate-summary-row" style={{color: '#28a745', fontWeight: 'bold'}}>
+                                        <span>Custom Amount:</span>
+                                        <span>₱{Number(customLoanAmount).toFixed(2)}</span>
+                                    </div>
+                                )}
+                                <div className="validate-summary-row">
+                                    <span>Final Loan Amount:</span>
+                                    <span>₱{(customLoanAmount && customLoanAmount.trim() !== '' ? Number(customLoanAmount) : (selectedRequest.estimatedValue || selectedRequest.loanAmount || selectedRequest.requestedAmount || 0)).toFixed(2)}</span>
                                 </div>
                                 <div className="validate-summary-row">
                                     <span>Interest Rate:</span>
@@ -252,11 +279,11 @@ function DeveloperAdminValidate() {
                                 </div>
                                 <div className="validate-summary-row">
                                     <span>Interest Amount:</span>
-                                    <span>₱{((selectedRequest.estimatedValue || selectedRequest.loanAmount || selectedRequest.requestedAmount || 0) * ((interestRate === '' ? 5 : Number(interestRate)) / 100)).toFixed(2)}</span>
+                                    <span>₱{((customLoanAmount && customLoanAmount.trim() !== '' ? Number(customLoanAmount) : (selectedRequest.estimatedValue || selectedRequest.loanAmount || selectedRequest.requestedAmount || 0)) * ((interestRate === '' ? 5 : Number(interestRate)) / 100)).toFixed(2)}</span>
                                 </div>
                                 <div className="validate-summary-row total">
                                     <span>Total to Redeem:</span>
-                                    <span>₱{((selectedRequest.estimatedValue || selectedRequest.loanAmount || selectedRequest.requestedAmount || 0) * (1 + (interestRate === '' ? 5 : Number(interestRate)) / 100)).toFixed(2)}</span>
+                                    <span>₱{((customLoanAmount && customLoanAmount.trim() !== '' ? Number(customLoanAmount) : (selectedRequest.estimatedValue || selectedRequest.loanAmount || selectedRequest.requestedAmount || 0)) * (1 + (interestRate === '' ? 5 : Number(interestRate)) / 100)).toFixed(2)}</span>
                                 </div>
                                 <div className="validate-summary-row">
                                     <span>Due Date:</span>

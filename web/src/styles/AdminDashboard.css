@@ -230,8 +230,6 @@
   font-size: 16px;
   filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3));
 }
-  margin: 0;
-}
 
 .admin-nav-section li {
   margin-bottom: 4px;
@@ -328,7 +326,7 @@
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
 
@@ -961,7 +959,6 @@
 .action-btn.unban:hover {
   background: #e2e8f0;
   border-color: #94a3b8;
-}
 }
 
 .timestamp-cell {

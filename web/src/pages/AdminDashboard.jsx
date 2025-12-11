@@ -16,6 +16,7 @@ function AdminDashboard() {
     pendingRequests: 0,
     approvedRequests: 0,
     forfeitedItems: 0,
+    wallet: 0,
     revenue: 0
   });
 
@@ -89,57 +90,88 @@ function AdminDashboard() {
         const forfeitedItems = allRequests.filter(r => r.status === 'FORFEITED').length;
         const redeemedItems = allRequests.filter(r => r.status === 'REDEEMED');
         
-        // Calculate revenue:
-        // Revenue = (Forfeited items value with 5% markup) + (Interest from redeemed items) - (Released/Validated loan amounts) + (Cash removed) - (Cash added)
-        let revenue = 0;
+        // Calculate wallet (system capital available)
+        let wallet = 0;
         
         // Add forfeited items (full loan amount + 5% - shop gains the item value with markup)
         allRequests.filter(r => r.status === 'FORFEITED').forEach(item => {
           const amount = item.loanAmount || item.requestedAmount || 0;
-          revenue += amount * 1.05; // Base amount + 5%
+          wallet += amount * 1.05; // Base amount + 5%
         });
         
         // Add interest from redeemed items (5% of loan amount)
         redeemedItems.forEach(item => {
           const amount = item.loanAmount || item.requestedAmount || 0;
-          revenue += amount * 0.05; // 5% interest
+          wallet += amount * 0.05; // 5% interest
         });
         
-        // Deduct validated/pawned items (money released to customers)
-        allRequests.filter(r => r.status === 'PAWNED' || r.status === 'REDEEMED').forEach(item => {
+        // Deduct only active pawned items (money currently released to customers)
+        // Do NOT deduct for redeemed items - they've already paid back their loans
+        allRequests.filter(r => r.status === 'PAWNED').forEach(item => {
           const amount = item.loanAmount || item.requestedAmount || 0;
-          revenue -= amount;
+          wallet -= amount;
         });
 
         // Process transaction logs for wallet management
         const allLogs = logsResponse.data || [];
         
-        // Add revenue from cash removed from users
+        // Add wallet from cash removed from users (manual adjustments only)
         allLogs.filter(log => log.action === 'REVENUE_EARNED_CASH_REMOVED').forEach(log => {
           const match = log.remarks.match(/Revenue earned: ₱([\d.]+)/);
           if (match) {
-            revenue += parseFloat(match[1]);
+            wallet += parseFloat(match[1]);
           }
         });
         
-        // Deduct revenue from cash added to users
+        // Deduct wallet from cash added to users (manual adjustments only)
         allLogs.filter(log => log.action === 'REVENUE_DEDUCTED_CASH_ADDED').forEach(log => {
           const match = log.remarks.match(/Revenue deducted: ₱([\d.]+)/);
           if (match) {
-            revenue -= parseFloat(match[1]);
+            wallet -= parseFloat(match[1]);
           }
         });
         
+        // Calculate revenue (pure profit from interest only)
+        let revenue = 0;
+        
         const backendStats = statsResponse.data || {};
+        const backendWalletRaw = backendStats.wallet ?? 0;
         const backendRevenueRaw = backendStats.revenue ?? 0;
+        const backendWallet = Number(backendWalletRaw);
         const backendRevenue = Number(backendRevenueRaw);
 
-        if (!Number.isNaN(backendRevenue) && backendRevenue > 0) {
-          revenue = backendRevenue;
+        console.log('Backend stats response:', backendStats);
+        console.log('Backend wallet:', backendWallet, 'Backend revenue:', backendRevenue);
+
+        // Use backend wallet calculation
+        if (!Number.isNaN(backendWallet) && backendWallet >= 0) {
+          wallet = backendWallet;
         }
 
-        if (!revenue || Number.isNaN(revenue) || revenue <= 0) {
-          revenue = 1000;
+        // Use backend revenue calculation
+        if (!Number.isNaN(backendRevenue) && backendRevenue >= 0) {
+          revenue = backendRevenue;
+          console.log('Using backend revenue:', revenue);
+        } else {
+          // Fallback revenue calculation (full amount + interest from redeemed items)
+          console.log('Using fallback revenue calculation');
+          revenue = 0;
+          
+          // Add full amount (loan + interest) from redeemed items
+          redeemedItems.forEach(item => {
+            const amount = item.loanAmount || item.requestedAmount || 0;
+            const totalAmount = amount * 1.05; // Loan amount + 5% interest
+            revenue += totalAmount;
+            console.log('Added full amount from redeemed item:', totalAmount);
+          });
+          
+          // Forfeited items do NOT contribute to revenue - they become inventory
+          console.log('Fallback revenue calculated (redeemed full amounts):', revenue);
+        }
+
+        // Ensure minimum values for display
+        if (!wallet || Number.isNaN(wallet) || wallet <= 0) {
+          wallet = 10000;
         }
 
         setStats({
@@ -148,6 +180,7 @@ function AdminDashboard() {
           pendingRequests,
           approvedRequests,
           forfeitedItems,
+          wallet,
           revenue
         });
       } catch (error) {
@@ -320,6 +353,14 @@ function AdminDashboard() {
                 <div className="stat-info">
                   <span className="stat-number">{stats.forfeitedItems}</span>
                   <span className="stat-label">Forfeited Items</span>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">💳</div>
+                <div className="stat-info">
+                  <span className="stat-number">₱{stats.wallet?.toFixed(2) || '0.00'}</span>
+                  <span className="stat-label">Total Wallet</span>
                 </div>
               </div>
 

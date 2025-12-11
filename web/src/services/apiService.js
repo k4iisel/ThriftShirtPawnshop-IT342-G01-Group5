@@ -365,10 +365,15 @@ export const apiService = {
       return await handleResponse(response);
     },
 
-    validatePawn: async (pawnId, interestRate = 5, daysUntilDue = 30) => {
+    validatePawn: async (pawnId, interestRate = 5, daysUntilDue = 30, customLoanAmount = null) => {
       const url = new URL(`${API_BASE_URL}/admin/pawn-requests/${pawnId}/validate`);
       url.searchParams.append('interestRate', interestRate);
       url.searchParams.append('daysUntilDue', daysUntilDue);
+      
+      // Add custom loan amount if provided
+      if (customLoanAmount !== null && customLoanAmount !== undefined) {
+        url.searchParams.append('customLoanAmount', customLoanAmount);
+      }
       
       const response = await fetch(url.toString(), {
         method: 'POST',

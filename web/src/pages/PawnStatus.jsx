@@ -62,7 +62,12 @@ function PawnStatus() {
         
         // Transform the API response data to match the UI structure
         const transformedPawns = allPawns.map((pawn, index) => {
-          const loanBaseAmount = pawn.estimatedValue || pawn.loanAmount || pawn.requestedAmount || 0;
+          console.log('🔍 Pawn data:', pawn);
+          console.log('🔍 loanAmount:', pawn.loanAmount, 'estimatedValue:', pawn.estimatedValue, 'requestedAmount:', pawn.requestedAmount);
+          
+          // Use actual loanAmount first (which gets updated with custom amount), then fallback to estimatedValue
+          const loanBaseAmount = pawn.loanAmount || pawn.estimatedValue || pawn.requestedAmount || 0;
+          console.log('🔍 loanBaseAmount calculated:', loanBaseAmount);
           let loanPeriod = 30;
           let dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
           if (pawn.dueDate) {
@@ -118,11 +123,16 @@ function PawnStatus() {
   };
 
   const handleRedeemItem = async (pawn) => {
+    console.log('🔍 Attempting to redeem pawn:', pawn);
+    console.log('🔍 Pawn ID:', pawn.pawnId, 'Status:', pawn.status);
+    
     // Calculate total redeem amount (loan + 5% interest)
-    // Use estimatedValue (what the backend loan uses) or fallback to loanAmount or requestedAmount
-    const loanAmount = pawn.estimatedValue || pawn.loanAmount || pawn.requestedAmount || 0;
+    // Use actual loanAmount first (which gets updated with custom amount), then fallback to estimatedValue
+    const loanAmount = pawn.loanAmount || pawn.estimatedValue || pawn.requestedAmount || 0;
     const interestAmount = loanAmount * 0.05;
     const totalRedeemAmount = loanAmount + interestAmount;
+    
+    console.log('🔍 Loan amount:', loanAmount, 'Total redeem amount:', totalRedeemAmount);
     
     const confirmMessage = `Are you sure you want to redeem "${pawn.itemName}"?\n\n` +
       `Amount: ₱${loanAmount.toFixed(2)}\n` +
@@ -132,16 +142,19 @@ function PawnStatus() {
       
     if (window.confirm(confirmMessage)) {
       try {
+        console.log('🔍 Calling redeem API with pawnId:', pawn.pawnId);
         // For now, we'll use the pawnId as a proxy to find the loan
         // In a real scenario, we'd get the loan ID from the pawn data
         const response = await apiService.loan.redeem(pawn.pawnId);
+        console.log('🔍 Redeem API response:', response);
         
         if (response.success) {
-          const totalAmount = (pawn.estimatedValue || pawn.loanAmount || pawn.requestedAmount || 0) * 1.05;
+          const totalAmount = pawn.loanAmount * 1.05;
           notify.notifySuccess(`✅ Item redeemed successfully! ₱${totalAmount.toFixed(2)} has been deducted from your wallet.`);
           // Refresh the pawn requests list
           fetchPawnRequests();
         } else {
+          console.error('❌ Redeem API failed:', response);
           notify.notifyError('❌ Failed to redeem item: ' + (response.message || 'Unknown error'));
         }
       } catch (error) {
@@ -290,7 +303,14 @@ function PawnStatus() {
                   <div className="financial-summary">
                     <div className="summary-row">
                       <span>Loan Amount:</span>
-                      <span className="amount">₱{pawn.loanAmount ? pawn.loanAmount.toFixed(2) : '0.00'}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                        <span className="amount">₱{pawn.loanAmount ? pawn.loanAmount.toFixed(2) : '0.00'}</span>
+                        {pawn.estimatedValue && pawn.loanAmount && pawn.loanAmount !== pawn.estimatedValue && (
+                          <small style={{ color: '#28a745', fontSize: '11px', fontWeight: 'bold' }}>
+                            ✓ Reconfigured from ₱{pawn.estimatedValue.toFixed(2)}
+                          </small>
+                        )}
+                      </div>
                     </div>
                     {pawn.estimatedValue && (
                       <div className="summary-row">
@@ -298,31 +318,50 @@ function PawnStatus() {
                         <span className="amount">₱{pawn.estimatedValue.toFixed(2)}</span>
                       </div>
                     )}
-                    <div className="summary-row">
-                      <span>Interest ({pawn.interestRate}%):</span>
-                      <span className="amount">₱{pawn.interestAmount.toFixed(2)}</span>
-                    </div>
-                    <div className="summary-row total">
-                      <span>Total to Redeem:</span>
-                      <span className="amount">₱{pawn.totalToRedeem.toFixed(2)}</span>
-                    </div>
-                    <div className="summary-row">
-                      <span>Loan Period</span>
-                      <span className="period">{pawn.loanPeriod} days</span>
-                    </div>
+                    {(pawn.status === 'PAWNED' || pawn.status === 'REDEEMED' || pawn.status === 'FORFEITED') && (
+                      <>
+                        <div className="summary-row">
+                          <span>Interest ({pawn.interestRate}%):</span>
+                          <span className="amount">₱{pawn.interestAmount.toFixed(2)}</span>
+                        </div>
+                        <div className="summary-row total">
+                          <span>Total to Redeem:</span>
+                          <span className="amount">₱{pawn.totalToRedeem.toFixed(2)}</span>
+                        </div>
+                        <div className="summary-row">
+                          <span>Loan Period</span>
+                          <span className="period">{pawn.loanPeriod} days</span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  <div className="due-date-row">
-                    <p className="due-date">Due Date: {pawn.dueDate}</p>
-                    <span className={`status-badge-inline ${pawn.status.toLowerCase()}`}>
-                      {pawn.status === 'PENDING' ? 'PENDING' : 
-                       pawn.status === 'APPROVED' ? 'APPROVED' : 
-                       pawn.status === 'REJECTED' ? 'REJECTED' : 
-                       pawn.status === 'PAWNED' ? 'PAWNED' :
-                       pawn.status === 'REDEEMED' ? 'REDEEMED' : 
-                       pawn.status === 'FORFEITED' ? 'FORFEITED' : pawn.status}
-                    </span>
-                  </div>
+                  {(pawn.status === 'PAWNED' || pawn.status === 'REDEEMED' || pawn.status === 'FORFEITED') && (
+                    <div className="due-date-row">
+                      <p className="due-date">Due Date: {pawn.dueDate}</p>
+                      <span className={`status-badge-inline ${pawn.status.toLowerCase()}`}>
+                        {pawn.status === 'PENDING' ? 'PENDING' : 
+                         pawn.status === 'APPROVED' ? 'APPROVED' : 
+                         pawn.status === 'REJECTED' ? 'REJECTED' : 
+                         pawn.status === 'PAWNED' ? 'PAWNED' :
+                         pawn.status === 'REDEEMED' ? 'REDEEMED' : 
+                         pawn.status === 'FORFEITED' ? 'FORFEITED' : pawn.status}
+                      </span>
+                    </div>
+                  )}
+
+                  {(pawn.status === 'PENDING' || pawn.status === 'APPROVED' || pawn.status === 'REJECTED') && (
+                    <div className="due-date-row">
+                      <span className={`status-badge-inline ${pawn.status.toLowerCase()}`}>
+                        {pawn.status === 'PENDING' ? 'PENDING' : 
+                         pawn.status === 'APPROVED' ? 'APPROVED' : 
+                         pawn.status === 'REJECTED' ? 'REJECTED' : 
+                         pawn.status === 'PAWNED' ? 'PAWNED' :
+                         pawn.status === 'REDEEMED' ? 'REDEEMED' : 
+                         pawn.status === 'FORFEITED' ? 'FORFEITED' : pawn.status}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {pawn.status === 'PAWNED' && (
