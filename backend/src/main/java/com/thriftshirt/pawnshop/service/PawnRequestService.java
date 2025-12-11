@@ -19,7 +19,6 @@ import com.thriftshirt.pawnshop.entity.PawnRequest;
 import com.thriftshirt.pawnshop.entity.User;
 import com.thriftshirt.pawnshop.exception.BadRequestException;
 import com.thriftshirt.pawnshop.exception.ResourceNotFoundException;
-
 import com.thriftshirt.pawnshop.repository.PawnRequestRepository;
 import com.thriftshirt.pawnshop.repository.UserRepository;
 
@@ -45,20 +44,20 @@ public class PawnRequestService {
         logger.info("Creating pawn request for user: {}", userId);
 
         // Validate input
-        if (requestDTO.getRequestedAmount() == null || requestDTO.getRequestedAmount() < 150) {
-            throw new BadRequestException("Requested amount must be at least 150");
+        if (requestDTO.getLoanAmount() == null || requestDTO.getLoanAmount() < 150) {
+            throw new BadRequestException("Loan amount must be at least 150");
         }
 
-        if (requestDTO.getRequestedAmount() > 10000) {
-            throw new BadRequestException("Requested amount cannot exceed 10,000");
+        if (requestDTO.getLoanAmount() > 10000) {
+            throw new BadRequestException("Loan amount cannot exceed 10,000");
         }
 
-        // Validate that requested loan amount doesn't exceed estimated value
+        // Validate that loan amount doesn't exceed estimated value
         if (requestDTO.getEstimatedValue() != null
-                && requestDTO.getRequestedAmount() > requestDTO.getEstimatedValue()) {
+                && requestDTO.getLoanAmount() > requestDTO.getEstimatedValue()) {
             throw new BadRequestException(String.format(
-                    "Requested loan amount (%.2f) cannot exceed the estimated value of the item (%.2f)",
-                    requestDTO.getRequestedAmount(), requestDTO.getEstimatedValue()));
+                    "Loan amount (%.2f) cannot exceed the estimated value of the item (%.2f)",
+                    requestDTO.getLoanAmount(), requestDTO.getEstimatedValue()));
         }
 
         // Validate photos - maximum 2 images
@@ -98,7 +97,7 @@ public class PawnRequestService {
             pawnRequest.setCondition(requestDTO.getCondition());
             pawnRequest.setDescription(requestDTO.getDescription());
             pawnRequest.setPhotos(requestDTO.getPhotos());
-            pawnRequest.setRequestedAmount(requestDTO.getRequestedAmount());
+            pawnRequest.setLoanAmount(requestDTO.getLoanAmount());
             pawnRequest.setEstimatedValue(requestDTO.getEstimatedValue());
             pawnRequest.setStatus("PENDING"); // Default status
             pawnRequest.setCategory(requestDTO.getCategory() != null ? requestDTO.getCategory() : "General");
@@ -151,6 +150,14 @@ public class PawnRequestService {
     }
 
     /**
+     * Get all pawn requests as entities (for internal use)
+     */
+    public List<PawnRequest> getAllPawnRequestsEntities() {
+        logger.info("Fetching all pawn request entities");
+        return pawnRequestRepository.findAll();
+    }
+
+    /**
      * Get a specific pawn request by ID
      */
     public PawnRequestResponse getPawnRequestById(Long pawnId) {
@@ -175,19 +182,14 @@ public class PawnRequestService {
     }
 
     /**
-     * Get all pawn requests for inventory (APPROVED and FORFEITED items)
+     * Get all pawn requests for inventory (FORFEITED items only)
      */
     public List<PawnRequestResponse> getInventoryItems() {
-        logger.info("Fetching inventory items (APPROVED and FORFEITED status)");
+        logger.info("Fetching inventory items (FORFEITED status only)");
 
-        List<PawnRequest> approvedItems = pawnRequestRepository.findByStatus("APPROVED");
         List<PawnRequest> forfeitedItems = pawnRequestRepository.findByStatus("FORFEITED");
 
-        List<PawnRequest> allInventoryItems = new java.util.ArrayList<>();
-        allInventoryItems.addAll(approvedItems);
-        allInventoryItems.addAll(forfeitedItems);
-
-        return allInventoryItems.stream()
+        return forfeitedItems.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -237,12 +239,12 @@ public class PawnRequestService {
             throw new BadRequestException("You can only delete your own pawn requests");
         }
 
-        // Only allow deletion of PENDING requests
-        if (!"PENDING".equals(pawnRequest.getStatus())) {
-            throw new BadRequestException("Only pending pawn requests can be deleted");
+        // Only allow deletion of PENDING and REJECTED requests
+        if (!"PENDING".equals(pawnRequest.getStatus()) && !"REJECTED".equals(pawnRequest.getStatus())) {
+            throw new BadRequestException("Only pending or rejected pawn requests can be deleted");
         }
 
-        logger.info("Deleting pawn request with ID: {}", pawnId);
+        logger.info("Deleting pawn request with ID: {} (Status: {})", pawnId, pawnRequest.getStatus());
         pawnRequestRepository.deleteById(pawnId);
         logger.info("✅ Pawn request {} deleted successfully", pawnId);
     }
@@ -290,6 +292,12 @@ public class PawnRequestService {
      * Map PawnRequest entity to response DTO
      */
     private PawnRequestResponse mapToResponse(PawnRequest pawnRequest) {
+        Integer interestRate = null;
+        LocalDate dueDate = null;
+        if (pawnRequest.getLoan() != null) {
+            interestRate = pawnRequest.getLoan().getInterestRate();
+            dueDate = pawnRequest.getLoan().getDueDate();
+        }
         return new PawnRequestResponse(
                 pawnRequest.getPawnId(),
                 pawnRequest.getItemName(),
@@ -298,12 +306,14 @@ public class PawnRequestService {
                 pawnRequest.getCondition(),
                 pawnRequest.getCategory(),
                 pawnRequest.getDescription(),
-                pawnRequest.getRequestedAmount(),
+                pawnRequest.getLoanAmount(),
                 pawnRequest.getEstimatedValue(),
                 pawnRequest.getPhotos(),
                 pawnRequest.getStatus(),
                 pawnRequest.getAppraisalDate(),
-                pawnRequest.getAppraisedBy());
+                pawnRequest.getAppraisedBy(),
+                interestRate,
+                dueDate);
     }
 
     /**

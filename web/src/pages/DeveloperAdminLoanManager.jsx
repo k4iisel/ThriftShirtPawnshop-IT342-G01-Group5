@@ -140,13 +140,6 @@ function DeveloperAdminLoanManager() {
                                                 <td>
                                                     <div className="loan-manager-actions">
                                                         <button
-                                                            className="loan-manager-action-btn paid"
-                                                            onClick={() => handlePayment(loan.loanId)}
-                                                            title="Mark as Paid (Redeem)"
-                                                        >
-                                                            ✓ Paid
-                                                        </button>
-                                                        <button
                                                             className="loan-manager-action-btn forfeit"
                                                             onClick={() => handleForfeit(loan.loanId)}
                                                             title="Mark as Forfeited"

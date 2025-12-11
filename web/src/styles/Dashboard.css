@@ -680,18 +680,18 @@
 }
 
 .status-pawned {
-  background: #d1ecf1;
-  color: #0c5460;
+  background: #d4edda;
+  color: #155724;
 }
 
 .status-redeemed {
-  background: #e2e3e5;
-  color: #383d41;
+  background: #d4edda;
+  color: #155724;
 }
 
 .status-forfeited {
-  background: #fff3cd;
-  color: #856404;
+  background: #f8d7da;
+  color: #721c24;
 }
 
 .log-time {

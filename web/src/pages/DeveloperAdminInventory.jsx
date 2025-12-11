@@ -2,13 +2,17 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useNotify from '../hooks/useNotify';
+import ImageModal from '../components/ImageModal';
 import logo from '../assets/images/logo.png';
 import '../styles/DeveloperAdmin.css';
 
 function DeveloperAdminInventory() {
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [selectedImages, setSelectedImages] = useState([]);
+    const [selectedItemName, setSelectedItemName] = useState('');
     const navigate = useNavigate();
     const { notifyError } = useNotify();
 
@@ -37,12 +41,39 @@ function DeveloperAdminInventory() {
         navigate('/admin/dashboard');
     };
 
-    const filteredItems = inventory.filter(item => {
-        const statusMatch = statusFilter === 'ALL' || item.status === statusFilter;
-        return statusMatch;
-    });
+    const handleViewImages = (item) => {
+        let images = [];
+        try {
+            if (item.photos && typeof item.photos === 'string') {
+                const parsed = JSON.parse(item.photos);
+                images = Array.isArray(parsed) ? parsed : [item.photos];
+            } else if (Array.isArray(item.photos)) {
+                images = item.photos;
+            }
+        } catch (error) {
+            console.error('Error parsing photos:', error);
+        }
+        
+        if (images.length === 0) {
+            images = [`https://via.placeholder.com/400x400?text=${encodeURIComponent(item.itemName)}`];
+        }
+        
+        setSelectedImages(images);
+        setSelectedItemName(item.itemName);
+        setShowImageModal(true);
+    };
 
-    const statuses = ['ALL', ...new Set(inventory.map(item => item.status))];
+    const filteredItems = inventory.filter(item => {
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        return (
+            item.itemName?.toLowerCase().includes(query) ||
+            item.status?.toLowerCase().includes(query) ||
+            item.description?.toLowerCase().includes(query) ||
+            item.brand?.toLowerCase().includes(query) ||
+            item.pawnId?.toString().includes(query)
+        );
+    });
 
     return (
         <div className="dev-admin-page">
@@ -61,17 +92,14 @@ function DeveloperAdminInventory() {
             <main className="dev-admin-main">
                 <div className="dev-admin-content">
                     <div className="dev-admin-toolbar">
-                        <div className="dev-admin-filters">
-                            <select
-                                className="dev-admin-select"
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                            >
-                                <option value="ALL">All Items</option>
-                                {statuses.slice(1).map(status => (
-                                    <option key={status} value={status}>{status}</option>
-                                ))}
-                            </select>
+                        <div className="dev-admin-search">
+                            <input
+                                type="text"
+                                className="dev-admin-search-input"
+                                placeholder="Search by item name, status, description, brand, or ID..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
                         </div>
                         <div className="dev-admin-count">
                             {filteredItems.length} items
@@ -115,7 +143,8 @@ function DeveloperAdminInventory() {
                                                                     src={urls[0]} 
                                                                     alt="Item" 
                                                                     className="dev-admin-photo"
-                                                                    onClick={() => window.open(urls[0], '_blank')}
+                                                                    style={{ cursor: 'pointer' }}
+                                                                    onClick={() => handleViewImages(item)}
                                                                 />
                                                             );
                                                         } catch (e) {
@@ -126,7 +155,12 @@ function DeveloperAdminInventory() {
                                             </td>
                                             <td className="dev-admin-item-desc">{item.description}</td>
                                             <td className="dev-admin-item-value">
-                                                ₱{item.estimatedValue?.toFixed(2) || item.requestedAmount?.toFixed(2)}
+                                                {(() => {
+                                                    const baseAmount = item.estimatedValue || item.loanAmount || item.requestedAmount || 0;
+                                                    const interestRate = item.interestRate || 5;
+                                                    const withInterest = baseAmount * (1 + interestRate / 100);
+                                                    return `₱${baseAmount.toFixed(2)} (+ ${interestRate}%: ₱${withInterest.toFixed(2)})`;
+                                                })()}
                                             </td>
                                             <td>
                                                 <span className={`dev-admin-status ${item.status.toLowerCase()}`}>
@@ -141,6 +175,15 @@ function DeveloperAdminInventory() {
                     </div>
                 </div>
             </main>
+
+            {/* Image Modal */}
+            {showImageModal && (
+                <ImageModal
+                    images={selectedImages}
+                    itemName={selectedItemName}
+                    onClose={() => setShowImageModal(false)}
+                />
+            )}
         </div>
     );
 }

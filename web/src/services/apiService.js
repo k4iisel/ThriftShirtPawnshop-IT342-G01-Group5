@@ -365,8 +365,12 @@ export const apiService = {
       return await handleResponse(response);
     },
 
-    validatePawn: async (pawnId) => {
-      const response = await fetch(`${API_BASE_URL}/admin/pawn-requests/${pawnId}/validate`, {
+    validatePawn: async (pawnId, interestRate = 5, daysUntilDue = 30) => {
+      const url = new URL(`${API_BASE_URL}/admin/pawn-requests/${pawnId}/validate`);
+      url.searchParams.append('interestRate', interestRate);
+      url.searchParams.append('daysUntilDue', daysUntilDue);
+      
+      const response = await fetch(url.toString(), {
         method: 'POST',
         headers: getAuthHeaders(),
       });

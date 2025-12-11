@@ -13,6 +13,10 @@ function DeveloperAdminValidate() {
     const { notifySuccess, notifyError } = useNotify();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    const [interestRate, setInterestRate] = useState('');
+    const [daysUntilDue, setDaysUntilDue] = useState('');
 
     useEffect(() => {
         fetchRequests();
@@ -37,14 +41,30 @@ function DeveloperAdminValidate() {
         }
     };
 
-    const handleValidate = async (pawnId, amount) => {
-        if (!window.confirm(`Confirm validation? This will create a loan for ₱${amount} with 5% interest and 30-day term.`)) {
-            return;
-        }
+    const handleOpenModal = (request) => {
+        setSelectedRequest(request);
+        setInterestRate('');
+        setDaysUntilDue('');
+        setShowModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false);
+        setSelectedRequest(null);
+        setInterestRate('');
+        setDaysUntilDue('');
+    };
+
+    const handleValidate = async () => {
+        if (!selectedRequest) return;
+
+        const finalInterestRate = interestRate === '' ? 5 : Number(interestRate);
+        const finalDaysUntilDue = daysUntilDue === '' ? 30 : Number(daysUntilDue);
 
         try {
-            await apiService.admin.validatePawn(pawnId);
+            await apiService.admin.validatePawn(selectedRequest.pawnId, finalInterestRate, finalDaysUntilDue);
             notifySuccess('Item validated and loan created successfully');
+            handleCloseModal();
             fetchRequests(); // Refresh list
         } catch (error) {
             console.error('Error validating pawn:', error);
@@ -56,6 +76,7 @@ function DeveloperAdminValidate() {
             } else {
                 notifyError(errorMessage);
             }
+            handleCloseModal();
         }
     };
 
@@ -110,7 +131,7 @@ function DeveloperAdminValidate() {
                                     <tr>
                                         <th>Item Details</th>
                                         <th>Condition</th>
-                                        <th>Approved Amount</th>
+                                        <th>Loan Amount</th>
                                         <th>Appraisal Date</th>
                                         <th>Actions</th>
                                     </tr>
@@ -135,7 +156,7 @@ function DeveloperAdminValidate() {
                                                     <span className="validate-condition">{req.condition}</span>
                                                 </td>
                                                 <td className="validate-amount">
-                                                    ₱{(req.estimatedValue || req.requestedAmount)?.toFixed(2)}
+                                                    ₱{(req.estimatedValue || req.loanAmount || req.requestedAmount || 0).toFixed(2)}
                                                 </td>
                                                 <td className="validate-date">
                                                     {req.appraisalDate ? 
@@ -155,7 +176,7 @@ function DeveloperAdminValidate() {
                                                     <div className="validate-actions">
                                                         <button
                                                             className="validate-action-btn validate-btn"
-                                                            onClick={() => handleValidate(req.pawnId, (req.estimatedValue || req.requestedAmount))}
+                                                            onClick={() => handleOpenModal(req)}
                                                         >
                                                             Validate & Release
                                                         </button>
@@ -176,6 +197,88 @@ function DeveloperAdminValidate() {
                     )}
                 </div>
             </main>
+
+            {showModal && selectedRequest && (
+                <div className="validate-modal-overlay" onClick={handleCloseModal}>
+                    <div className="validate-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="validate-modal-header">
+                            <h2>Validate & Release Loan</h2>
+                            <button className="validate-modal-close" onClick={handleCloseModal}>×</button>
+                        </div>
+                        <div className="validate-modal-body">
+                            <div className="validate-modal-item-info">
+                                <h3>{selectedRequest.itemName}</h3>
+                                <p>{selectedRequest.brand} - {selectedRequest.size} - {selectedRequest.condition}</p>
+                            </div>
+                            
+                            <div className="validate-modal-form">
+                                <div className="validate-form-group">
+                                    <label htmlFor="interestRate">Interest Rate (%)</label>
+                                    <input
+                                        type="number"
+                                        id="interestRate"
+                                        value={interestRate}
+                                        onChange={(e) => setInterestRate(e.target.value)}
+                                        placeholder="5 (default)"
+                                        min="0"
+                                        max="100"
+                                        step="0.5"
+                                    />
+                                </div>
+                                
+                                <div className="validate-form-group">
+                                    <label htmlFor="daysUntilDue">Days Until Due</label>
+                                    <input
+                                        type="number"
+                                        id="daysUntilDue"
+                                        value={daysUntilDue}
+                                        onChange={(e) => setDaysUntilDue(e.target.value)}
+                                        placeholder="30 (default)"
+                                        min="1"
+                                        max="365"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="validate-modal-summary">
+                                <h4>Loan Summary</h4>
+                                <div className="validate-summary-row">
+                                    <span>Loan Amount:</span>
+                                    <span>₱{(selectedRequest.estimatedValue || selectedRequest.loanAmount || selectedRequest.requestedAmount || 0).toFixed(2)}</span>
+                                </div>
+                                <div className="validate-summary-row">
+                                    <span>Interest Rate:</span>
+                                    <span>{interestRate === '' ? 5 : interestRate}%</span>
+                                </div>
+                                <div className="validate-summary-row">
+                                    <span>Interest Amount:</span>
+                                    <span>₱{((selectedRequest.estimatedValue || selectedRequest.loanAmount || selectedRequest.requestedAmount || 0) * ((interestRate === '' ? 5 : Number(interestRate)) / 100)).toFixed(2)}</span>
+                                </div>
+                                <div className="validate-summary-row total">
+                                    <span>Total to Redeem:</span>
+                                    <span>₱{((selectedRequest.estimatedValue || selectedRequest.loanAmount || selectedRequest.requestedAmount || 0) * (1 + (interestRate === '' ? 5 : Number(interestRate)) / 100)).toFixed(2)}</span>
+                                </div>
+                                <div className="validate-summary-row">
+                                    <span>Due Date:</span>
+                                    <span>{new Date(Date.now() + (daysUntilDue === '' ? 30 : Number(daysUntilDue)) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric'
+                                    })}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="validate-modal-footer">
+                            <button className="validate-modal-btn cancel" onClick={handleCloseModal}>
+                                Cancel
+                            </button>
+                            <button className="validate-modal-btn confirm" onClick={handleValidate}>
+                                Confirm & Release
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -180,10 +180,10 @@ function History() {
   const extractAmount = (remarks) => {
     if (!remarks) return 0;
     
-    // Look for requested amount first (highest priority)
-    const requestedAmountMatch = remarks.match(/Requested\s*amount:\s*₱([0-9,.]+)/i);
-    if (requestedAmountMatch) {
-      return parseFloat(requestedAmountMatch[1].replace(/,/g, ''));
+    // Look for loan amount first (highest priority)
+    const loanAmountMatch = remarks.match(/Loan\s*amount:\s*₱([0-9,.]+)/i);
+    if (loanAmountMatch) {
+      return parseFloat(loanAmountMatch[1].replace(/,/g, ''));
     }
     
     // Look for other amount patterns

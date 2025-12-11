@@ -3,6 +3,8 @@ package com.thriftshirt.pawnshop.service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -26,6 +28,10 @@ import com.thriftshirt.pawnshop.repository.UserRepository;
 public class LoanService {
 
     private static final Logger logger = LoggerFactory.getLogger(LoanService.class);
+    private static final BigDecimal BASE_CAPITAL = new BigDecimal("1000");
+    private static final BigDecimal FORFEIT_MARKUP = new BigDecimal("1.05");
+    private static final BigDecimal INTEREST_RATE = new BigDecimal("0.05");
+    private static final Pattern PESO_AMOUNT_PATTERN = Pattern.compile("₱\\s*([0-9]+(?:\\.[0-9]+)?)");
 
     @Autowired
     private PawnRequestRepository pawnRequestRepository;
@@ -48,10 +54,20 @@ public class LoanService {
     }
 
     /**
-     * Create a loan from an approved pawn request
+     * Create a loan from an approved pawn request with default terms
      */
     public Loan createLoan(Long pawnId) {
-        logger.info("Creating loan for pawn request ID: {}", pawnId);
+        return createLoan(pawnId, 5, 30); // Default: 5% interest, 30 days
+    }
+
+    /**
+     * Create a loan from an approved pawn request with custom terms
+     */
+    public Loan createLoan(Long pawnId, Integer interestRate, Integer daysUntilDue) {
+        if (interestRate == null) interestRate = 5;
+        if (daysUntilDue == null) daysUntilDue = 30;
+        
+        logger.info("Creating loan for pawn request ID: {} with {}% interest and {} days", pawnId, interestRate, daysUntilDue);
 
         PawnRequest pawnRequest = pawnRequestRepository.findById(pawnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pawn request not found"));
@@ -82,7 +98,9 @@ public class LoanService {
         if (isRenewal) {
             // Reuse existing loan for renewal
             loan = existingLoan;
-            logger.info("Renewing existing loan ID: {} for pawn ID: {}", loan.getLoanId(), pawnId);
+            if (loan != null) {
+                logger.info("Renewing existing loan ID: {} for pawn ID: {}", loan.getLoanId(), pawnId);
+            }
         } else {
             // Create new loan
             loan = new Loan();
@@ -90,17 +108,31 @@ public class LoanService {
         }
 
         Double loanAmountDouble = pawnRequest.getEstimatedValue() != null ? pawnRequest.getEstimatedValue()
-                : pawnRequest.getRequestedAmount();
+                : pawnRequest.getLoanAmount();
 
         if (loanAmountDouble == null) {
             throw new BadRequestException("Cannot create loan: No amount value found");
         }
 
-        loan.setLoanAmount(BigDecimal.valueOf(loanAmountDouble));
+        BigDecimal loanAmount = BigDecimal.valueOf(loanAmountDouble);
 
-        // Default Terms
-        loan.setInterestRate(5); // 5%
-        loan.setDueDate(LocalDate.now().plusDays(30)); // 30 Days
+        BigDecimal totalRevenue = calculateCurrentRevenue();
+
+        // Check if there's enough revenue to release this loan
+        if (totalRevenue.compareTo(loanAmount) < 0) {
+            throw new BadRequestException(String.format(
+                "Insufficient funds! Current revenue: ₱%.2f, Required: ₱%.2f. Need ₱%.2f more.",
+                totalRevenue.doubleValue(), 
+                loanAmount.doubleValue(), 
+                loanAmount.subtract(totalRevenue).doubleValue()
+            ));
+        }
+
+        loan.setLoanAmount(loanAmount);
+
+        // Set loan terms
+        loan.setInterestRate(interestRate);
+        loan.setDueDate(LocalDate.now().plusDays(daysUntilDue));
         loan.setStatus("ACTIVE");
         loan.setPenalty(BigDecimal.ZERO);
         loan.setDateRedeemed(null); // Clear redemption date for renewals
@@ -128,8 +160,8 @@ public class LoanService {
         TransactionLog log = new TransactionLog();
         log.setUser(pawnRequest.getUser());
         log.setAction("LOAN_CREATED");
-        log.setRemarks(String.format("Loan created for item: %s (ID: %d). ₱%.2f added to wallet. New wallet balance: ₱%.2f", 
-            pawnRequest.getItemName(), pawnId, loan.getLoanAmount().doubleValue(), user.getWalletBalance().doubleValue()));
+        log.setRemarks(String.format("Loan created for item: %s (ID: %d). Status: PAWNED. ₱%.2f added to wallet. Interest: %d%%, Due in %d days. New wallet balance: ₱%.2f", 
+            pawnRequest.getItemName(), pawnId, loan.getLoanAmount().doubleValue(), interestRate, daysUntilDue, user.getWalletBalance().doubleValue()));
         log.setCondition(pawnRequest.getCondition());
         log.setPhotos(pawnRequest.getPhotos());
         transactionLogService.logTransaction(log);
@@ -144,6 +176,90 @@ public class LoanService {
         return loanRepository.findAll().stream()
                 .filter(loan -> "ACTIVE".equals(loan.getStatus()))
                 .collect(Collectors.toList());
+    }
+
+    public BigDecimal calculateCurrentRevenue() {
+        List<PawnRequest> allRequests = pawnRequestRepository.findAll();
+        List<TransactionLog> allLogs = transactionLogService.getAllLogs();
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+
+        for (PawnRequest req : allRequests) {
+            BigDecimal amount = getLoanAmountOrZero(req);
+            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+
+            String status = req.getStatus();
+            if (status == null) {
+                continue;
+            }
+
+            switch (status) {
+                case "FORFEITED":
+                    // Shop keeps the item and gains 5% markup based on loan amount
+                    totalRevenue = totalRevenue.add(amount.multiply(FORFEIT_MARKUP));
+                    break;
+                case "REDEEMED":
+                    // Customer repays the loan plus interest, returning principal to the pool
+                    totalRevenue = totalRevenue.add(amount); // principal returned
+                    totalRevenue = totalRevenue.add(amount.multiply(INTEREST_RATE)); // interest earned
+                    break;
+                case "PAWNED":
+                case "ACTIVE":
+                    // Funds currently out in an active loan
+                    totalRevenue = totalRevenue.subtract(amount);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        for (TransactionLog log : allLogs) {
+            String action = log.getAction();
+            BigDecimal amount = extractAmountFromRemarks(log.getRemarks());
+
+            if (amount.compareTo(BigDecimal.ZERO) <= 0 || action == null) {
+                continue;
+            }
+
+            switch (action) {
+                case "REVENUE_EARNED_CASH_REMOVED":
+                case "REVENUE_EARNED_REDEMPTION":
+                    totalRevenue = totalRevenue.add(amount);
+                    break;
+                case "REVENUE_DEDUCTED_CASH_ADDED":
+                    totalRevenue = totalRevenue.subtract(amount);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return totalRevenue.add(BASE_CAPITAL);
+    }
+
+    private BigDecimal getLoanAmountOrZero(PawnRequest req) {
+        Double amount = req.getLoanAmount() != null ? req.getLoanAmount() : req.getEstimatedValue();
+        if (amount == null) {
+            return BigDecimal.ZERO;
+        }
+        return BigDecimal.valueOf(amount);
+    }
+
+    private BigDecimal extractAmountFromRemarks(String remarks) {
+        if (remarks == null) {
+            return BigDecimal.ZERO;
+        }
+
+        Matcher matcher = PESO_AMOUNT_PATTERN.matcher(remarks);
+        if (matcher.find()) {
+            try {
+                return new BigDecimal(matcher.group(1));
+            } catch (NumberFormatException ex) {
+                logger.warn("Failed to parse amount from remarks: {}", remarks, ex);
+            }
+        }
+        return BigDecimal.ZERO;
     }
 
     /**
@@ -195,7 +311,7 @@ public class LoanService {
         // Validate wallet balance
         if (userWalletBalance.compareTo(totalRedeemAmount) < 0) {
             throw new BadRequestException(String.format(
-                "Amount is not enough. Required: ₱%.2f, Available: ₱%.2f", 
+                "Insufficient balance. Required: ₱%.2f, Available: ₱%.2f", 
                 totalRedeemAmount.doubleValue(), userWalletBalance.doubleValue()
             ));
         }
@@ -214,16 +330,29 @@ public class LoanService {
         loanRepository.save(loan);
         pawnRequestRepository.save(pawn); // Explicitly save parent to ensure sync
 
-        logger.info("✅ Loan {} paid and item redeemed. Amount deducted: ₱{}", loanId, totalRedeemAmount);
+        // Calculate revenue earned (5% interest)
+        BigDecimal interestEarned = loan.getLoanAmount().multiply(BigDecimal.valueOf(0.05));
+        
+        logger.info("✅ Loan {} paid and item redeemed. Amount deducted: ₱{}, Revenue earned: ₱{}", 
+            loanId, totalRedeemAmount, interestEarned);
 
-        // Log transaction
+        // Log transaction for user
         TransactionLog log = new TransactionLog();
         log.setUser(pawn.getUser());
         log.setAction("LOAN_PAID");
-        log.setRemarks(String.format("Loan %d paid (₱%.2f deducted from wallet). Item %s redeemed.", 
-                loanId, totalRedeemAmount.doubleValue(), pawn.getItemName()));
+        log.setRemarks(String.format("Loan %d paid (₱%.2f deducted from wallet). Item %s redeemed. Interest earned: ₱%.2f", 
+                loanId, totalRedeemAmount.doubleValue(), pawn.getItemName(), interestEarned.doubleValue()));
         log.setCondition(pawn.getCondition());
         transactionLogService.logTransaction(log);
+
+        // Log admin revenue transaction
+        TransactionLog adminLog = new TransactionLog();
+        adminLog.setUser(pawn.getUser()); // Track which user's redemption generated this revenue
+        adminLog.setAction("REVENUE_EARNED_REDEMPTION");
+        adminLog.setRemarks(String.format("Revenue earned from loan redemption: ₱%.2f (5%% interest on ₱%.2f). Item: %s (Loan ID: %d)", 
+                interestEarned.doubleValue(), loan.getLoanAmount().doubleValue(), pawn.getItemName(), loanId));
+        adminLog.setCondition(pawn.getCondition());
+        transactionLogService.logTransaction(adminLog);
 
         return loan;
     }
@@ -283,6 +412,12 @@ public class LoanService {
         PawnRequest pawnRequest = pawnRequestRepository.findById(pawnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pawn request not found"));
 
+        // Check if item is already pending (idempotent behavior)
+        if ("PENDING".equals(pawnRequest.getStatus())) {
+            logger.info("✅ Pawn ID: {} is already PENDING for admin approval", pawnId);
+            return pawnRequest.getLoan();
+        }
+
         // Check if item is redeemed and can be renewed
         if (!"REDEEMED".equals(pawnRequest.getStatus())) {
             throw new BadRequestException("Loans can only be renewed for redeemed items. Current status: " + pawnRequest.getStatus());
@@ -294,22 +429,22 @@ public class LoanService {
             throw new BadRequestException("No existing loan found for this pawn item");
         }
 
-        // Change pawn request status to APPROVED so it appears in admin validate page
-        pawnRequest.setStatus("APPROVED");
+        // Change pawn request status to PENDING so admin can review and approve it again
+        pawnRequest.setStatus("PENDING");
 
         // Keep the loan in PAID status
-        // Admin will validate and create/renew the loan when they process it
+        // Admin will review the renewal request, approve it, and then validate/create the new loan
 
         // Save the pawn request
         pawnRequestRepository.save(pawnRequest);
 
-        logger.info("✅ Loan renewal requested. Pawn ID: {} status changed to APPROVED for validation", pawnId);
+        logger.info("✅ Loan renewal requested. Pawn ID: {} status changed to PENDING for admin approval", pawnId);
 
         // Log transaction
         TransactionLog log = new TransactionLog();
         log.setUser(pawnRequest.getUser());
         log.setAction("LOAN_RENEWAL_REQUESTED");
-        log.setRemarks("Loan renewal requested for previously redeemed item: " + pawnRequest.getItemName() + " (Pawn ID: " + pawnId + "). Status changed to APPROVED, awaiting validation.");
+        log.setRemarks("Loan renewal requested for previously redeemed item: " + pawnRequest.getItemName() + " (Pawn ID: " + pawnId + "). Status changed to PENDING, awaiting admin approval.");
         log.setCondition(pawnRequest.getCondition());
         transactionLogService.logTransaction(log);
 

@@ -11,18 +11,21 @@ public class PawnRequestResponse {
     private String condition;
     private String category;
     private String description;
-    private Double requestedAmount;
+    private Double loanAmount;
     private Double estimatedValue;
     private String photos;
     private String status;
     private LocalDate appraisalDate;
     private String appraisedBy;
+    private Integer interestRate;
+    private LocalDate dueDate;
     
     // Constructor
     public PawnRequestResponse(Long pawnId, String itemName, String brand, String size, 
                                String condition, String category, String description,
-                               Double requestedAmount, Double estimatedValue, String photos,
-                               String status, LocalDate appraisalDate, String appraisedBy) {
+                               Double loanAmount, Double estimatedValue, String photos,
+                               String status, LocalDate appraisalDate, String appraisedBy,
+                               Integer interestRate, LocalDate dueDate) {
         this.pawnId = pawnId;
         this.itemName = itemName;
         this.brand = brand;
@@ -30,12 +33,14 @@ public class PawnRequestResponse {
         this.condition = condition;
         this.category = category;
         this.description = description;
-        this.requestedAmount = requestedAmount;
+        this.loanAmount = loanAmount;
         this.estimatedValue = estimatedValue;
         this.photos = photos;
         this.status = status;
         this.appraisalDate = appraisalDate;
         this.appraisedBy = appraisedBy;
+        this.interestRate = interestRate;
+        this.dueDate = dueDate;
     }
     
     // Getters and Setters
@@ -95,12 +100,12 @@ public class PawnRequestResponse {
         this.description = description;
     }
     
-    public Double getRequestedAmount() {
-        return requestedAmount;
+    public Double getLoanAmount() {
+        return loanAmount;
     }
     
-    public void setRequestedAmount(Double requestedAmount) {
-        this.requestedAmount = requestedAmount;
+    public void setLoanAmount(Double loanAmount) {
+        this.loanAmount = loanAmount;
     }
     
     public Double getEstimatedValue() {
@@ -141,5 +146,21 @@ public class PawnRequestResponse {
     
     public void setAppraisedBy(String appraisedBy) {
         this.appraisedBy = appraisedBy;
+    }
+    
+    public Integer getInterestRate() {
+        return interestRate;
+    }
+    
+    public void setInterestRate(Integer interestRate) {
+        this.interestRate = interestRate;
+    }
+    
+    public LocalDate getDueDate() {
+        return dueDate;
+    }
+    
+    public void setDueDate(LocalDate dueDate) {
+        this.dueDate = dueDate;
     }
 }
