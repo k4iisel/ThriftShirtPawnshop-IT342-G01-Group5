@@ -31,13 +31,24 @@ public class FileUploadController {
             return ResponseEntity.badRequest().body(ApiResponse.error("Please select a file to upload."));
         }
 
+        String originalFilename = file.getOriginalFilename();
+        long size = file.getSize();
+        logger.info("Received file upload request. Name: {}, Size: {} bytes", originalFilename, size);
+
         try {
             Map<String, Object> uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
             String url = (String) uploadResult.get("secure_url");
+            logger.info("Upload successful. URL: {}", url);
             return ResponseEntity.ok(ApiResponse.success("File uploaded successfully", url));
         } catch (IOException e) {
-            logger.error("Cloudinary upload failed", e);
-            return ResponseEntity.internalServerError().body(ApiResponse.error("Image upload failed"));
+            logger.error("Cloudinary upload failed for file: " + originalFilename, e);
+            // Include message in response for debugging (dev only, but helpful here)
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Image upload failed: " + e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Unexpected error during file upload", e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Unexpected upload error: " + e.getMessage()));
         }
     }
 }
