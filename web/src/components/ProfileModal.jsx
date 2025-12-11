@@ -72,6 +72,34 @@ function ProfileModal({ isOpen, onClose }) {
     onClose();
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      // Create a temporary form data to upload the file
+      const uploadData = new FormData();
+      uploadData.append('file', file);
+
+      notifySuccess('Uploading image...');
+
+      const response = await apiService.upload(uploadData);
+
+      if (response.success) {
+        setFormData(prev => ({
+          ...prev,
+          profileImage: response.data // The URL returned from backend
+        }));
+        notifySuccess('Image uploaded! Click Save to apply.');
+      } else {
+        notifyError('Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      notifyError('Error uploading image');
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -94,11 +122,31 @@ function ProfileModal({ isOpen, onClose }) {
         ) : (
           <div className="profile-modal-content">
             <div className="profile-avatar-section">
-              <div className="profile-avatar">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
+              <div className="profile-avatar" style={{ position: 'relative', overflow: 'hidden' }}>
+                {formData.profileImage ? (
+                  <img
+                    src={formData.profileImage}
+                    alt="Profile"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                )}
+
+                {isEditing && (
+                  <label className="avatar-upload-overlay">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                    <span>Change</span>
+                  </label>
+                )}
               </div>
               <h3>{profile.firstName} {profile.lastName}</h3>
               <p className="profile-role">{profile.role}</p>
@@ -171,9 +219,9 @@ function ProfileModal({ isOpen, onClose }) {
               <div className="form-group">
                 <label>Member Since</label>
                 <p className="form-value">
-                  {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long' 
+                  {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long'
                   }) : 'Unknown'}
                 </p>
               </div>

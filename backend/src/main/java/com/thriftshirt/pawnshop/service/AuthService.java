@@ -200,6 +200,9 @@ public class AuthService {
         if (profileRequest.getAddress() != null) {
             user.setAddress(profileRequest.getAddress());
         }
+        if (profileRequest.getProfileImage() != null) {
+            user.setProfileImage(profileRequest.getProfileImage());
+        }
 
         User updatedUser = userRepository.save(user);
         return new UserProfileResponse(updatedUser);
