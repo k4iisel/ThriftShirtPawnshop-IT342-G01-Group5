@@ -35,6 +35,9 @@ public class PawnRequestService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     /**
      * Create a new pawn request
      */
@@ -104,6 +107,12 @@ public class PawnRequestService {
             // Save and return
             PawnRequest saved = pawnRequestRepository.save(pawnRequest);
             logger.info("✅ Pawn request created successfully with ID: {}", saved.getPawnId());
+
+            // Create notification for user
+            notificationService.createNotification(
+                    userId,
+                    "Pawn request created for item: " + saved.getItemName() + ". Waiting for admin approval.",
+                    "INFO");
 
             return mapToResponse(saved);
 

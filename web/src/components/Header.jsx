@@ -63,24 +63,63 @@ const Header = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Recent transaction notifications
-  const [notifications, setNotifications] = useState([
-    { id: 1, message: 'Pawn request approved - Item: Nike Shirt, Amount: ₱250', read: false, time: '1h ago' },
-    { id: 2, message: 'Loan payment due soon - Item: Vintage Jacket, Due: Tomorrow', read: false, time: '3h ago' },
-    { id: 3, message: 'Item renewed successfully - Item: Denim Jeans, New due: Dec 15', read: true, time: '1d ago' },
-  ]);
+  const [notifications, setNotifications] = useState([]);
+
+  const fetchNotifications = async () => {
+    try {
+      if (apiService.auth.isAuthenticated()) {
+        const response = await apiService.notifications.getAll();
+        if (response.success) {
+          setNotifications(response.data);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    }
+  };
+
+  // Poll for notifications every 30 seconds
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const markAsRead = (id) => {
-    setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    );
+  const markAsRead = async (id) => {
+    try {
+      await apiService.notifications.markAsRead(id);
+      // Optimistic update
+      setNotifications(prev =>
+        prev.map(n => n.notifId === id ? { ...n, read: true } : n)
+      );
+    } catch (error) {
+      console.error('Error marking as read:', error);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    notifyInfo('All notifications marked as read');
+  const markAllAsRead = async () => {
+    try {
+      await apiService.notifications.markAllAsRead();
+      // Optimistic update
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      notifyInfo('All notifications marked as read');
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  };
+
+  const formatTime = (timestamp) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000); // seconds
+
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return date.toLocaleDateString();
   };
 
   const getPageTitle = () => {
@@ -214,16 +253,18 @@ const Header = () => {
 
                 <div className="notification-list">
                   {notifications.length > 0 ? (
-                    notifications.map(notification => (
+                    notifications.map((notification) => (
                       <div
-                        key={notification.id}
+                        key={notification.notifId}
                         className={`notification-item ${!notification.read ? 'unread' : ''}`}
                         onClick={() => {
-                          markAsRead(notification.id);
+                          if (!notification.read) {
+                            markAsRead(notification.notifId);
+                          }
                         }}
                       >
                         <div className="notification-message">{notification.message}</div>
-                        <div className="notification-time">{notification.time}</div>
+                        <div className="notification-time">{formatTime(notification.timestamp)}</div>
                       </div>
                     ))
                   ) : (
@@ -335,9 +376,9 @@ const Header = () => {
       )}
 
       {/* Profile Modal */}
-      <ProfileModal 
-        isOpen={showProfileModal} 
-        onClose={() => setShowProfileModal(false)} 
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
       />
     </header>
   );

@@ -521,6 +521,41 @@ export const apiService = {
     return await handleResponse(response);
   },
 
+  // Notification endpoints
+  notifications: {
+    getAll: async () => {
+      const response = await fetch(`${API_BASE_URL}/notifications`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    },
+
+    getUnreadCount: async () => {
+      const response = await fetch(`${API_BASE_URL}/notifications/unread-count`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    },
+
+    markAsRead: async (notifId) => {
+      const response = await fetch(`${API_BASE_URL}/notifications/${notifId}/read`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    },
+
+    markAllAsRead: async () => {
+      const response = await fetch(`${API_BASE_URL}/notifications/read-all`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
+    }
+  },
+
   // Add more service endpoints here as needed (transactions, etc.)
 
   // User endpoints
