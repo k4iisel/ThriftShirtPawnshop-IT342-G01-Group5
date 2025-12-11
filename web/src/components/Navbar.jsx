@@ -153,15 +153,15 @@ function Navbar() {
       <div className={`navbar-spacer sidebar-spacer`}></div>
 
       {/* Profile Modal */}
-      <ProfileModal 
-        isOpen={isProfileModalOpen} 
-        onClose={() => setIsProfileModalOpen(false)} 
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
       />
 
       {/* Dev Team Modal */}
-      <DevTeamModal 
-        isOpen={isDevTeamModalOpen} 
-        onClose={() => setIsDevTeamModalOpen(false)} 
+      <DevTeamModal
+        isOpen={isDevTeamModalOpen}
+        onClose={() => setIsDevTeamModalOpen(false)}
       />
     </>
   );
