@@ -122,8 +122,13 @@
 }
 
 @keyframes validateSpinner {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Table Container */
@@ -279,19 +284,19 @@
     gap: 12px;
     align-items: stretch;
   }
-  
+
   .validate-main {
     padding: 16px;
   }
-  
+
   .validate-section-header {
     padding: 16px;
   }
-  
+
   .validate-table {
     font-size: 12px;
   }
-  
+
   .validate-table th,
   .validate-table td {
     padding: 12px 8px;
@@ -299,16 +304,19 @@
 }
 
 @media (max-width: 640px) {
+
   .validate-table th:nth-child(2),
   .validate-table td:nth-child(2) {
-    display: none; /* Hide condition column on small screens */
+    display: none;
+    /* Hide condition column on small screens */
   }
-  
+
   .validate-table th:nth-child(4),
   .validate-table td:nth-child(4) {
-    display: none; /* Hide appraisal date on small screens */
+    display: none;
+    /* Hide appraisal date on small screens */
   }
-  
+
   .validate-action-btn {
     font-size: 11px;
     padding: 8px 12px;
@@ -317,15 +325,17 @@
 
 /* Success Animation */
 @keyframes validateSuccess {
-  0% { 
+  0% {
     background: #3b82f6;
     transform: scale(1);
   }
-  50% { 
+
+  50% {
     background: #10b981;
     transform: scale(1.05);
   }
-  100% { 
+
+  100% {
     background: #3b82f6;
     transform: scale(1);
   }
@@ -368,7 +378,7 @@
   .validate-page {
     background: #111827;
   }
-  
+
   .validate-header,
   .validate-section-header,
   .validate-table-container,
@@ -376,31 +386,31 @@
     background: #1f2937;
     border-color: #374151;
   }
-  
+
   .validate-title,
   .validate-section-title {
     color: #f9fafb;
   }
-  
+
   .validate-back-btn {
     background: #374151;
     color: #d1d5db;
   }
-  
+
   .validate-back-btn:hover {
     background: #4b5563;
   }
-  
+
   .validate-table th {
     background: #374151;
     color: #e5e7eb;
     border-bottom-color: #4b5563;
   }
-  
+
   .validate-table td {
     border-bottom-color: #374151;
   }
-  
+
   .validate-table tr:hover {
     background-color: #374151;
   }
@@ -588,4 +598,39 @@
 
 .validate-modal-btn.confirm:hover {
   background: #2563eb;
+}
+
+/* Admin Tabs Styling */
+.admin-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  padding: 4px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: fit-content;
+}
+
+.admin-tab-btn {
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-tab-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.admin-tab-btn.active {
+  background: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }

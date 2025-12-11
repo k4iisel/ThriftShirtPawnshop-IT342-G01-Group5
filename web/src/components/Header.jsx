@@ -110,6 +110,16 @@ const Header = () => {
     }
   };
 
+  const deleteNotification = async (id) => {
+    try {
+      await apiService.notifications.delete(id);
+      setNotifications(prev => prev.filter(n => n.notifId !== id));
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      notifyError('Failed to delete notification');
+    }
+  };
+
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -263,8 +273,20 @@ const Header = () => {
                           }
                         }}
                       >
-                        <div className="notification-message">{notification.message}</div>
-                        <div className="notification-time">{formatTime(notification.timestamp)}</div>
+                        <div className="notification-content">
+                          <div className="notification-message">{notification.message}</div>
+                          <div className="notification-time">{formatTime(notification.timestamp)}</div>
+                        </div>
+                        <button
+                          className="delete-notification-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNotification(notification.notifId);
+                          }}
+                          title="Delete notification"
+                        >
+                          ×
+                        </button>
                       </div>
                     ))
                   ) : (

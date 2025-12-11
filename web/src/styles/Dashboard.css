@@ -136,8 +136,9 @@
 
 /* User Stats Grid */
 .user-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 20px;
   padding: 0 30px 30px;
   max-width: 900px;
@@ -151,6 +152,15 @@
   text-align: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s, box-shadow 0.2s;
+  /* Enforce equal sizing */
+  flex: 1;
+  min-width: 200px;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 180px;
+  /* Fixed height for uniformity */
 }
 
 /* Wallet Card Specific Styling */
@@ -834,13 +844,13 @@
     max-width: 600px;
     margin: 0 20px 30px;
   }
-  
+
   .section-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
   }
-  
+
   .activity-logs-actions {
     align-self: flex-end;
   }
@@ -875,21 +885,21 @@
     margin: 0 16px 30px;
     padding: 16px;
   }
-  
+
   .activity-logs-section {
     margin: 0 16px 30px;
     padding: 16px;
     max-width: none;
   }
-  
+
   .activity-logs-actions {
     gap: 8px;
   }
-  
+
   .activity-count {
     font-size: 12px;
   }
-  
+
   .clear-activity-btn {
     padding: 4px 8px;
     font-size: 12px;

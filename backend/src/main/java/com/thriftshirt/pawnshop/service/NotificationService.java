@@ -97,4 +97,18 @@ public class NotificationService {
         }
         notificationRepository.saveAll(unread);
     }
+
+    /**
+     * Delete a notification
+     */
+    public void deleteNotification(Long notifId, Long userId) {
+        Notification notification = notificationRepository.findById(notifId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
+
+        if (!notification.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Unauthorized access to notification");
+        }
+
+        notificationRepository.delete(notification);
+    }
 }

@@ -8,13 +8,13 @@ import PawnStatus from './pages/PawnStatus';
 import History from './pages/History';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
-import DeveloperAdminApprove from './pages/DeveloperAdminApprove';
+
 import DeveloperAdminValidate from './pages/DeveloperAdminValidate';
 import DeveloperAdminLoanManager from './pages/DeveloperAdminLoanManager';
 import DeveloperAdminInventory from './pages/DeveloperAdminInventory';
 import DeveloperAdminLogs from './pages/DeveloperAdminLogs';
 import DeveloperAdminUsers from './pages/DeveloperAdminUsers';
-import DeveloperAdminWallet from './pages/DeveloperAdminWallet';
+
 import NotificationContainer from './components/NotificationContainer';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRouteProtection from './components/AdminRouteProtection';
@@ -50,11 +50,7 @@ function AppContent() {
           </AdminRouteProtection>
         } />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/developer_admin_approve" element={
-          <AdminRouteProtection>
-            <DeveloperAdminApprove />
-          </AdminRouteProtection>
-        } />
+
         <Route path="/developer_admin_validate" element={
           <AdminRouteProtection>
             <DeveloperAdminValidate />
@@ -80,11 +76,7 @@ function AppContent() {
             <DeveloperAdminUsers />
           </AdminRouteProtection>
         } />
-        <Route path="/developer_admin_wallet" element={
-          <AdminRouteProtection>
-            <DeveloperAdminWallet />
-          </AdminRouteProtection>
-        } />
+
       </Routes>
     </>
   );

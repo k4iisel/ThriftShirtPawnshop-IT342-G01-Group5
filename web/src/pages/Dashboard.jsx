@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Header from '../components/Header';
 import ImageModal from '../components/ImageModal';
-import CashTransactionModal from '../components/CashTransactionModal';
+
 import useAuth from '../hooks/useAuth';
 import useNotify from '../hooks/useNotify';
 import apiService from '../services/apiService';
@@ -87,7 +87,6 @@ function Dashboard() {
 
   const [userStats, setUserStats] = useState({
     activePawns: 0,
-    loanAmount: 0,
     dueSoon: 0
   });
 
@@ -95,8 +94,6 @@ function Dashboard() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
   const [selectedItemName, setSelectedItemName] = useState('');
-  const [showCashModal, setShowCashModal] = useState(false);
-  const [cashTransactionType, setCashTransactionType] = useState('');
 
   // Function to fetch recent activity (all statuses, sorted by most recent)
   const fetchRecentPawnedItems = async (force = false) => {
@@ -111,7 +108,7 @@ function Dashboard() {
       }
 
       const response = await apiService.pawnRequest.getAll();
-      
+
       if (response.success && response.data) {
         // Sort all items by most recent activity (createdAt or updatedAt)
         const sortedItems = response.data
@@ -122,7 +119,7 @@ function Dashboard() {
             return bDate - aDate; // Most recent first
           })
           .slice(0, 10); // Show top 10 most recent items
-        
+
         setRecentPawnedItems(sortedItems);
       }
     } catch (error) {
@@ -142,7 +139,7 @@ function Dashboard() {
   // Handle viewing images
   const handleViewImages = (pawn) => {
     let images = [];
-    
+
     if (pawn.photos) {
       try {
         const photosData = JSON.parse(pawn.photos);
@@ -155,11 +152,11 @@ function Dashboard() {
         images = [pawn.photos];
       }
     }
-    
+
     if (images.length === 0) {
       images = [`https://via.placeholder.com/400x400?text=${encodeURIComponent(pawn.itemName)}`];
     }
-    
+
     setSelectedImages(images);
     setSelectedItemName(pawn.itemName);
     setShowImageModal(true);
@@ -174,20 +171,15 @@ function Dashboard() {
   useEffect(() => {
     const interval = setInterval(() => {
       if (userData) {
-        // Re-fetch stats to update wallet balance and active pawns count
+        // Re-fetch stats to update active pawns count
         const fetchStats = async () => {
           try {
-            const walletResponse = await apiService.user.getWalletBalance();
-            const actualWalletBalance = walletResponse.success && walletResponse.data?.balance 
-              ? parseFloat(walletResponse.data.balance) 
-              : 0;
-            
             const response = await apiService.pawnRequest.getAll();
-            
+
             if (response.success && response.data) {
               const pawnedItems = response.data.filter(pawn => pawn.status === 'PAWNED');
               const activePawnCount = pawnedItems.length;
-              
+
               const dueSoonCount = pawnedItems.filter(pawn => {
                 if (pawn.loan && pawn.loan.dueDate) {
                   const dueDate = new Date(pawn.loan.dueDate);
@@ -197,13 +189,12 @@ function Dashboard() {
                 }
                 return false;
               }).length;
-              
+
               setUserStats({
                 activePawns: activePawnCount,
-                loanAmount: actualWalletBalance,
                 dueSoon: dueSoonCount
               });
-              
+
               fetchRecentPawnedItems();
             }
           } catch (error) {
@@ -217,27 +208,19 @@ function Dashboard() {
     return () => clearInterval(interval);
   }, [userData]);
 
-
-
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Fetch wallet balance from backend database
-        const walletResponse = await apiService.user.getWalletBalance();
-        const actualWalletBalance = walletResponse.success && walletResponse.data?.balance 
-          ? parseFloat(walletResponse.data.balance) 
-          : 0;
-        
         // Fetch all pawn requests (same as PawnStatus)
         const response = await apiService.pawnRequest.getAll();
-        
+
         if (response.success && response.data) {
           // Filter for PAWNED status items
           const pawnedItems = response.data.filter(pawn => pawn.status === 'PAWNED');
-          
+
           // Count active pawned items
           const activePawnCount = pawnedItems.length;
-          
+
           // Count items due soon (within 7 days of due date)
           const dueSoonCount = pawnedItems.filter(pawn => {
             if (pawn.loan && pawn.loan.dueDate) {
@@ -248,21 +231,14 @@ function Dashboard() {
             }
             return false;
           }).length;
-          
+
           setUserStats({
             activePawns: activePawnCount,
-            loanAmount: actualWalletBalance,
             dueSoon: dueSoonCount
           });
-          
+
           // Refresh recent pawned items
           fetchRecentPawnedItems();
-        } else {
-          // If no pawn requests, still show wallet balance
-          setUserStats(prev => ({
-            ...prev,
-            loanAmount: actualWalletBalance
-          }));
         }
       } catch (error) {
         console.error('❌ Dashboard: Error fetching user stats:', error);
@@ -272,16 +248,14 @@ function Dashboard() {
     fetchStats();
   }, [userData]);
 
-
-
   // Refresh recent pawned items
   const [refreshing, setRefreshing] = useState(false);
-  
+
   const refreshRecentPawns = async () => {
     if (refreshing) return;
-    
+
     setRefreshing(true);
-    
+
     try {
       // Clear the cleared flag to allow fetching new data
       localStorage.removeItem('recentActivityCleared');
@@ -321,25 +295,6 @@ function Dashboard() {
             <h3 className="stat-value">{userStats.activePawns}</h3>
           </div>
 
-          <div className="user-stat-card wallet-card">
-            <div className="stat-icon-box" style={{ color: '#4caf50' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="1" x2="12" y2="23" />
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
-            <p className="stat-label">Wallet</p>
-            <h3 className="stat-value">₱{userStats.loanAmount?.toFixed(2)}</h3>
-            <div className="wallet-actions">
-              <button className="cash-in-btn" onClick={() => { setCashTransactionType('Cash In'); setShowCashModal(true); }}>
-                Cash In
-              </button>
-              <button className="cash-out-btn" onClick={() => { setCashTransactionType('Cash Out'); setShowCashModal(true); }}>
-                Cash Out
-              </button>
-            </div>
-          </div>
-
           <div className="user-stat-card">
             <div className="stat-icon-box" style={{ color: '#ff5722' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -372,7 +327,7 @@ function Dashboard() {
               <h2>Recent Activity</h2>
             </div>
             <div className="activity-logs-actions">
-              <button 
+              <button
                 className="clear-activity-btn"
                 onClick={clearRecentActivity}
               >
@@ -385,9 +340,13 @@ function Dashboard() {
             {recentPawnedItems.length > 0 ? (
               recentPawnedItems.map(pawn => {
                 const getStatusInfo = (status) => {
-                  switch(status) {
+                  switch (status) {
                     case 'PENDING':
                       return { class: 'log-info', label: 'Pending Review' };
+                    case 'OFFER_MADE':
+                      return { class: 'log-warning', label: 'Offer Received!' };
+                    case 'ACCEPTED':
+                      return { class: 'log-success', label: 'Accepted' };
                     case 'APPROVED':
                       return { class: 'log-success', label: 'Approved' };
                     case 'REJECTED':
@@ -404,7 +363,7 @@ function Dashboard() {
                 };
 
                 const statusInfo = getStatusInfo(pawn.status);
-                
+
                 // Get valid date from updatedAt or createdAt
                 let activityDate;
                 try {
@@ -416,23 +375,23 @@ function Dashboard() {
                 } catch (e) {
                   activityDate = new Date(); // fallback to current date
                 }
-                
+
                 // Format date based on whether it's today or not
                 const formatDateTime = (date) => {
                   try {
                     const today = new Date();
                     const isToday = date.toDateString() === today.toDateString();
-                    
+
                     if (isToday) {
                       // Show only time for today's activities
-                      return date.toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
+                      return date.toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
                       });
                     } else {
                       // Show date and time for older activities
-                      return date.toLocaleDateString('en-US', { 
-                        month: 'short', 
+                      return date.toLocaleDateString('en-US', {
+                        month: 'short',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
@@ -442,10 +401,10 @@ function Dashboard() {
                     return 'Recent';
                   }
                 };
-                
+
                 return (
-                  <div 
-                    key={pawn.id} 
+                  <div
+                    key={pawn.pawnId || pawn.id}
                     className={`activity-log-item ${statusInfo.class}`}
                   >
                     <div className={`log-icon log-icon-${statusInfo.class.replace('log-', '')}`}>
@@ -461,10 +420,34 @@ function Dashboard() {
                           {statusInfo.label}
                         </span>
                       </p>
-                      <p className="log-details">
-                        ₱{parseFloat(pawn.loanAmount || pawn.requestedAmount || 0).toFixed(2)}
-                      </p>
+
+                      {/* Show Offered Amount if available, else standard message or loan amount if active */}
+                      {pawn.offeredAmount && (pawn.status === 'OFFER_MADE' || pawn.status === 'ACCEPTED') && (
+                        <div className="offer-details">
+                          <p className="log-details offer-amount">Offer: ₱{parseFloat(pawn.offeredAmount).toFixed(2)}</p>
+                          {pawn.adminRemarks && <span className="admin-remarks">Note: {pawn.adminRemarks}</span>}
+                        </div>
+                      )}
+
+                      {(pawn.status === 'PAWNED' && pawn.loan) && (
+                        <p className="log-details">Loan: ₱{parseFloat(pawn.loan.principalAmount).toFixed(2)}</p>
+                      )}
+
                       <p className="log-time">{formatDateTime(activityDate)}</p>
+
+                      {/* Action Buttons for Offer */}
+                      {pawn.status === 'OFFER_MADE' && (
+                        <div className="offer-actions">
+                          <button
+                            className="accept-btn"
+                            onClick={() => navigate('/pawn-status')} // Redirect to Pawn Status page for full details/acceptance
+                          // Or better, handle it inline here if we want? But PawnStatus page might be better place.
+                          // Let's redirect to PawnStatus page for now as it probably has more details.
+                          >
+                            View Offer
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -485,13 +468,6 @@ function Dashboard() {
             onClose={() => setShowImageModal(false)}
           />
         )}
-
-        {/* Cash Transaction Modal */}
-        <CashTransactionModal
-          isOpen={showCashModal}
-          onClose={() => setShowCashModal(false)}
-          transactionType={cashTransactionType}
-        />
       </div>
     </div>
   );

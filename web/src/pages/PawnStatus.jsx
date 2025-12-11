@@ -29,15 +29,15 @@ function PawnStatus() {
   useEffect(() => {
     if (selectedPawn && pawns.length > 0) {
       // Find matching pawn by ID or other identifying fields
-      const matchingPawn = pawns.find(p => 
-        p.pawnId === selectedPawn.id || 
+      const matchingPawn = pawns.find(p =>
+        p.pawnId === selectedPawn.id ||
         p.id === selectedPawn.id ||
-        (p.itemName === selectedPawn.itemName && p.loanAmount === selectedPawn.loanAmount)
+        (p.itemName === selectedPawn.itemName)
       );
-      
+
       if (matchingPawn) {
         setHighlightedPawnId(matchingPawn.pawnId || matchingPawn.id);
-        
+
         // Auto-scroll to highlighted item after a brief delay
         setTimeout(() => {
           const element = document.getElementById(`pawn-${matchingPawn.pawnId || matchingPawn.id}`);
@@ -53,32 +53,36 @@ function PawnStatus() {
     try {
       setLoading(true);
       const response = await apiService.pawnRequest.getAll();
-      
+
       if (response.success && response.data) {
         console.log('📋 Fetched pawn requests:', response.data);
-        
-        // Show all pawn requests with their actual status
+
         const allPawns = response.data;
-        
-        // Transform the API response data to match the UI structure
-        const transformedPawns = allPawns.map((pawn, index) => {
-          console.log('🔍 Pawn data:', pawn);
-          console.log('🔍 loanAmount:', pawn.loanAmount, 'estimatedValue:', pawn.estimatedValue, 'requestedAmount:', pawn.requestedAmount);
-          
-          // Use actual loanAmount first (which gets updated with custom amount), then fallback to estimatedValue
-          const loanBaseAmount = pawn.loanAmount || pawn.estimatedValue || pawn.requestedAmount || 0;
-          console.log('🔍 loanBaseAmount calculated:', loanBaseAmount);
-          let loanPeriod = 30;
-          let dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+        const transformedPawns = allPawns.map((pawn) => {
+          // Priority: customAmount (if validated) > offeredAmount (if offer made) > 0
+          // For active loans, the backend might handle loanAmount differently in the future,
+          // but currently 'offeredAmount' is the key one for the offer stage.
+          // If a loan is active, we might need to look at loan details, but for now assuming offeredAmount persists.
+          let displayAmount = pawn.offeredAmount || 0;
+
+          // Use values from API if available (for Active/PAWNED loans)
+          const interestRate = pawn.interestRate || 5;
+          const loanPeriod = pawn.proposedLoanDuration || 30;
+
+          let dueDateStr = 'N/A';
           if (pawn.dueDate) {
-            const now = new Date();
-            const due = new Date(pawn.dueDate);
-            // Calculate days difference, inclusive
-            const diffTime = due.getTime() - now.getTime();
-            const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-            loanPeriod = diffDays;
-            dueDate = due;
+            // API sends date array or string, handle accordingly. usually string from Spring Boot standard serialization
+            dueDateStr = pawn.dueDate;
+          } else {
+            // Fallback calculation for display if not yet active but offered
+            const calcDate = new Date(Date.now() + loanPeriod * 24 * 60 * 60 * 1000);
+            dueDateStr = calcDate.toLocaleDateString('en-GB');
           }
+
+          const interestAmount = displayAmount * (interestRate / 100);
+          const totalToRedeem = displayAmount + interestAmount;
+
           return {
             pawnId: pawn.pawnId,
             itemName: pawn.itemName,
@@ -88,30 +92,25 @@ function PawnStatus() {
             condition: pawn.condition,
             description: pawn.description,
             status: pawn.status || 'PENDING',
-            loanAmount: pawn.loanAmount || pawn.requestedAmount,
-            estimatedValue: pawn.estimatedValue,
-            appraisalDate: pawn.appraisalDate,
-            appraisedBy: pawn.appraisedBy,
+            offeredAmount: pawn.offeredAmount,
+            adminRemarks: pawn.adminRemarks,
             photos: pawn.photos,
             // Generate placeholder values for display
             image: 'https://via.placeholder.com/100x100?text=' + encodeURIComponent(pawn.itemName),
-            submissionDate: new Date().toLocaleDateString('en-GB'), // Current date
-            interestRate: pawn.interestRate || 5,
-            interestAmount: loanBaseAmount * ((pawn.interestRate || 5) / 100),
-            totalToRedeem: loanBaseAmount * (1 + (pawn.interestRate || 5) / 100),
+            submissionDate: new Date(pawn.createdAt || Date.now()).toLocaleDateString('en-GB'),
+            interestRate: interestRate,
+            interestAmount: interestAmount,
+            totalToRedeem: totalToRedeem,
             loanPeriod,
-            dueDate: dueDate.toLocaleDateString('en-GB')
+            dueDate: dueDateStr
           };
         });
         setPawns(transformedPawns);
-        
+
         if (transformedPawns.length === 0) {
           notify.notifyInfo('No pawn requests found. Create your first pawn request!');
-        } else {
-          notify.notifySuccess(`✅ Loaded ${transformedPawns.length} pawn request(s)`);
         }
       } else {
-        console.error('❌ API response error:', response);
         notify.notifyError('Failed to load pawn requests: ' + (response.message || 'Unknown error'));
       }
     } catch (error) {
@@ -122,103 +121,64 @@ function PawnStatus() {
     }
   };
 
-  const handleRedeemItem = async (pawn) => {
-    console.log('🔍 Attempting to redeem pawn:', pawn);
-    console.log('🔍 Pawn ID:', pawn.pawnId, 'Status:', pawn.status);
-    
-    // Calculate total redeem amount (loan + 5% interest)
-    // Use actual loanAmount first (which gets updated with custom amount), then fallback to estimatedValue
-    const loanAmount = pawn.loanAmount || pawn.estimatedValue || pawn.requestedAmount || 0;
-    const interestAmount = loanAmount * 0.05;
-    const totalRedeemAmount = loanAmount + interestAmount;
-    
-    console.log('🔍 Loan amount:', loanAmount, 'Total redeem amount:', totalRedeemAmount);
-    
-    const confirmMessage = `Are you sure you want to redeem "${pawn.itemName}"?\n\n` +
-      `Amount: ₱${loanAmount.toFixed(2)}\n` +
-      `Interest (5%): ₱${interestAmount.toFixed(2)}\n` +
-      `Total Amount: ₱${totalRedeemAmount.toFixed(2)}\n\n` +
-      `This amount will be deducted from your wallet balance. The loan will be completed and your item will be returned to you.`;
-      
-    if (window.confirm(confirmMessage)) {
-      try {
-        console.log('🔍 Calling redeem API with pawnId:', pawn.pawnId);
-        // For now, we'll use the pawnId as a proxy to find the loan
-        // In a real scenario, we'd get the loan ID from the pawn data
-        const response = await apiService.loan.redeem(pawn.pawnId);
-        console.log('🔍 Redeem API response:', response);
-        
-        if (response.success) {
-          const totalAmount = pawn.loanAmount * 1.05;
-          notify.notifySuccess(`✅ Item redeemed successfully! ₱${totalAmount.toFixed(2)} has been deducted from your wallet.`);
-          // Refresh the pawn requests list
-          fetchPawnRequests();
-        } else {
-          console.error('❌ Redeem API failed:', response);
-          notify.notifyError('❌ Failed to redeem item: ' + (response.message || 'Unknown error'));
-        }
-      } catch (error) {
-        console.error('❌ Error redeeming item:', error);
-        // Enhanced error message based on error type
-        let errorMessage = 'An unexpected error occurred. Please try again later.';
-        
-        if (error.status === 400 && error.data?.message) {
-          errorMessage = error.data.message; // This will show "Amount is not enough" etc.
-        } else if (error.status === 401) {
-          errorMessage = 'Authentication required. Please log in again.';
-        } else if (error.status === 403) {
-          errorMessage = 'Access denied. Insufficient permissions.';
-        } else if (error.message) {
-          errorMessage = error.message;
-        }
-        
-        notify.notifyError('❌ Error redeeming item: ' + errorMessage);
-      }
-    }
+  const handleRedeemItem = (pawn) => {
+    // In new workflow, redemption is face-to-face
+    const confirmMessage = `To redeem "${pawn.itemName}", please visit our store.\n\n` +
+      `Total to Pay: ₱${pawn.totalToRedeem.toFixed(2)}\n` +
+      `(Includes ${pawn.interestRate}% interest)\n\n` +
+      `Present this ID to the staff: ${pawn.pawnId}`;
+
+    alert(confirmMessage);
   };
 
   const handleRenewLoan = async (pawn) => {
-    if (window.confirm(`Are you sure you want to renew the loan for "${pawn.itemName}"? The item status will be changed to PENDING for admin approval.`)) {
+    // Renewal logic might also need to be face-to-face or simple request
+    // Keeping existing "request renewal" flow for now but warning user
+    if (window.confirm(`Request loan renewal for "${pawn.itemName}"? This requires admin approval.`)) {
       try {
         const response = await apiService.loan.renew(pawn.pawnId);
-        
         if (response.success) {
-          notify.notifySuccess('✅ Loan renewal requested! The item is now pending admin approval.');
+          notify.notifySuccess('✅ Loan renewal requested!');
           fetchPawnRequests();
         } else {
           notify.notifyError('❌ Failed to renew loan: ' + (response.message || 'Unknown error'));
         }
       } catch (error) {
-        console.error('❌ Error renewing loan:', error);
         notify.notifyError('❌ Error renewing loan: ' + error.message);
       }
     }
   };
 
-
-
   const handleDeletePawn = async (pawnId) => {
-    // Show confirmation dialog
-    if (window.confirm('Are you sure you want to delete this pawn request? This action cannot be undone.')) {
+    if (window.confirm('Are you sure you want to delete this pawn request?')) {
       try {
         const response = await apiService.pawnRequest.delete(pawnId);
-        
         if (response.success) {
           notify.notifySuccess('✅ Pawn request deleted successfully');
-          // Refresh the pawn requests list
           fetchPawnRequests();
         } else {
           notify.notifyError('❌ Failed to delete pawn request: ' + (response.message || 'Unknown error'));
         }
       } catch (error) {
-        console.error('❌ Error deleting pawn request:', error);
         notify.notifyError('❌ Error deleting pawn request: ' + error.message);
       }
     }
   };
 
+  const handleRespondToOffer = async (pawnId, accept) => {
+    if (!window.confirm(accept ? "Accept this offer? You will need to visit the store to receive cash." : "Decline this offer?")) {
+      return;
+    }
+    try {
+      await apiService.pawnRequest.respondToOffer(pawnId, accept);
+      notify.notifySuccess(accept ? "Offer accepted! Visit us to claim your cash." : "Offer declined.");
+      fetchPawnRequests();
+    } catch (error) {
+      notify.notifyError("Failed to update status: " + error.message);
+    }
+  };
+
   const handleViewImages = (pawn) => {
-    // Parse photos from JSON string or use placeholder
     let images = [];
     try {
       if (pawn.photos && typeof pawn.photos === 'string') {
@@ -229,12 +189,11 @@ function PawnStatus() {
     } catch (error) {
       console.error('Error parsing photos:', error);
     }
-    
-    // If no images, use placeholder
+
     if (images.length === 0) {
       images = [pawn.image || `https://via.placeholder.com/400x400?text=${encodeURIComponent(pawn.itemName)}`];
     }
-    
+
     setSelectedImages(images);
     setSelectedItemName(pawn.itemName);
     setShowImageModal(true);
@@ -243,7 +202,7 @@ function PawnStatus() {
   return (
     <div className="pawn-status-page">
       <Navbar />
-      
+
       <div className="pawn-status-content">
         <Header />
 
@@ -265,8 +224,8 @@ function PawnStatus() {
             </div>
           ) : (
             pawns.map((pawn, index) => (
-              <div 
-                key={`${pawn.pawnId}-${index}`} 
+              <div
+                key={`${pawn.pawnId}-${index}`}
                 id={`pawn-${pawn.pawnId || pawn.id}`}
                 className={`pawn-card ${highlightedPawnId === (pawn.pawnId || pawn.id) ? 'highlighted' : ''}`}
               >
@@ -275,7 +234,7 @@ function PawnStatus() {
                     <div className="item-title-row">
                       <h3>{pawn.itemName}</h3>
                       {(pawn.status === 'PENDING' || pawn.status === 'REJECTED') && (
-                        <button 
+                        <button
                           className="delete-icon-btn"
                           onClick={() => handleDeletePawn(pawn.pawnId)}
                           title="Delete this pawn request"
@@ -284,7 +243,7 @@ function PawnStatus() {
                         </button>
                       )}
                     </div>
-                    <button 
+                    <button
                       className="view-images-btn"
                       onClick={() => handleViewImages(pawn)}
                       title="Click to view item images"
@@ -299,27 +258,53 @@ function PawnStatus() {
                   <p className="item-condition">Condition: {pawn.condition}</p>
                   <p className="item-size">Size: {pawn.size}</p>
                   {pawn.description && <p className="item-description">{pawn.description}</p>}
-                  
+
+                  {/* Status Badge */}
+                  <div className="status-badge-container">
+                    <span className={`status-badge-inline ${pawn.status.toLowerCase()}`}>
+                      {pawn.status}
+                    </span>
+                  </div>
+
+                  {/* Financial & Offer Details */}
                   <div className="financial-summary">
-                    <div className="summary-row">
-                      <span>Loan Amount:</span>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                        <span className="amount">₱{pawn.loanAmount ? pawn.loanAmount.toFixed(2) : '0.00'}</span>
-                        {pawn.estimatedValue && pawn.loanAmount && pawn.loanAmount !== pawn.estimatedValue && (
-                          <small style={{ color: '#28a745', fontSize: '11px', fontWeight: 'bold' }}>
-                            ✓ Reconfigured from ₱{pawn.estimatedValue.toFixed(2)}
-                          </small>
+
+                    {/* Offer Received Section */}
+                    {pawn.status === 'OFFER_MADE' && (
+                      <div className="offer-section">
+                        <div className="summary-row offer-highlight">
+                          <span>OFFER RECEIVED:</span>
+                          <span className="amount">₱{pawn.offeredAmount ? pawn.offeredAmount.toFixed(2) : '0.00'}</span>
+                        </div>
+                        {pawn.adminRemarks && (
+                          <div className="admin-remarks">
+                            <small><strong>Note from Admin:</strong> {pawn.adminRemarks}</small>
+                          </div>
                         )}
-                      </div>
-                    </div>
-                    {pawn.estimatedValue && (
-                      <div className="summary-row">
-                        <span>Estimated Value:</span>
-                        <span className="amount">₱{pawn.estimatedValue.toFixed(2)}</span>
+                        <div className="offer-actions">
+                          <button className="accept-btn" onClick={() => handleRespondToOffer(pawn.pawnId, true)}>Accept Offer</button>
+                          <button className="reject-btn" onClick={() => handleRespondToOffer(pawn.pawnId, false)}>Decline</button>
+                        </div>
                       </div>
                     )}
-                    {(pawn.status === 'PAWNED' || pawn.status === 'REDEEMED' || pawn.status === 'FORFEITED') && (
+
+                    {(pawn.status === 'ACCEPTED') && (
+                      <div className="offer-section">
+                        <div className="summary-row">
+                          <span>Accepted Offer:</span>
+                          <span className="amount">₱{pawn.offeredAmount ? pawn.offeredAmount.toFixed(2) : '0.00'}</span>
+                        </div>
+                        <p className="visit-store-msg">Please visit the store to validate your item and receive cash.</p>
+                      </div>
+                    )}
+
+
+                    {['PAWNED', 'Active', 'ACTIVE', 'REDEEMED', 'DEFAULTED'].includes(pawn.status) && (
                       <>
+                        <div className="summary-row">
+                          <span>Loan Amount:</span>
+                          <span className="amount">₱{pawn.offeredAmount ? pawn.offeredAmount.toFixed(2) : '0.00'}</span>
+                        </div>
                         <div className="summary-row">
                           <span>Interest ({pawn.interestRate}%):</span>
                           <span className="amount">₱{pawn.interestAmount.toFixed(2)}</span>
@@ -329,44 +314,17 @@ function PawnStatus() {
                           <span className="amount">₱{pawn.totalToRedeem.toFixed(2)}</span>
                         </div>
                         <div className="summary-row">
-                          <span>Loan Period</span>
-                          <span className="period">{pawn.loanPeriod} days</span>
+                          <span>Due Date:</span>
+                          <span>{pawn.dueDate}</span>
                         </div>
                       </>
                     )}
                   </div>
-
-                  {(pawn.status === 'PAWNED' || pawn.status === 'REDEEMED' || pawn.status === 'FORFEITED') && (
-                    <div className="due-date-row">
-                      <p className="due-date">Due Date: {pawn.dueDate}</p>
-                      <span className={`status-badge-inline ${pawn.status.toLowerCase()}`}>
-                        {pawn.status === 'PENDING' ? 'PENDING' : 
-                         pawn.status === 'APPROVED' ? 'APPROVED' : 
-                         pawn.status === 'REJECTED' ? 'REJECTED' : 
-                         pawn.status === 'PAWNED' ? 'PAWNED' :
-                         pawn.status === 'REDEEMED' ? 'REDEEMED' : 
-                         pawn.status === 'FORFEITED' ? 'FORFEITED' : pawn.status}
-                      </span>
-                    </div>
-                  )}
-
-                  {(pawn.status === 'PENDING' || pawn.status === 'APPROVED' || pawn.status === 'REJECTED') && (
-                    <div className="due-date-row">
-                      <span className={`status-badge-inline ${pawn.status.toLowerCase()}`}>
-                        {pawn.status === 'PENDING' ? 'PENDING' : 
-                         pawn.status === 'APPROVED' ? 'APPROVED' : 
-                         pawn.status === 'REJECTED' ? 'REJECTED' : 
-                         pawn.status === 'PAWNED' ? 'PAWNED' :
-                         pawn.status === 'REDEEMED' ? 'REDEEMED' : 
-                         pawn.status === 'FORFEITED' ? 'FORFEITED' : pawn.status}
-                      </span>
-                    </div>
-                  )}
                 </div>
 
-                {pawn.status === 'PAWNED' && (
+                {['PAWNED', 'Active', 'ACTIVE'].includes(pawn.status) && (
                   <div className="pawn-actions">
-                    <button 
+                    <button
                       className="redeem-btn"
                       onClick={() => handleRedeemItem(pawn)}
                     >
@@ -374,26 +332,15 @@ function PawnStatus() {
                     </button>
                   </div>
                 )}
-                {pawn.status === 'REDEEMED' && (
-                  <div className="pawn-actions">
-                    <button 
-                      className="renew-btn"
-                      onClick={() => handleRenewLoan(pawn)}
-                    >
-                      Renew Loan
-                    </button>
-                  </div>
-                )}
-
-
+                {/* Renew Loan button removed */}
               </div>
             ))
           )}
         </div>
       </div>
-      
+
       {showImageModal && (
-        <ImageModal 
+        <ImageModal
           images={selectedImages}
           itemName={selectedItemName}
           onClose={() => setShowImageModal(false)}

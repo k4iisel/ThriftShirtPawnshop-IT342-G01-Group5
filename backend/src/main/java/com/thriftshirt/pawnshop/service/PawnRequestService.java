@@ -43,23 +43,6 @@ public class PawnRequestService {
     public PawnRequestResponse createPawnRequest(Long userId, CreatePawnRequestDTO requestDTO) {
         logger.info("Creating pawn request for user: {}", userId);
 
-        // Validate input
-        if (requestDTO.getLoanAmount() == null || requestDTO.getLoanAmount() < 150) {
-            throw new BadRequestException("Loan amount must be at least 150");
-        }
-
-        if (requestDTO.getLoanAmount() > 10000) {
-            throw new BadRequestException("Loan amount cannot exceed 10,000");
-        }
-
-        // Validate that loan amount doesn't exceed estimated value
-        if (requestDTO.getEstimatedValue() != null
-                && requestDTO.getLoanAmount() > requestDTO.getEstimatedValue()) {
-            throw new BadRequestException(String.format(
-                    "Loan amount (%.2f) cannot exceed the estimated value of the item (%.2f)",
-                    requestDTO.getLoanAmount(), requestDTO.getEstimatedValue()));
-        }
-
         // Validate photos - maximum 2 images
         if (requestDTO.getPhotos() != null && !requestDTO.getPhotos().isEmpty()) {
             int imageCount = countImagesInJson(requestDTO.getPhotos());
@@ -71,9 +54,6 @@ public class PawnRequestService {
         // Find user
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        // Allow users to create new pawn requests even with existing active loans
-        // This enables multiple concurrent pawn transactions
 
         // Check if user has any pending pawn requests that are not yet processed
         List<PawnRequest> pendingRequests = pawnRequestRepository.findPendingOrApprovedByUser(user);
@@ -97,9 +77,10 @@ public class PawnRequestService {
             pawnRequest.setCondition(requestDTO.getCondition());
             pawnRequest.setDescription(requestDTO.getDescription());
             pawnRequest.setPhotos(requestDTO.getPhotos());
-            pawnRequest.setLoanAmount(requestDTO.getLoanAmount());
-            pawnRequest.setEstimatedValue(requestDTO.getEstimatedValue());
-            pawnRequest.setStatus("PENDING"); // Default status
+
+            // Initial status is PENDING
+            pawnRequest.setStatus("PENDING");
+            pawnRequest.setCreatedAt(java.time.LocalDateTime.now());
             pawnRequest.setCategory(requestDTO.getCategory() != null ? requestDTO.getCategory() : "General");
 
             logger.info("Attempting to save pawn request to database...");
@@ -110,7 +91,7 @@ public class PawnRequestService {
             // Create notification for user
             notificationService.createNotification(
                     userId,
-                    "Pawn request created for item: " + saved.getItemName() + ". Waiting for admin approval.",
+                    "Pawn request created for item: " + saved.getItemName() + ". Waiting for admin assessment.",
                     "INFO");
 
             return mapToResponse(saved);
@@ -250,6 +231,69 @@ public class PawnRequestService {
     }
 
     /**
+     * Assess Pawn Request (Admin)
+     */
+    public PawnRequestResponse assessPawnRequest(Long pawnId, java.math.BigDecimal offeredAmount,
+            String remarks, java.math.BigDecimal interestRate, Integer duration) {
+        PawnRequest pawnRequest = pawnRequestRepository.findById(pawnId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pawn request not found"));
+
+        if (!"PENDING".equals(pawnRequest.getStatus())) {
+            throw new BadRequestException(
+                    "Only PENDING requests can be assessed. Current status: " + pawnRequest.getStatus());
+        }
+
+        pawnRequest.setOfferedAmount(offeredAmount);
+        pawnRequest.setAdminRemarks(remarks);
+        pawnRequest.setProposedInterestRate(interestRate);
+        pawnRequest.setProposedLoanDuration(duration);
+        pawnRequest.setStatus("OFFER_MADE");
+        pawnRequest.setAppraisalDate(LocalDate.now());
+
+        PawnRequest saved = pawnRequestRepository.save(pawnRequest);
+
+        // Notify User
+        notificationService.createNotification(
+                pawnRequest.getUser().getId(),
+                "Great news! You have an offer of ₱" + offeredAmount + " for your item: " + pawnRequest.getItemName(),
+                "OFFER");
+
+        return mapToResponse(saved);
+    }
+
+    /**
+     * Respond to Offer (User)
+     */
+    public PawnRequestResponse respondToOffer(Long pawnId, boolean accepted) {
+        PawnRequest pawnRequest = pawnRequestRepository.findById(pawnId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pawn request not found"));
+
+        if (!"OFFER_MADE".equals(pawnRequest.getStatus())) {
+            throw new BadRequestException(
+                    "Can only respond to requests with an active offer. Current status: " + pawnRequest.getStatus());
+        }
+
+        if (accepted) {
+            pawnRequest.setStatus("ACCEPTED"); // User Accepted, ready for face-to-face validation
+            // Notify User of next steps
+            notificationService.createNotification(
+                    pawnRequest.getUser().getId(),
+                    "You accepted the offer for " + pawnRequest.getItemName()
+                            + ". Please visit our nearest branch for validation and cash payout.",
+                    "SUCCESS");
+        } else {
+            pawnRequest.setStatus("REJECTED"); // User Rejected
+            notificationService.createNotification(
+                    pawnRequest.getUser().getId(),
+                    "You rejected the offer for " + pawnRequest.getItemName() + ". The request has been closed.",
+                    "INFO");
+        }
+
+        PawnRequest saved = pawnRequestRepository.save(pawnRequest);
+        return mapToResponse(saved);
+    }
+
+    /**
      * Get user dashboard statistics
      */
     public Map<String, Object> getUserDashboardStats(Long userId) {
@@ -265,8 +309,7 @@ public class PawnRequestService {
                 .filter(req -> "PAWNED".equals(req.getStatus()))
                 .count();
 
-        // 2. Wallet Balance
-        BigDecimal walletBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
+        // 2. Wallet Balance Removed
 
         // 3. Due Soon (within 3 days)
         LocalDate today = LocalDate.now();
@@ -282,7 +325,7 @@ public class PawnRequestService {
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("activePawns", activePawns);
-        stats.put("loanAmount", walletBalance);
+        stats.put("loanAmount", BigDecimal.ZERO); // Legacy compatibility
         stats.put("dueSoon", dueSoon);
 
         return stats;
@@ -298,6 +341,9 @@ public class PawnRequestService {
             interestRate = pawnRequest.getLoan().getInterestRate();
             dueDate = pawnRequest.getLoan().getDueDate();
         }
+        Double offeredAmount = pawnRequest.getOfferedAmount() != null ? pawnRequest.getOfferedAmount().doubleValue()
+                : null;
+
         return new PawnRequestResponse(
                 pawnRequest.getPawnId(),
                 pawnRequest.getItemName(),
@@ -306,14 +352,19 @@ public class PawnRequestService {
                 pawnRequest.getCondition(),
                 pawnRequest.getCategory(),
                 pawnRequest.getDescription(),
-                pawnRequest.getLoanAmount(),
-                pawnRequest.getEstimatedValue(),
+                null, // Loan Amount (Requested) - Removed from usage
+                null, // Estimated Value (Not really used, optional)
+                offeredAmount, // Correctly mapped offeredAmount
                 pawnRequest.getPhotos(),
                 pawnRequest.getStatus(),
                 pawnRequest.getAppraisalDate(),
                 pawnRequest.getAppraisedBy(),
                 interestRate,
-                dueDate);
+                dueDate,
+                pawnRequest.getCreatedAt(),
+                pawnRequest.getProposedInterestRate() != null ? pawnRequest.getProposedInterestRate().doubleValue()
+                        : null,
+                pawnRequest.getProposedLoanDuration());
     }
 
     /**

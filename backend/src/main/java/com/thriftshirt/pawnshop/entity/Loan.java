@@ -110,19 +110,19 @@ public class Loan {
      */
     public BigDecimal calculateTotalRedeemAmount() {
         BigDecimal total = this.loanAmount != null ? this.loanAmount : BigDecimal.ZERO;
-        
+
         // Add interest calculation if applicable
         if (this.interestRate != null && this.interestRate > 0) {
             BigDecimal interestAmount = total.multiply(BigDecimal.valueOf(this.interestRate))
                     .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
             total = total.add(interestAmount);
         }
-        
+
         // Add penalty if exists
         if (this.penalty != null) {
             total = total.add(this.penalty);
         }
-        
+
         return total;
     }
 
@@ -133,9 +133,16 @@ public class Loan {
         if (this.loanAmount == null || this.interestRate == null || this.interestRate <= 0) {
             return BigDecimal.ZERO;
         }
-        
+
         return this.loanAmount.multiply(BigDecimal.valueOf(this.interestRate))
                 .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Helper getter for API response
+     */
+    public BigDecimal getTotalRedeemAmount() {
+        return calculateTotalRedeemAmount();
     }
 
 }

@@ -28,6 +28,13 @@ public class UserService {
     /**
      * Get all users (for Admin)
      */
+    public void deleteUser(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new RuntimeException("User not found with id: " + userId);
+        }
+        userRepository.deleteById(userId);
+    }
+
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
@@ -68,7 +75,7 @@ public class UserService {
     }
 
     /**
-     * Save user (for wallet operations)
+     * Save user
      */
     public User saveUser(User user) {
         return userRepository.save(user);

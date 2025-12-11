@@ -61,6 +61,22 @@ function DeveloperAdminUsers() {
         }
     };
 
+    const handleDelete = async (userId) => {
+        if (!window.confirm('WARNING: Are you sure you want to PERMANENTLY DELETE this user? This will also delete all their pawn requests and logs. This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const apiService = await import('../services/apiService');
+            await apiService.default.admin.deleteUser(userId);
+            notifySuccess('User deleted successfully');
+            setUsers(users.filter(user => user.id !== userId));
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            notifyError('Failed to delete user');
+        }
+    };
+
     const filteredUsers = users.filter(user => {
         if (!filter) return true;
         const search = filter.toLowerCase();
@@ -151,6 +167,15 @@ function DeveloperAdminUsers() {
                                                         onClick={() => handleToggleStatus(user.id, user.enabled)}
                                                     >
                                                         {user.enabled ? 'Ban' : 'Unban'}
+                                                    </button>
+                                                )}
+                                                {user.role !== 'ADMIN' && (
+                                                    <button
+                                                        className="dev-admin-btn delete"
+                                                        onClick={() => handleDelete(user.id)}
+                                                        style={{ marginLeft: '8px', backgroundColor: '#dc2626', color: 'white' }}
+                                                    >
+                                                        Delete
                                                     </button>
                                                 )}
                                             </td>

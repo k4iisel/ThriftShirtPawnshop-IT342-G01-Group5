@@ -320,20 +320,19 @@ export const apiService = {
       return await handleResponse(response);
     },
 
-    addCashToUser: async (userId, amount, reason) => {
-      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/add-cash`, {
-        method: 'POST',
+    deleteUser: async (userId) => {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+        method: 'DELETE',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ amount, reason }),
       });
       return await handleResponse(response);
     },
 
-    removeCashFromUser: async (userId, amount, reason) => {
-      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/remove-cash`, {
+    assessPawnRequest: async (pawnId, offeredAmount, remarks, interestRate = 5, duration = 30) => {
+      const response = await fetch(`${API_BASE_URL}/admin/pawn-requests/${pawnId}/assess`, {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ amount, reason }),
+        body: JSON.stringify({ offeredAmount, remarks, interestRate, duration }),
       });
       return await handleResponse(response);
     },
@@ -369,12 +368,12 @@ export const apiService = {
       const url = new URL(`${API_BASE_URL}/admin/pawn-requests/${pawnId}/validate`);
       url.searchParams.append('interestRate', interestRate);
       url.searchParams.append('daysUntilDue', daysUntilDue);
-      
+
       // Add custom loan amount if provided
       if (customLoanAmount !== null && customLoanAmount !== undefined) {
         url.searchParams.append('customLoanAmount', customLoanAmount);
       }
-      
+
       const response = await fetch(url.toString(), {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -435,6 +434,14 @@ export const apiService = {
 
       return await handleResponse(response);
     },
+
+    respondToOffer: async (pawnId, accept) => {
+      const response = await fetch(`${API_BASE_URL}/user/pawn-requests/${pawnId}/offer-response?accept=${accept}`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      });
+      return await handleResponse(response);
+    }
   },
 
   // User Loan endpoints
@@ -466,14 +473,7 @@ export const apiService = {
       return await handleResponse(response);
     },
 
-    renew: async (loanId) => {
-      const response = await fetch(`${API_BASE_URL}/user/loans/${loanId}/renew`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      });
-
-      return await handleResponse(response);
-    },
+    // Renew endpoint removed
 
     deleteTransaction: async (logId) => {
       const response = await fetch(`${API_BASE_URL}/user/transaction-history/${logId}`, {
@@ -492,26 +492,6 @@ export const apiService = {
 
       return await handleResponse(response);
     },
-
-    // Wallet Management
-    cashIn: async (amount) => {
-      const response = await fetch(`${API_BASE_URL}/user/wallet/cash-in?amount=${amount}`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      });
-
-      return await handleResponse(response);
-    },
-
-    cashOut: async (amount) => {
-      const response = await fetch(`${API_BASE_URL}/user/wallet/cash-out?amount=${amount}`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      });
-
-      return await handleResponse(response);
-    },
-
   },
 
   // File Upload
@@ -562,6 +542,14 @@ export const apiService = {
         headers: getAuthHeaders(),
       });
       return await handleResponse(response);
+    },
+
+    delete: async (notifId) => {
+      const response = await fetch(`${API_BASE_URL}/notifications/${notifId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      return await handleResponse(response);
     }
   },
 
@@ -569,13 +557,7 @@ export const apiService = {
 
   // User endpoints
   user: {
-    getWalletBalance: async () => {
-      const response = await fetch(`${API_BASE_URL}/user/wallet/balance`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-      return await handleResponse(response);
-    }
+    // Wallet balance removed
   },
 
   // Generic API call method

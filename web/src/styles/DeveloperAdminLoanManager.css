@@ -116,8 +116,13 @@
 }
 
 @keyframes loanManagerSpinner {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loan-manager-loading-text {
@@ -167,9 +172,9 @@
 
 /* Item Details */
 .loan-manager-item-details {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .loan-manager-item-name {
@@ -277,123 +282,200 @@
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-    .loan-manager-page {
-        padding: 15px;
-    }
-    
-    .loan-manager-header {
-        padding: 15px 20px;
-    }
-    
-    .loan-manager-section-header {
-        padding: 20px 25px;
-    }
+  .loan-manager-page {
+    padding: 15px;
+  }
+
+  .loan-manager-header {
+    padding: 15px 20px;
+  }
+
+  .loan-manager-section-header {
+    padding: 20px 25px;
+  }
 }
 
 @media (max-width: 768px) {
-    .loan-manager-page {
-        padding: 10px;
-    }
-    
-    .loan-manager-header {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-        padding: 20px;
-    }
-    
-    .loan-manager-title {
-        font-size: 1.5rem;
-    }
-    
-    .loan-manager-section-title {
-        font-size: 1.6rem;
-    }
-    
-    .loan-manager-table-container {
-        overflow-x: auto;
-    }
-    
-    .loan-manager-table {
-        min-width: 700px;
-    }
-    
-    .loan-manager-table th,
-    .loan-manager-table td {
-        padding: 12px 10px;
-    }
-    
-    .loan-manager-actions {
-        flex-direction: column;
-    }
-    
-    .loan-manager-action-btn {
-        min-width: 100%;
-    }
+  .loan-manager-page {
+    padding: 10px;
+  }
+
+  .loan-manager-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .loan-manager-title {
+    font-size: 1.5rem;
+  }
+
+  .loan-manager-section-title {
+    font-size: 1.6rem;
+  }
+
+  .loan-manager-table-container {
+    overflow-x: auto;
+  }
+
+  .loan-manager-table {
+    min-width: 700px;
+  }
+
+  .loan-manager-table th,
+  .loan-manager-table td {
+    padding: 12px 10px;
+  }
+
+  .loan-manager-actions {
+    flex-direction: column;
+  }
+
+  .loan-manager-action-btn {
+    min-width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
-    .loan-manager-header {
-        padding: 15px;
-    }
-    
-    .loan-manager-section-header {
-        padding: 15px 20px;
-    }
-    
-    .loan-manager-table th,
-    .loan-manager-table td {
-        padding: 10px 8px;
-        font-size: 0.85rem;
-    }
-    
-    .loan-manager-item-name {
-        font-size: 0.9rem;
-    }
-    
-    .loan-manager-amount {
-        font-size: 1rem;
-    }
+  .loan-manager-header {
+    padding: 15px;
+  }
+
+  .loan-manager-section-header {
+    padding: 15px 20px;
+  }
+
+  .loan-manager-table th,
+  .loan-manager-table td {
+    padding: 10px 8px;
+    font-size: 0.85rem;
+  }
+
+  .loan-manager-item-name {
+    font-size: 0.9rem;
+  }
+
+  .loan-manager-amount {
+    font-size: 1rem;
+  }
+}
+
+
+/* Photo Thumbnail */
+.loan-manager-photo-cell {
+  width: 80px;
+  text-align: center;
+}
+
+.loan-manager-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.loan-manager-thumbnail:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.loan-manager-no-photo {
+  font-size: 11px;
+  color: #9ca3af;
+  font-style: italic;
+  padding: 10px;
+  background: #f9fafb;
+  border-radius: 4px;
+}
+
+/* Redeem Amount */
+.loan-manager-redeem-amount {
+  font-weight: 700;
+  color: #d97706;
+  /* Amber color */
+  font-size: 14px;
+}
+
+/* Photo Thumbnail */
+.loan-manager-photo-cell {
+  width: 80px;
+  text-align: center;
+}
+
+.loan-manager-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.loan-manager-thumbnail:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.loan-manager-no-photo {
+  font-size: 11px;
+  color: #9ca3af;
+  font-style: italic;
+  padding: 10px;
+  background: #f9fafb;
+  border-radius: 4px;
+}
+
+/* Redeem Amount */
+.loan-manager-redeem-amount {
+  font-weight: 700;
+  color: #d97706;
+  /* Amber color */
+  font-size: 14px;
 }
 
 /* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
-    .loan-manager-page {
-        background: #2c2c2c;
-    }
-    
-    .loan-manager-header,
-    .loan-manager-section-header,
-    .loan-manager-table-container,
-    .loan-manager-loading {
-        background: #34495e;
-        color: #ecf0f1;
-    }
-    
-    .loan-manager-title,
-    .loan-manager-section-title {
-        color: #ecf0f1;
-    }
-    
-    .loan-manager-table thead {
-        background: linear-gradient(135deg, #3498db 0%, #9b59b6 100%);
-    }
-    
-    .loan-manager-table td {
-        border-bottom-color: #495057;
-    }
-    
-    .loan-manager-table tbody tr:hover {
-        background-color: #495057;
-    }
-    
-    .loan-manager-item-name {
-        color: #ecf0f1;
-    }
-    
-    .loan-manager-section-description,
-    .loan-manager-item-id,
-    .loan-manager-empty {
-        color: #bdc3c7;
-    }
+  .loan-manager-page {
+    background: #2c2c2c;
+  }
+
+  .loan-manager-header,
+  .loan-manager-section-header,
+  .loan-manager-table-container,
+  .loan-manager-loading {
+    background: #34495e;
+    color: #ecf0f1;
+  }
+
+  .loan-manager-title,
+  .loan-manager-section-title {
+    color: #ecf0f1;
+  }
+
+  .loan-manager-table thead {
+    background: linear-gradient(135deg, #3498db 0%, #9b59b6 100%);
+  }
+
+  .loan-manager-table td {
+    border-bottom-color: #495057;
+  }
+
+  .loan-manager-table tbody tr:hover {
+    background-color: #495057;
+  }
+
+  .loan-manager-item-name {
+    color: #ecf0f1;
+  }
+
+  .loan-manager-section-description,
+  .loan-manager-item-id,
+  .loan-manager-empty {
+    color: #bdc3c7;
+  }
 }

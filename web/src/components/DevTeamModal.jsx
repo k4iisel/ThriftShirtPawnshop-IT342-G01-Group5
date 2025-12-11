@@ -10,7 +10,7 @@ import MielProfile from '../assets/images/Members/MielProfile.jpg';
 
 function DevTeamModal({ isOpen, onClose }) {
   const [selectedMember, setSelectedMember] = useState(null);
-  
+
   if (!isOpen) return null;
 
   const teamMembers = [
@@ -41,7 +41,7 @@ function DevTeamModal({ isOpen, onClose }) {
     {
       id: 4,
       name: "Kaysean Miel",
-      role: "Backend Developer",
+      role: "Full Stack Developer",
       email: "kaysean.miel@cit.edu",
       github: "@kayseanmiel",
       photo: MielProfile
@@ -74,12 +74,12 @@ function DevTeamModal({ isOpen, onClose }) {
             <div className="dev-team-grid">
               {teamMembers.map((member) => (
                 <div key={member.id} className="dev-member">
-                  <div 
-                    className="dev-avatar dev-avatar-photo" 
+                  <div
+                    className="dev-avatar dev-avatar-photo"
                     onClick={() => handleMemberPhotoClick(member)}
                   >
-                    <img 
-                      src={member.photo} 
+                    <img
+                      src={member.photo}
                       alt={member.name}
                       className="dev-photo"
                     />
@@ -97,12 +97,12 @@ function DevTeamModal({ isOpen, onClose }) {
           </div>
         </div>
       </div>
-      
+
       {selectedMember && (
-        <MemberPhotoModal 
-          member={selectedMember} 
-          isOpen={!!selectedMember} 
-          onClose={closeMemberModal} 
+        <MemberPhotoModal
+          member={selectedMember}
+          isOpen={!!selectedMember}
+          onClose={closeMemberModal}
         />
       )}
     </>

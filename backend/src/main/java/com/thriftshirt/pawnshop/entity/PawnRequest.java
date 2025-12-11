@@ -47,17 +47,25 @@ public class PawnRequest {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "loan_amount")
-    private Double loanAmount;
+    @Column(name = "offered_amount")
+    private java.math.BigDecimal offeredAmount;
 
-    @Column(name = "estimated_value")
-    private Double estimatedValue;
+    @Column(name = "admin_remarks", columnDefinition = "TEXT")
+    private String adminRemarks;
+
+    @Column(name = "proposed_interest_rate", precision = 5, scale = 2)
+    private java.math.BigDecimal proposedInterestRate;
+
+    @Column(name = "proposed_loan_duration")
+    private Integer proposedLoanDuration;
 
     @Column(name = "photos", columnDefinition = "TEXT")
     private String photos; // could store URLs or JSON (array)
 
     @Column(name = "status")
     private String status;
+
+    private java.time.LocalDateTime createdAt;
 
     private LocalDate appraisalDate;
 
@@ -132,20 +140,36 @@ public class PawnRequest {
         this.description = description;
     }
 
-    public Double getLoanAmount() {
-        return loanAmount;
+    public java.math.BigDecimal getOfferedAmount() {
+        return offeredAmount;
     }
 
-    public void setLoanAmount(Double loanAmount) {
-        this.loanAmount = loanAmount;
+    public void setOfferedAmount(java.math.BigDecimal offeredAmount) {
+        this.offeredAmount = offeredAmount;
     }
 
-    public Double getEstimatedValue() {
-        return estimatedValue;
+    public java.math.BigDecimal getProposedInterestRate() {
+        return proposedInterestRate;
     }
 
-    public void setEstimatedValue(Double estimatedValue) {
-        this.estimatedValue = estimatedValue;
+    public void setProposedInterestRate(java.math.BigDecimal proposedInterestRate) {
+        this.proposedInterestRate = proposedInterestRate;
+    }
+
+    public Integer getProposedLoanDuration() {
+        return proposedLoanDuration;
+    }
+
+    public void setProposedLoanDuration(Integer proposedLoanDuration) {
+        this.proposedLoanDuration = proposedLoanDuration;
+    }
+
+    public String getAdminRemarks() {
+        return adminRemarks;
+    }
+
+    public void setAdminRemarks(String adminRemarks) {
+        this.adminRemarks = adminRemarks;
     }
 
     public String getPhotos() {
@@ -162,6 +186,14 @@ public class PawnRequest {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public java.time.LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(java.time.LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public LocalDate getAppraisalDate() {

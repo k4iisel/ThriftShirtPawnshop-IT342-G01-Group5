@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useNotify from '../hooks/useNotify';
+import ImageModal from '../components/ImageModal';
 import apiService from '../services/apiService';
 import logo from '../assets/images/logo.png';
 import '../styles/DeveloperAdminValidate.css';
@@ -11,10 +12,46 @@ function DeveloperAdminValidate() {
 
     const navigate = useNavigate();
     const { notifySuccess, notifyError } = useNotify();
+
+    // State
+    const [activeTab, setActiveTab] = useState('assessment'); // 'assessment' or 'validation'
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
-    const [selectedRequest, setSelectedRequest] = useState(null);
+
+    // Image Modal State
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [selectedImages, setSelectedImages] = useState([]);
+    const [selectedItemName, setSelectedItemName] = useState('');
+
+    const parseImages = (photosStr) => {
+        try {
+            if (!photosStr) return [];
+            if (Array.isArray(photosStr)) return photosStr;
+            return JSON.parse(photosStr);
+        } catch (e) {
+            console.error("Failed to parse photos", e);
+            return [];
+        }
+    };
+
+    const handleViewImages = (photosStr, itemName) => {
+        const images = parseImages(photosStr);
+        if (images.length > 0) {
+            setSelectedImages(images);
+            setSelectedItemName(itemName);
+            setShowImageModal(true);
+        }
+    };
+
+    // Assessment State
+    const [showAssessModal, setShowAssessModal] = useState(false);
+    const [selectedForAssessment, setSelectedForAssessment] = useState(null);
+    const [assessAmount, setAssessAmount] = useState('');
+    const [assessRemarks, setAssessRemarks] = useState('');
+
+    // Validation State
+    const [showValidateModal, setShowValidateModal] = useState(false);
+    const [selectedForValidation, setSelectedForValidation] = useState(null);
     const [interestRate, setInterestRate] = useState('');
     const [daysUntilDue, setDaysUntilDue] = useState('');
     const [customLoanAmount, setCustomLoanAmount] = useState('');
@@ -26,11 +63,9 @@ function DeveloperAdminValidate() {
     const fetchRequests = async () => {
         try {
             setLoading(true);
-            // Fetch all requests and filter for APPROVED status
             const response = await apiService.admin.getAllPawnRequests();
             if (response && response.data) {
-                const approvedRequests = response.data.filter(req => req.status === 'APPROVED');
-                setRequests(approvedRequests);
+                setRequests(response.data);
             } else {
                 setRequests([]);
             }
@@ -42,44 +77,83 @@ function DeveloperAdminValidate() {
         }
     };
 
-    const handleOpenModal = (request) => {
-        setSelectedRequest(request);
-        setInterestRate('');
-        setDaysUntilDue('');
-        setShowModal(true);
+    // Filtered lists
+    const pendingRequests = requests.filter(req => req.status === 'PENDING');
+    const acceptedRequests = requests.filter(req => req.status === 'ACCEPTED');
+
+    // --- Assessment Handlers ---
+    const handleOpenAssessModal = (request) => {
+        setSelectedForAssessment(request);
+        setAssessAmount('');
+        setAssessRemarks('');
+        setInterestRate('5');
+        setDaysUntilDue('30');
+        setShowAssessModal(true);
     };
 
-    const handleCloseModal = () => {
-        setShowModal(false);
-        setSelectedRequest(null);
+    const handleCloseAssessModal = () => {
+        setShowAssessModal(false);
+        setSelectedForAssessment(null);
+        setAssessAmount('');
+        setAssessRemarks('');
+    };
+
+    const submitAssessment = async (e) => {
+        e.preventDefault();
+        if (!selectedForAssessment || !assessAmount) return;
+
+        try {
+            await apiService.admin.assessPawnRequest(
+                selectedForAssessment.pawnId,
+                parseFloat(assessAmount),
+                assessRemarks,
+                interestRate ? parseFloat(interestRate) : 5,
+                daysUntilDue ? parseInt(daysUntilDue) : 30
+            );
+            notifySuccess('Offer sent to user successfully');
+            handleCloseAssessModal();
+            fetchRequests();
+        } catch (error) {
+            console.error('Error submitting assessment:', error);
+            notifyError(error.message || 'Failed to submit assessment');
+        }
+    };
+
+    // --- Validation Handlers ---
+    const handleOpenValidateModal = (request) => {
+        setSelectedForValidation(request);
+        setInterestRate('');
+        setDaysUntilDue('');
+        setCustomLoanAmount('');
+        setShowValidateModal(true);
+    };
+
+    const handleCloseValidateModal = () => {
+        setShowValidateModal(false);
+        setSelectedForValidation(null);
         setInterestRate('');
         setDaysUntilDue('');
         setCustomLoanAmount('');
     };
 
-    const handleValidate = async () => {
-        if (!selectedRequest) return;
+    const submitValidation = async () => {
+        if (!selectedForValidation) return;
 
-        const finalInterestRate = interestRate === '' ? 5 : Number(interestRate);
-        const finalDaysUntilDue = daysUntilDue === '' ? 30 : Number(daysUntilDue);
-        const finalCustomAmount = customLoanAmount && customLoanAmount.trim() !== '' ? Number(customLoanAmount) : null;
+        // Use defaults since user requested to remove inputs from this modal
+        // "The offer and interest rate should be in the make offer... and not here"
+        const finalInterestRate = 5;
+        const finalDaysUntilDue = 30;
+        const finalCustomAmount = null; // Use accepted offer amount
 
         try {
-            await apiService.admin.validatePawn(selectedRequest.pawnId, finalInterestRate, finalDaysUntilDue, finalCustomAmount);
+            await apiService.admin.validatePawn(selectedForValidation.pawnId, finalInterestRate, finalDaysUntilDue, finalCustomAmount);
             notifySuccess('Item validated and loan created successfully');
-            handleCloseModal();
-            fetchRequests(); // Refresh list
+            handleCloseValidateModal();
+            fetchRequests();
         } catch (error) {
             console.error('Error validating pawn:', error);
-            const errorMessage = error.message || 'Failed to create loan';
-            if (errorMessage.includes('Loan already exists')) {
-                notifyError('This item has already been validated and has an active loan');
-            } else if (errorMessage.includes('must be APPROVED')) {
-                notifyError('Item must be APPROVED before validation');
-            } else {
-                notifyError(errorMessage);
-            }
-            handleCloseModal();
+            notifyError(error.message || 'Failed to create loan');
+            handleCloseValidateModal();
         }
     };
 
@@ -91,11 +165,20 @@ function DeveloperAdminValidate() {
         try {
             await apiService.admin.updatePawnStatus(pawnId, 'REJECTED');
             notifySuccess('Item rejected successfully');
-            fetchRequests(); // Refresh list
+            fetchRequests();
         } catch (error) {
             console.error('Error rejecting pawn:', error);
             notifyError('Failed to reject item');
         }
+    };
+
+    // Helper to view photos (reusing existing logic or simplified)
+    const viewPhotos = (request) => {
+        // Implementation for viewing photos, could invoke a parent Modal or alert links
+        // For now, let's assume images are handled/displayed in row or ignored for this specific view to save space
+        // Or we can add a 'View Photos' button that could open a modal (not implemented in this snippet fully, but logic exists in Dashboard)
+        // We will just show item details text.
+        console.log("View photos for", request.itemName);
     };
 
     return (
@@ -104,7 +187,7 @@ function DeveloperAdminValidate() {
                 <div className="validate-header-left">
                     <div className="validate-logo">
                         <img src={logo} alt="Logo" className="validate-logo-img" />
-                        <h1 className="validate-title">Validate Items</h1>
+                        <h1 className="validate-title">Pawn Processing</h1>
                     </div>
                 </div>
                 <button
@@ -117,9 +200,32 @@ function DeveloperAdminValidate() {
 
             <main className="validate-main">
                 <div className="validate-content">
+
+                    {/* Tabs */}
+                    <div className="admin-tabs">
+                        <button
+                            className={`admin-tab-btn ${activeTab === 'assessment' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('assessment')}
+                        >
+                            Assessment Queue ({pendingRequests.length})
+                        </button>
+                        <button
+                            className={`admin-tab-btn ${activeTab === 'validation' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('validation')}
+                        >
+                            Approved / Validation ({acceptedRequests.length})
+                        </button>
+                    </div>
+
                     <div className="validate-section-header">
-                        <h2 className="validate-section-title">Ready for Loan Release</h2>
-                        <p className="validate-section-description">These items have been approved online. Validate the physical item to release the loan.</p>
+                        <h2 className="validate-section-title">
+                            {activeTab === 'assessment' ? 'Review & Assess Items' : 'Validate & Release Loans'}
+                        </h2>
+                        <p className="validate-section-description">
+                            {activeTab === 'assessment'
+                                ? 'Review photos and item details to make an initial offer.'
+                                : 'Validate physical items for users who accepted your offer.'}
+                        </p>
                     </div>
 
                     {loading ? (
@@ -132,67 +238,89 @@ function DeveloperAdminValidate() {
                             <table className="validate-table">
                                 <thead>
                                     <tr>
+                                        <th>Photo</th>
                                         <th>Item Details</th>
                                         <th>Condition</th>
-                                        <th>Loan Amount</th>
-                                        <th>Appraisal Date</th>
+                                        {activeTab === 'validation' && <th>Offered Amount</th>}
+                                        <th>Date</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {requests.length === 0 ? (
+                                    {(activeTab === 'assessment' ? pendingRequests : acceptedRequests).length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" className="validate-empty">
-                                                No approved requests waiting for validation.
+                                            <td colSpan={activeTab === 'validation' ? "6" : "5"} className="validate-empty">
+                                                No items in this queue.
                                             </td>
                                         </tr>
                                     ) : (
-                                        requests.map(req => (
-                                            <tr key={req.pawnId}>
-                                                <td>
-                                                    <div className="validate-item-details">
-                                                        <div className="validate-item-name">{req.itemName}</div>
-                                                        <div className="validate-item-info">{req.brand} - {req.size}</div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span className="validate-condition">{req.condition}</span>
-                                                </td>
-                                                <td className="validate-amount">
-                                                    ₱{(req.estimatedValue || req.loanAmount || req.requestedAmount || 0).toFixed(2)}
-                                                </td>
-                                                <td className="validate-date">
-                                                    {req.appraisalDate ? 
-                                                        new Date(req.appraisalDate).toLocaleDateString('en-US', {
-                                                            year: 'numeric',
-                                                            month: 'short',
-                                                            day: 'numeric'
-                                                        }) : 
-                                                        new Date().toLocaleDateString('en-US', {
-                                                            year: 'numeric',
-                                                            month: 'short',
-                                                            day: 'numeric'
-                                                        })
-                                                    }
-                                                </td>
-                                                <td>
-                                                    <div className="validate-actions">
-                                                        <button
-                                                            className="validate-action-btn validate-btn"
-                                                            onClick={() => handleOpenModal(req)}
-                                                        >
-                                                            Validate & Release
-                                                        </button>
-                                                        <button
-                                                            className="validate-action-btn reject-btn"
-                                                            onClick={() => handleReject(req.pawnId, req.itemName)}
-                                                        >
-                                                            Reject
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
+                                        (activeTab === 'assessment' ? pendingRequests : acceptedRequests).map(req => {
+                                            const images = parseImages(req.photos);
+                                            const mainImage = images.length > 0 ? images[0] : null;
+
+                                            return (
+                                                <tr key={req.pawnId}>
+                                                    <td className="validate-photo-cell">
+                                                        {mainImage ? (
+                                                            <img
+                                                                src={mainImage}
+                                                                alt={req.itemName}
+                                                                className="validate-thumbnail"
+                                                                onClick={() => handleViewImages(req.photos, req.itemName)}
+                                                            />
+                                                        ) : (
+                                                            <div className="validate-no-photo">No Photo</div>
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        <div className="validate-item-details">
+                                                            <div className="validate-item-name">{req.itemName}</div>
+                                                            <div className="validate-item-info">{req.brand} - {req.size}</div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span className="validate-condition">{req.condition}</span>
+                                                    </td>
+
+                                                    {activeTab === 'validation' && (
+                                                        <td className="validate-amount">
+                                                            ₱{parseFloat(req.offeredAmount || 0).toFixed(2)}
+                                                        </td>
+                                                    )}
+
+                                                    <td className="validate-date">
+                                                        {req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'N/A'}
+                                                    </td>
+
+                                                    <td>
+                                                        <div className="validate-actions">
+                                                            {activeTab === 'assessment' ? (
+                                                                <button
+                                                                    className="validate-action-btn validate-btn"
+                                                                    onClick={() => handleOpenAssessModal(req)}
+                                                                >
+                                                                    Make Offer
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    className="validate-action-btn validate-btn"
+                                                                    onClick={() => handleOpenValidateModal(req)}
+                                                                >
+                                                                    Validate & Pay
+                                                                </button>
+                                                            )}
+
+                                                            <button
+                                                                className="validate-action-btn reject-btn"
+                                                                onClick={() => handleReject(req.pawnId, req.itemName)}
+                                                            >
+                                                                Reject
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     )}
                                 </tbody>
                             </table>
@@ -201,110 +329,145 @@ function DeveloperAdminValidate() {
                 </div>
             </main>
 
-            {showModal && selectedRequest && (
-                <div className="validate-modal-overlay" onClick={handleCloseModal}>
+            {/* Assessment Modal */}
+            {showAssessModal && selectedForAssessment && (
+                <div className="validate-modal-overlay" onClick={handleCloseAssessModal}>
+                    <div className="validate-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="validate-modal-header">
+                            <h2>Make an Offer</h2>
+                            <button className="validate-modal-close" onClick={handleCloseAssessModal}>×</button>
+                        </div>
+                        <form onSubmit={submitAssessment}>
+                            <div className="validate-modal-body">
+                                <div className="validate-modal-item-info">
+                                    <h3>{selectedForAssessment.itemName}</h3>
+                                    <p>{selectedForAssessment.brand} - {selectedForAssessment.condition}</p>
+                                    <p className="description">{selectedForAssessment.description}</p>
+                                </div>
+
+                                <div className="validate-modal-form">
+                                    <div className="validate-form-group">
+                                        <label htmlFor="assessAmount">Offer Amount (₱) *</label>
+                                        <input
+                                            type="number"
+                                            id="assessAmount"
+                                            value={assessAmount}
+                                            onChange={(e) => setAssessAmount(e.target.value)}
+                                            placeholder="Enter amount"
+                                            min="1"
+                                            step="0.01"
+                                            required
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <div className="validate-form-group">
+                                        <label htmlFor="assessRemarks">Remarks (Optional)</label>
+                                        <textarea
+                                            id="assessRemarks"
+                                            value={assessRemarks}
+                                            onChange={(e) => setAssessRemarks(e.target.value)}
+                                            placeholder="Add notes for the user..."
+                                            rows="3"
+                                        />
+                                    </div>
+                                    <div className="validate-form-group-row">
+                                        <div className="validate-form-group half">
+                                            <label htmlFor="interestRate">Interest Rate (%)</label>
+                                            <input
+                                                type="number"
+                                                id="interestRate"
+                                                value={interestRate}
+                                                onChange={(e) => setInterestRate(e.target.value)}
+                                                placeholder="5"
+                                                min="0"
+                                                step="0.1"
+                                            />
+                                        </div>
+                                        <div className="validate-form-group half">
+                                            <label htmlFor="daysUntilDue">Duration (Days)</label>
+                                            <input
+                                                type="number"
+                                                id="daysUntilDue"
+                                                value={daysUntilDue}
+                                                onChange={(e) => setDaysUntilDue(e.target.value)}
+                                                placeholder="30"
+                                                min="1"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="validate-modal-footer">
+                                <button type="button" className="validate-modal-btn cancel" onClick={handleCloseAssessModal}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="validate-modal-btn confirm">
+                                    Submit Offer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Validation Modal */}
+            {showValidateModal && selectedForValidation && (
+                <div className="validate-modal-overlay" onClick={handleCloseValidateModal}>
                     <div className="validate-modal" onClick={(e) => e.stopPropagation()}>
                         <div className="validate-modal-header">
                             <h2>Validate & Release Loan</h2>
-                            <button className="validate-modal-close" onClick={handleCloseModal}>×</button>
+                            <button className="validate-modal-close" onClick={handleCloseValidateModal}>×</button>
                         </div>
                         <div className="validate-modal-body">
                             <div className="validate-modal-item-info">
-                                <h3>{selectedRequest.itemName}</h3>
-                                <p>{selectedRequest.brand} - {selectedRequest.size} - {selectedRequest.condition}</p>
-                            </div>
-                            
-                            <div className="validate-modal-form">
-                                <div className="validate-form-group">
-                                    <label htmlFor="customAmount">Custom Loan Amount (Optional)</label>
-                                    <input
-                                        type="number"
-                                        id="customAmount"
-                                        value={customLoanAmount}
-                                        onChange={(e) => setCustomLoanAmount(e.target.value)}
-                                        placeholder="Leave empty to use original amount"
-                                        min="0"
-                                        step="0.01"
-                                    />
-                                    <small>Leave empty to use the original estimated value</small>
-                                </div>
-                                
-                                <div className="validate-form-group">
-                                    <label htmlFor="interestRate">Interest Rate (%)</label>
-                                    <input
-                                        type="number"
-                                        id="interestRate"
-                                        value={interestRate}
-                                        onChange={(e) => setInterestRate(e.target.value)}
-                                        placeholder="5 (default)"
-                                        min="0"
-                                        max="100"
-                                        step="0.5"
-                                    />
-                                </div>
-                                
-                                <div className="validate-form-group">
-                                    <label htmlFor="daysUntilDue">Days Until Due</label>
-                                    <input
-                                        type="number"
-                                        id="daysUntilDue"
-                                        value={daysUntilDue}
-                                        onChange={(e) => setDaysUntilDue(e.target.value)}
-                                        placeholder="30 (default)"
-                                        min="1"
-                                        max="365"
-                                    />
+                                <h3>{selectedForValidation.itemName}</h3>
+                                <div className="accepted-offer-badge">
+                                    User Accepted Offer: ₱{parseFloat(selectedForValidation.offeredAmount || 0).toFixed(2)}
                                 </div>
                             </div>
 
                             <div className="validate-modal-summary">
                                 <h4>Loan Summary</h4>
                                 <div className="validate-summary-row">
-                                    <span>Original Amount:</span>
-                                    <span>₱{(selectedRequest.estimatedValue || selectedRequest.loanAmount || selectedRequest.requestedAmount || 0).toFixed(2)}</span>
-                                </div>
-                                {customLoanAmount && customLoanAmount.trim() !== '' && (
-                                    <div className="validate-summary-row" style={{color: '#28a745', fontWeight: 'bold'}}>
-                                        <span>Custom Amount:</span>
-                                        <span>₱{Number(customLoanAmount).toFixed(2)}</span>
-                                    </div>
-                                )}
-                                <div className="validate-summary-row">
-                                    <span>Final Loan Amount:</span>
-                                    <span>₱{(customLoanAmount && customLoanAmount.trim() !== '' ? Number(customLoanAmount) : (selectedRequest.estimatedValue || selectedRequest.loanAmount || selectedRequest.requestedAmount || 0)).toFixed(2)}</span>
+                                    <span>Loan Amount:</span>
+                                    <span>₱{parseFloat(selectedForValidation.offeredAmount || 0).toFixed(2)}</span>
                                 </div>
                                 <div className="validate-summary-row">
                                     <span>Interest Rate:</span>
-                                    <span>{interestRate === '' ? 5 : interestRate}%</span>
+                                    <span>{selectedForValidation.proposedInterestRate || 5}%</span>
                                 </div>
                                 <div className="validate-summary-row">
-                                    <span>Interest Amount:</span>
-                                    <span>₱{((customLoanAmount && customLoanAmount.trim() !== '' ? Number(customLoanAmount) : (selectedRequest.estimatedValue || selectedRequest.loanAmount || selectedRequest.requestedAmount || 0)) * ((interestRate === '' ? 5 : Number(interestRate)) / 100)).toFixed(2)}</span>
+                                    <span>Loan Duration:</span>
+                                    <span>{selectedForValidation.proposedLoanDuration || 30} days</span>
                                 </div>
                                 <div className="validate-summary-row total">
-                                    <span>Total to Redeem:</span>
-                                    <span>₱{((customLoanAmount && customLoanAmount.trim() !== '' ? Number(customLoanAmount) : (selectedRequest.estimatedValue || selectedRequest.loanAmount || selectedRequest.requestedAmount || 0)) * (1 + (interestRate === '' ? 5 : Number(interestRate)) / 100)).toFixed(2)}</span>
-                                </div>
-                                <div className="validate-summary-row">
-                                    <span>Due Date:</span>
-                                    <span>{new Date(Date.now() + (daysUntilDue === '' ? 30 : Number(daysUntilDue)) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
-                                        year: 'numeric',
-                                        month: 'short',
-                                        day: 'numeric'
-                                    })}</span>
+                                    <span>Payout to User:</span>
+                                    <span>₱{parseFloat(selectedForValidation.offeredAmount || 0).toFixed(2)}</span>
                                 </div>
                             </div>
+
+                            <p className="validate-modal-note" style={{ marginTop: '16px', color: '#666', fontSize: '13px', fontStyle: 'italic' }}>
+                                By confirming, you acknowledge that the item has been physically validated and cash has been released to the user.
+                            </p>
                         </div>
                         <div className="validate-modal-footer">
-                            <button className="validate-modal-btn cancel" onClick={handleCloseModal}>
+                            <button className="validate-modal-btn cancel" onClick={handleCloseValidateModal}>
                                 Cancel
                             </button>
-                            <button className="validate-modal-btn confirm" onClick={handleValidate}>
+                            <button className="validate-modal-btn confirm" onClick={submitValidation}>
                                 Confirm & Release
                             </button>
                         </div>
                     </div>
                 </div>
+            )}
+            {/* Image Modal */}
+            {showImageModal && (
+                <ImageModal
+                    images={selectedImages}
+                    itemName={selectedItemName}
+                    onClose={() => setShowImageModal(false)}
+                />
             )}
         </div>
     );

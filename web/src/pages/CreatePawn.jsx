@@ -17,15 +17,13 @@ function CreatePawn() {
     size: '',
     condition: '',
     description: '',
-    loanAmount: '',
-    estimatedValue: '',
     images: []
   });
 
   const [imagePreview, setImagePreview] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-
+  // ... (handleInputChange and handleImageChange unchanged)
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -129,16 +127,6 @@ function CreatePawn() {
       return;
     }
 
-    if (!formData.loanAmount || formData.loanAmount < 50) {
-      notify.notifyError('Loan amount must be at least ₱50');
-      return;
-    }
-
-    if (formData.loanAmount > 10000) {
-      notify.notifyError('Loan amount cannot exceed ₱10,000');
-      return;
-    }
-
     if (formData.images.length === 0) {
       notify.notifyError('At least one image is required');
       return;
@@ -165,8 +153,8 @@ function CreatePawn() {
         size: formData.size,
         condition: formData.condition,
         description: formData.description || null,
-        loanAmount: parseFloat(formData.loanAmount),
-        estimatedValue: formData.estimatedValue ? parseFloat(formData.estimatedValue) : null,
+        // loanAmount: REMOVED
+        // estimatedValue: REMOVED
         photos: photosString, // Store as JSON array of URLs
         category: 'Thrift Shirt' // Default category
       };
@@ -188,8 +176,6 @@ function CreatePawn() {
           size: '',
           condition: '',
           description: '',
-          loanAmount: '',
-          estimatedValue: '',
           images: []
         });
         setImagePreview([]);
@@ -342,26 +328,7 @@ function CreatePawn() {
               )}
             </div>
 
-            <div className="form-section">
-              <h2>Loan Information</h2>
 
-              <div className="form-group">
-                <label htmlFor="loanAmount">Loan Amount (₱) *</label>
-                <input
-                  type="number"
-                  id="loanAmount"
-                  name="loanAmount"
-                  value={formData.loanAmount}
-                  onChange={handleInputChange}
-                  placeholder="500"
-                  min="150"
-                  max="10000"
-                  step="0.01"
-                  required
-                />
-                <small>Minimum: ₱150, Maximum: ₱10,000</small>
-              </div>
-            </div>
 
             <div className="form-actions">
               <button

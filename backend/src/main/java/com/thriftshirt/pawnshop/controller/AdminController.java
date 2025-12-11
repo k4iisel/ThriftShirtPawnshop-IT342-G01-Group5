@@ -235,6 +235,31 @@ public class AdminController {
         }
     }
 
+    // Delete User (Cascade)
+    @org.springframework.web.bind.annotation.DeleteMapping("/users/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> deleteUser(@PathVariable Long userId, Authentication authentication) {
+        logger.info("Admin deleting user {}: {}", userId, authentication.getName());
+
+        User adminUser = (User) authentication.getPrincipal();
+        if (!adminUser.getRole().name().equals("ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
+        }
+
+        try {
+            // Prevent self-deletion
+            if (adminUser.getId().equals(userId)) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("You cannot delete your own admin account"));
+            }
+
+            userService.deleteUser(userId);
+            return ResponseEntity.ok(ApiResponse.success("User deleted successfully"));
+        } catch (Exception e) {
+            logger.error("Error deleting user: ", e);
+            return ResponseEntity.status(500).body(ApiResponse.error("Failed to delete user: " + e.getMessage()));
+        }
+    }
+
     // Update pawn request status (admin only)
     @PutMapping("/pawn-requests/{pawnId}/status")
     @PreAuthorize("hasRole('ADMIN')")
@@ -277,7 +302,7 @@ public class AdminController {
             @RequestParam(required = false, defaultValue = "30") Integer daysUntilDue,
             Authentication authentication) {
         logger.info("Admin validating pawn request {}: {} with interest: {}%, days: {}",
-            pawnId, authentication.getName(), interestRate, daysUntilDue);
+                pawnId, authentication.getName(), interestRate, daysUntilDue);
 
         User user = (User) authentication.getPrincipal();
 
@@ -386,273 +411,41 @@ public class AdminController {
         }
     }
 
-    // Admin wallet management endpoints
-    @PostMapping("/users/{userId}/wallet/add-funds")
+    // Pawn Assessment (Admin sets offer)
+    @PostMapping("/pawn-requests/{pawnId}/assess")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> addFundsToUserWallet(
-            @PathVariable Long userId,
-            @RequestParam BigDecimal amount,
-            Authentication authentication) {
-        logger.info("Admin adding funds to user {} wallet. Amount: {}", userId, amount);
-
-        User adminUser = (User) authentication.getPrincipal();
-        if (!adminUser.getRole().name().equals("ADMIN")) {
-            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
-        }
-
-        try {
-            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-                return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Invalid amount. Amount must be greater than zero."));
-            }
-
-            User user = userRepository.findById(userId)
-                    .orElseThrow(
-                            () -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
-
-            BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
-            user.setWalletBalance(currentBalance.add(amount));
-            userRepository.save(user);
-
-            // Log the admin action
-            com.thriftshirt.pawnshop.entity.TransactionLog log = new com.thriftshirt.pawnshop.entity.TransactionLog();
-            log.setUser(adminUser);
-            log.setAction("ADMIN_ADD_FUNDS");
-            log.setRemarks(String.format("Admin added ₱%.2f to user %s (ID: %d) wallet. New balance: ₱%.2f",
-                    amount.doubleValue(), user.getUsername(), userId, user.getWalletBalance().doubleValue()));
-            transactionLogService.logTransaction(log);
-
-            logger.info("Admin successfully added ₱{} to user {} wallet", amount, userId);
-            return ResponseEntity.ok(ApiResponse.success("Funds added successfully",
-                    Map.of("userId", userId, "addedAmount", amount, "newBalance", user.getWalletBalance())));
-        } catch (Exception e) {
-            logger.error("Error adding funds to user wallet: ", e);
-            return ResponseEntity.status(500)
-                    .body(ApiResponse.error("Failed to add funds: " + e.getMessage()));
-        }
-    }
-
-    @PostMapping("/users/{userId}/wallet/deduct-funds")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> deductFundsFromUserWallet(
-            @PathVariable Long userId,
-            @RequestParam BigDecimal amount,
-            Authentication authentication) {
-        logger.info("Admin deducting funds from user {} wallet. Amount: {}", userId, amount);
-
-        User adminUser = (User) authentication.getPrincipal();
-        if (!adminUser.getRole().name().equals("ADMIN")) {
-            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
-        }
-
-        try {
-            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-                return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Invalid amount. Amount must be greater than zero."));
-            }
-
-            User user = userRepository.findById(userId)
-                    .orElseThrow(
-                            () -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
-
-            BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
-
-            if (currentBalance.compareTo(amount) < 0) {
-                return ResponseEntity.badRequest()
-                        .body(ApiResponse.error(String.format(
-                                "Insufficient balance. User has ₱%.2f, requested to deduct ₱%.2f",
-                                currentBalance.doubleValue(), amount.doubleValue())));
-            }
-
-            user.setWalletBalance(currentBalance.subtract(amount));
-            userRepository.save(user);
-
-            // Log the admin action
-            com.thriftshirt.pawnshop.entity.TransactionLog log = new com.thriftshirt.pawnshop.entity.TransactionLog();
-            log.setUser(adminUser);
-            log.setAction("ADMIN_DEDUCT_FUNDS");
-            log.setRemarks(String.format("Admin deducted ₱%.2f from user %s (ID: %d) wallet. New balance: ₱%.2f",
-                    amount.doubleValue(), user.getUsername(), userId, user.getWalletBalance().doubleValue()));
-            transactionLogService.logTransaction(log);
-
-            logger.info("Admin successfully deducted ₱{} from user {} wallet", amount, userId);
-            return ResponseEntity.ok(ApiResponse.success("Funds deducted successfully",
-                    Map.of("userId", userId, "deductedAmount", amount, "newBalance", user.getWalletBalance())));
-        } catch (Exception e) {
-            logger.error("Error deducting funds from user wallet: ", e);
-            return ResponseEntity.status(500)
-                    .body(ApiResponse.error("Failed to deduct funds: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping("/users/{userId}/wallet/balance")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> getUserWalletBalance(
-            @PathVariable Long userId,
-            Authentication authentication) {
-        logger.info("Admin checking wallet balance for user: {}", userId);
-
-        User adminUser = (User) authentication.getPrincipal();
-        if (!adminUser.getRole().name().equals("ADMIN")) {
-            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
-        }
-
-        try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(
-                            () -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
-
-            BigDecimal balance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
-
-            return ResponseEntity.ok(ApiResponse.success("Wallet balance retrieved",
-                    Map.of("userId", userId, "username", user.getUsername(), "walletBalance", balance)));
-        } catch (Exception e) {
-            logger.error("Error getting user wallet balance: ", e);
-            return ResponseEntity.status(500)
-                    .body(ApiResponse.error("Failed to get wallet balance: " + e.getMessage()));
-        }
-    }
-
-    // Add cash to user wallet
-    @PostMapping("/users/{userId}/add-cash")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> addCashToUser(
-            @PathVariable Long userId,
+    public ResponseEntity<ApiResponse> assessPawnRequest(
+            @PathVariable Long pawnId,
             @RequestBody Map<String, Object> request,
             Authentication authentication) {
-        logger.info("Admin adding cash to user {}", userId);
+        logger.info("Admin assessing pawn request {}: {}", pawnId, authentication.getName());
 
-        User admin = (User) authentication.getPrincipal();
-
-        try {
-            BigDecimal amount = new BigDecimal(request.get("amount").toString());
-            String reason = request.get("reason") != null ? request.get("reason").toString() : "Cash added by admin";
-
-            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                return ResponseEntity.status(400)
-                        .body(ApiResponse.error("Amount must be greater than zero"));
-            }
-
-            BigDecimal totalRevenue = loanService.calculateCurrentRevenue();
-
-            // Check if there's enough revenue to add cash
-            if (totalRevenue.compareTo(amount) < 0) {
-                return ResponseEntity.status(400)
-                        .body(ApiResponse.error(String.format(
-                            "Insufficient revenue! Current revenue: ₱%.2f, Required: ₱%.2f. Need ₱%.2f more.",
-                            totalRevenue.doubleValue(), 
-                            amount.doubleValue(), 
-                            amount.subtract(totalRevenue).doubleValue()
-                        )));
-            }
-
-            User user = userRepository.findById(userId)
-                    .orElseThrow(
-                            () -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
-
-            BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
-            BigDecimal newBalance = currentBalance.add(amount);
-            user.setWalletBalance(newBalance);
-            userRepository.save(user);
-
-            // Log transaction
-            com.thriftshirt.pawnshop.entity.TransactionLog log = new com.thriftshirt.pawnshop.entity.TransactionLog();
-            log.setUser(user);
-            log.setAction("ADMIN_ADD_CASH");
-            log.setRemarks(String.format("Admin %s added ₱%.2f to wallet. Reason: %s. New balance: ₱%.2f",
-                    admin.getUsername(), amount.doubleValue(), reason, newBalance.doubleValue()));
-            transactionLogService.logTransaction(log);
-
-            // Log revenue deduction (money given out from system)
-            com.thriftshirt.pawnshop.entity.TransactionLog revenueLog = new com.thriftshirt.pawnshop.entity.TransactionLog();
-            revenueLog.setUser(user);
-            revenueLog.setAction("REVENUE_DEDUCTED_CASH_ADDED");
-            revenueLog.setRemarks(String.format("Revenue deducted: ₱%.2f (Cash added to %s by admin). Reason: %s",
-                    amount.doubleValue(), user.getUsername(), reason));
-            transactionLogService.logTransaction(revenueLog);
-
-            logger.info("✅ Admin {} added ₱{} to user {} wallet. Revenue deducted.", admin.getId(), amount, userId);
-            return ResponseEntity.ok(ApiResponse.success("Cash added successfully",
-                    Map.of("userId", userId, "newBalance", newBalance, "amountAdded", amount)));
-        } catch (NumberFormatException e) {
-            logger.error("Invalid amount format: ", e);
-            return ResponseEntity.status(400)
-                    .body(ApiResponse.error("Invalid amount format"));
-        } catch (Exception e) {
-            logger.error("Error adding cash to user: ", e);
-            return ResponseEntity.status(500)
-                    .body(ApiResponse.error("Failed to add cash: " + e.getMessage()));
+        User adminUser = (User) authentication.getPrincipal();
+        if (!adminUser.getRole().name().equals("ADMIN")) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Admin access required"));
         }
-    }
-
-    // Remove cash from user wallet
-    @PostMapping("/users/{userId}/remove-cash")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> removeCashFromUser(
-            @PathVariable Long userId,
-            @RequestBody Map<String, Object> request,
-            Authentication authentication) {
-        logger.info("Admin removing cash from user {}", userId);
-
-        User admin = (User) authentication.getPrincipal();
 
         try {
-            BigDecimal amount = new BigDecimal(request.get("amount").toString());
-            String reason = request.get("reason") != null ? request.get("reason").toString() : "Cash removed by admin";
+            BigDecimal offeredAmount = new BigDecimal(request.get("offeredAmount").toString());
+            String remarks = (String) request.get("remarks");
 
-            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                return ResponseEntity.status(400)
-                        .body(ApiResponse.error("Amount must be greater than zero"));
-            }
+            BigDecimal interestRate = request.containsKey("interestRate")
+                    ? new BigDecimal(request.get("interestRate").toString())
+                    : new BigDecimal("5.0");
 
-            User user = userRepository.findById(userId)
-                    .orElseThrow(
-                            () -> new com.thriftshirt.pawnshop.exception.ResourceNotFoundException("User not found"));
+            Integer duration = request.containsKey("duration")
+                    ? Integer.parseInt(request.get("duration").toString())
+                    : 30;
 
-            BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
+            PawnRequestResponse response = pawnRequestService.assessPawnRequest(pawnId, offeredAmount, remarks,
+                    interestRate, duration);
 
-            if (currentBalance.compareTo(amount) < 0) {
-                return ResponseEntity.status(400)
-                        .body(ApiResponse
-                                .error(String.format("Insufficient balance. Available: ₱%.2f, Requested: ₱%.2f",
-                                        currentBalance.doubleValue(), amount.doubleValue())));
-            }
-
-            BigDecimal totalRevenue = loanService.calculateCurrentRevenue();
-
-            // Removing cash returns funds to revenue pool, no need to check availability
-
-            BigDecimal newBalance = currentBalance.subtract(amount);
-            user.setWalletBalance(newBalance);
-            userRepository.save(user);
-
-            // Log transaction
-            com.thriftshirt.pawnshop.entity.TransactionLog log = new com.thriftshirt.pawnshop.entity.TransactionLog();
-            log.setUser(user);
-            log.setAction("ADMIN_REMOVE_CASH");
-            log.setRemarks(String.format("Admin %s removed ₱%.2f from wallet. Reason: %s. New balance: ₱%.2f",
-                    admin.getUsername(), amount.doubleValue(), reason, newBalance.doubleValue()));
-            transactionLogService.logTransaction(log);
-
-            // Log revenue increase (money taken back into system)
-            com.thriftshirt.pawnshop.entity.TransactionLog revenueLog = new com.thriftshirt.pawnshop.entity.TransactionLog();
-            revenueLog.setUser(user);
-            revenueLog.setAction("REVENUE_EARNED_CASH_REMOVED");
-            revenueLog.setRemarks(String.format("Revenue earned: ₱%.2f (Cash removed from %s by admin). Reason: %s",
-                    amount.doubleValue(), user.getUsername(), reason));
-            transactionLogService.logTransaction(revenueLog);
-
-            logger.info("✅ Admin {} removed ₱{} from user {} wallet. Revenue increased.", admin.getId(), amount, userId);
-            return ResponseEntity.ok(ApiResponse.success("Cash removed successfully",
-                    Map.of("userId", userId, "newBalance", newBalance, "amountRemoved", amount)));
-        } catch (NumberFormatException e) {
-            logger.error("Invalid amount format: ", e);
-            return ResponseEntity.status(400)
-                    .body(ApiResponse.error("Invalid amount format"));
+            logger.info("Pawn request {} assessed. Offer: ₱{}", pawnId, offeredAmount);
+            return ResponseEntity.ok(ApiResponse.success("Assessment submitted successfully", response));
         } catch (Exception e) {
-            logger.error("Error removing cash from user: ", e);
+            logger.error("Error assessing pawn request: ", e);
             return ResponseEntity.status(500)
-                    .body(ApiResponse.error("Failed to remove cash: " + e.getMessage()));
+                    .body(ApiResponse.error("Failed to assess pawn request: " + e.getMessage()));
         }
     }
 
