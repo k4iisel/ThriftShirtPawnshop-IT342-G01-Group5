@@ -78,12 +78,9 @@ function ProfileModal({ isOpen, onClose }) {
 
     try {
       // Create a temporary form data to upload the file
-      const uploadData = new FormData();
-      uploadData.append('file', file);
-
       notifySuccess('Uploading image...');
 
-      const response = await apiService.upload(uploadData);
+      const response = await apiService.upload(file);
 
       if (response.success) {
         setFormData(prev => ({
