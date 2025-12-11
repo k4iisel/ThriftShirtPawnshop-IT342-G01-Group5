@@ -54,8 +54,22 @@ function ProfileModal({ isOpen, onClose }) {
       const updatedProfile = await apiService.auth.updateProfile(formData);
       setProfile(updatedProfile);
       setFormData(updatedProfile);
+
+      // Update local storage to reflect changes immediately
+      const currentUser = JSON.parse(sessionStorage.getItem('user') || '{}');
+      const newUserData = { ...currentUser, ...updatedProfile };
+      sessionStorage.setItem('user', JSON.stringify(newUserData));
+      if (localStorage.getItem('user')) {
+        localStorage.setItem('user', JSON.stringify(newUserData));
+      }
+
       setIsEditing(false);
-      notifySuccess('Profile updated successfully!');
+      notifySuccess('Profile updated successfully! Reloading...');
+
+      // Reload to update Header and other components
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Error updating profile:', error);
       notifyError('Failed to update profile');

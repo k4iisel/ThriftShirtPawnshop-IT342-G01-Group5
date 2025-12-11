@@ -162,6 +162,20 @@
   vertical-align: middle;
 }
 
+.validate-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.validate-thumbnail:hover {
+  transform: scale(1.1);
+}
+
 .validate-table tr:hover {
   background-color: #f8f9fa;
 }
