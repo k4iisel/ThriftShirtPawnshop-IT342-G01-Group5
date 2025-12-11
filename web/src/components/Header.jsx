@@ -305,7 +305,15 @@ const Header = () => {
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
               <div className="user-avatar">
-                <span>{getUserInitials()}</span>
+                {userProfile.profileImage ? (
+                  <img
+                    src={userProfile.profileImage}
+                    alt="User"
+                    className="header-avatar-img"
+                  />
+                ) : (
+                  <span>{getUserInitials()}</span>
+                )}
               </div>
               <span className="user-name">{getDisplayName()}</span>
               <ChevronDown size={16} className={`chevron ${showUserMenu ? 'rotated' : ''}`} />
