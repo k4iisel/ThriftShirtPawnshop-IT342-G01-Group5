@@ -67,7 +67,8 @@ function PawnStatus() {
           let displayAmount = pawn.offeredAmount || 0;
 
           // Use values from API if available (for Active/PAWNED loans)
-          const interestRate = pawn.interestRate || 5;
+          // Priority: Active Loan Interest -> Proposed Offer Interest -> Default 5%
+          const interestRate = pawn.interestRate || pawn.proposedInterestRate || 5;
           const loanPeriod = pawn.proposedLoanDuration || 30;
 
           let dueDateStr = 'N/A';

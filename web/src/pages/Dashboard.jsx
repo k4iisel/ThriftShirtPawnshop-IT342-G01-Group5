@@ -187,27 +187,15 @@ function Dashboard() {
     const interval = setInterval(() => {
       if (userData) {
         // Re-fetch stats to update active pawns count
+        // Re-fetch stats to update active pawns count
         const fetchStats = async () => {
           try {
-            const response = await apiService.pawnRequest.getAll();
+            const response = await apiService.auth.getUserStats();
 
             if (response.success && response.data) {
-              const pawnedItems = response.data.filter(pawn => pawn.status === 'PAWNED');
-              const activePawnCount = pawnedItems.length;
-
-              const dueSoonCount = pawnedItems.filter(pawn => {
-                if (pawn.loan && pawn.loan.dueDate) {
-                  const dueDate = new Date(pawn.loan.dueDate);
-                  const today = new Date();
-                  const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-                  return daysUntilDue <= 7 && daysUntilDue >= 0;
-                }
-                return false;
-              }).length;
-
               setUserStats({
-                activePawns: activePawnCount,
-                dueSoon: dueSoonCount
+                activePawns: response.data.activePawns || 0,
+                dueSoon: response.data.dueSoon || 0
               });
 
               fetchRecentPawnedItems();
@@ -226,35 +214,18 @@ function Dashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Fetch all pawn requests (same as PawnStatus)
-        const response = await apiService.pawnRequest.getAll();
+        // Fetch user stats from backend
+        const response = await apiService.auth.getUserStats();
 
         if (response.success && response.data) {
-          // Filter for PAWNED status items
-          const pawnedItems = response.data.filter(pawn => pawn.status === 'PAWNED');
-
-          // Count active pawned items
-          const activePawnCount = pawnedItems.length;
-
-          // Count items due soon (within 7 days of due date)
-          const dueSoonCount = pawnedItems.filter(pawn => {
-            if (pawn.loan && pawn.loan.dueDate) {
-              const dueDate = new Date(pawn.loan.dueDate);
-              const today = new Date();
-              const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-              return daysUntilDue <= 7 && daysUntilDue >= 0;
-            }
-            return false;
-          }).length;
-
           setUserStats({
-            activePawns: activePawnCount,
-            dueSoon: dueSoonCount
+            activePawns: response.data.activePawns || 0,
+            dueSoon: response.data.dueSoon || 0
           });
-
-          // Refresh recent pawned items
-          fetchRecentPawnedItems();
         }
+
+        // Refresh recent items
+        fetchRecentPawnedItems();
       } catch (error) {
         console.error('❌ Dashboard: Error fetching user stats:', error);
       }
